@@ -1,31 +1,89 @@
 import { useState } from "react";
-import { Sparkles, AlertTriangle, CreditCard, Users, Briefcase, CheckSquare, RefreshCw, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
+import {
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  ShieldAlert,
+  Zap,
+  RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Loader2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface Briefing {
   headline: string;
-  urgentActions: string[];
-  riskAlerts: string[];
-  paymentIssues: string[];
-  clientFollowUps: string[];
-  projectProblems: string[];
+  goingWell: string[];
+  needsAttention: string[];
+  criticalRisks: string[];
+  recommendedActions: string[];
 }
 
-interface BriefingSection {
+interface Section {
   key: keyof Omit<Briefing, "headline">;
   label: string;
   icon: React.ElementType;
-  color: string;
+  theme: {
+    card: string;
+    icon: string;
+    label: string;
+    bullet: string;
+    dot: string;
+  };
 }
 
-const SECTIONS: BriefingSection[] = [
-  { key: "urgentActions", label: "Urgent Actions", icon: CheckSquare, color: "text-orange-400" },
-  { key: "riskAlerts", label: "Risk Alerts", icon: AlertTriangle, color: "text-red-400" },
-  { key: "paymentIssues", label: "Payment Issues", icon: CreditCard, color: "text-yellow-400" },
-  { key: "clientFollowUps", label: "Client Follow-ups", icon: Users, color: "text-blue-400" },
-  { key: "projectProblems", label: "Project Problems", icon: Briefcase, color: "text-purple-400" },
+const SECTIONS: Section[] = [
+  {
+    key: "goingWell",
+    label: "Going Well",
+    icon: CheckCircle2,
+    theme: {
+      card: "border-emerald-500/20 bg-emerald-500/5",
+      icon: "text-emerald-400",
+      label: "text-emerald-400",
+      bullet: "text-emerald-500/60",
+      dot: "bg-emerald-500",
+    },
+  },
+  {
+    key: "needsAttention",
+    label: "Needs Attention",
+    icon: AlertTriangle,
+    theme: {
+      card: "border-amber-500/20 bg-amber-500/5",
+      icon: "text-amber-400",
+      label: "text-amber-400",
+      bullet: "text-amber-500/60",
+      dot: "bg-amber-500",
+    },
+  },
+  {
+    key: "criticalRisks",
+    label: "Critical Risks",
+    icon: ShieldAlert,
+    theme: {
+      card: "border-red-500/20 bg-red-500/5",
+      icon: "text-red-400",
+      label: "text-red-400",
+      bullet: "text-red-500/60",
+      dot: "bg-red-500",
+    },
+  },
+  {
+    key: "recommendedActions",
+    label: "Recommended Actions",
+    icon: Zap,
+    theme: {
+      card: "border-primary/20 bg-primary/5",
+      icon: "text-primary",
+      label: "text-primary",
+      bullet: "text-primary/60",
+      dot: "bg-primary",
+    },
+  },
 ];
 
 export function AIBriefing() {
@@ -42,7 +100,7 @@ export function AIBriefing() {
       const res = await fetch("/api/ai/briefing", { credentials: "include" });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
-        throw new Error((body as any).error ?? "Failed to generate briefing");
+        throw new Error((body as { error?: string }).error ?? "Failed to generate briefing");
       }
       const data = await res.json();
       setBriefing(data.briefing);
@@ -56,24 +114,29 @@ export function AIBriefing() {
   }
 
   const totalItems = briefing
-    ? Object.values(briefing).flat().length - 1 // exclude headline
+    ? briefing.goingWell.length +
+      briefing.needsAttention.length +
+      briefing.criticalRisks.length +
+      briefing.recommendedActions.length
     : 0;
 
   return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 via-transparent to-transparent">
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Sparkles size={16} className="text-primary" />
-            Today's Business Briefing
+          <CardTitle className="flex items-center gap-2 text-base font-semibold">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/15 border border-primary/20">
+              <Sparkles size={14} className="text-primary" />
+            </div>
+            AI Business Briefing
           </CardTitle>
           <div className="flex items-center gap-2">
             {briefing && (
               <button
                 onClick={() => setExpanded((e) => !e)}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground transition-colors"
+                className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary/50 transition-colors"
               >
-                {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} />}
               </button>
             )}
             <Button
@@ -96,69 +159,98 @@ export function AIBriefing() {
 
       <CardContent>
         {!briefing && !loading && !error && (
-          <div className="flex flex-col items-center justify-center py-6 text-center gap-2">
-            <Sparkles size={24} className="text-muted-foreground/50" />
-            <p className="text-sm text-muted-foreground">
-              Click <strong>Generate Briefing</strong> to get your AI-powered daily overview —
-              urgent actions, risks, payments, and more.
-            </p>
+          <div className="flex flex-col items-center justify-center py-8 text-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center">
+              <Sparkles size={20} className="text-primary/50" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground/70">Get your AI-powered executive briefing</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Analysed from your live workspace data — clients, projects, payments, and tasks.
+              </p>
+            </div>
           </div>
         )}
 
         {loading && (
-          <div className="flex items-center justify-center gap-2 py-6 text-muted-foreground">
-            <Loader2 size={16} className="animate-spin" />
-            <span className="text-sm">Analysing your workspace…</span>
+          <div className="flex flex-col items-center justify-center gap-3 py-8 text-muted-foreground">
+            <Loader2 size={20} className="animate-spin text-primary" />
+            <p className="text-sm">Analysing your workspace data…</p>
           </div>
         )}
 
         {error && (
           <div className="rounded-lg bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-            {error}
+            {error.includes("OPENAI_API_KEY") || error.includes("not configured")
+              ? "AI is not configured. Set the OPENAI_API_KEY secret to enable briefings."
+              : error}
           </div>
         )}
 
         {briefing && expanded && (
           <div className="space-y-4">
             {/* Headline */}
-            <div className="rounded-lg bg-primary/10 border border-primary/20 px-4 py-3">
-              <p className="text-sm font-medium text-foreground">{briefing.headline}</p>
+            <div className="rounded-xl bg-primary/10 border border-primary/20 px-4 py-3">
+              <p className="text-sm font-medium leading-relaxed text-foreground">
+                {briefing.headline}
+              </p>
               {generatedAt && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Generated {new Date(generatedAt).toLocaleTimeString()}
+                <p className="text-[11px] text-muted-foreground mt-1.5 font-mono">
+                  Generated at {new Date(generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                 </p>
               )}
             </div>
 
-            {/* Sections */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {SECTIONS.map(({ key, label, icon: Icon, color }) => {
+            {/* 4-section grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {SECTIONS.map(({ key, label, icon: Icon, theme }) => {
                 const items = briefing[key];
-                if (!items.length) return null;
                 return (
-                  <div key={key} className="rounded-lg border border-border/50 bg-card/50 p-3">
-                    <div className="flex items-center gap-1.5 mb-2">
-                      <Icon size={13} className={color} />
-                      <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                  <div
+                    key={key}
+                    className={cn(
+                      "rounded-xl border p-3.5 transition-colors",
+                      theme.card,
+                      items.length === 0 && "opacity-50",
+                    )}
+                  >
+                    <div className="flex items-center gap-2 mb-2.5">
+                      <Icon size={14} className={theme.icon} />
+                      <span className={cn("text-xs font-semibold uppercase tracking-wider", theme.label)}>
                         {label}
                       </span>
+                      {items.length > 0 && (
+                        <span
+                          className={cn(
+                            "ml-auto text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white",
+                            theme.dot,
+                          )}
+                        >
+                          {items.length}
+                        </span>
+                      )}
                     </div>
-                    <ul className="space-y-1">
-                      {items.map((item, i) => (
-                        <li key={i} className="text-xs text-foreground flex gap-1.5">
-                          <span className="text-muted-foreground mt-0.5">•</span>
-                          <span>{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                    {items.length === 0 ? (
+                      <p className="text-xs text-muted-foreground italic">Nothing to report.</p>
+                    ) : (
+                      <ul className="space-y-1.5">
+                        {items.map((item, i) => (
+                          <li key={i} className="text-xs text-foreground flex gap-2 leading-relaxed">
+                            <span className={cn("mt-0.5 shrink-0", theme.bullet)}>▸</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 );
               })}
             </div>
 
             {totalItems === 0 && (
-              <p className="text-sm text-center text-muted-foreground py-2">
-                ✅ Everything looks good — no urgent issues today.
+              <p className="text-sm text-center text-emerald-400 py-2 flex items-center justify-center gap-2">
+                <CheckCircle2 size={14} />
+                Everything looks healthy — no urgent issues today.
               </p>
             )}
           </div>

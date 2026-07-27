@@ -15,9 +15,12 @@ const router: IRouter = Router();
 router.get("/dashboard", async (req, res): Promise<void> => {
   const wid = req.session.workspaceId!;
   const now = new Date();
+  const nowStr = now.toISOString().split("T")[0]!;
   const thirtyDaysLater = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
-  const thirtyDaysStr = thirtyDaysLater.toISOString().split("T")[0];
-  const nowStr = now.toISOString().split("T")[0];
+  const thirtyDaysStr = thirtyDaysLater.toISOString().split("T")[0]!;
+  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+    .toISOString()
+    .split("T")[0]!;
 
   const [
     allClients,
@@ -61,9 +64,12 @@ router.get("/dashboard", async (req, res): Promise<void> => {
       .limit(5),
   ]);
 
+  // ── Clients ────────────────────────────────────────────────────────────────
   const totalClients = allClients.length;
   const activeClients = allClients.filter((c) => c.status === "active").length;
+  const inactiveClients = allClients.filter((c) => c.status === "inactive").length;
 
+  // ── Projects ───────────────────────────────────────────────────────────────
   const projects = allProjects.map(({ project, clientName }) => ({
     ...project,
     clientName: clientName ?? null,
@@ -82,9 +88,19 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     ["design", "development", "testing", "review"].includes(p.status),
   ).length;
   const completedProjects = projects.filter((p) => p.status === "delivered").length;
+  const cancelledProjects = projects.filter((p) => p.status === "cancelled").length;
+  const totalNonCancelled = projects.length - cancelledProjects;
   const delayedProjects = projects.filter(
-    (p) => p.deadline && p.deadline < nowStr && p.status !== "delivered" && p.status !== "cancelled",
+    (p) =>
+      p.deadline &&
+      p.deadline < nowStr &&
+      p.status !== "delivered" &&
+      p.status !== "cancelled",
   ).length;
+  const completionRate =
+    totalNonCancelled === 0
+      ? 100
+      : Math.round((completedProjects / totalNonCancelled) * 100);
 
   const upcomingDeadlines = projects
     .filter(
@@ -98,11 +114,20 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     .sort((a, b) => (a.deadline ?? "").localeCompare(b.deadline ?? ""))
     .slice(0, 5);
 
-  const projectsAtRisk = projects.filter(
-    (p) =>
-      (p.deadline && p.deadline < nowStr && p.status !== "delivered" && p.status !== "cancelled") ||
-      (p.progress < 30 && p.deadline && p.deadline <= thirtyDaysStr),
-  ).slice(0, 5);
+  const projectsAtRisk = projects
+    .filter(
+      (p) =>
+        (p.deadline &&
+          p.deadline < nowStr &&
+          p.status !== "delivered" &&
+          p.status !== "cancelled") ||
+        (p.progress < 30 &&
+          p.deadline &&
+          p.deadline <= thirtyDaysStr &&
+          p.status !== "delivered" &&
+          p.status !== "cancelled"),
+    )
+    .slice(0, 5);
 
   const projectsNeedingAttention = projects
     .filter(
@@ -113,6 +138,7 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     )
     .slice(0, 5);
 
+  // ── Payments ───────────────────────────────────────────────────────────────
   const invoicesAwaitingPayment = allPayments.filter(
     ({ payment }) => payment.status === "pending" || payment.status === "overdue",
   ).length;
@@ -122,9 +148,96 @@ router.get("/dashboard", async (req, res): Promise<void> => {
     .reduce((sum, { payment }) => sum + Number(payment.amount), 0);
 
   const outstandingPayments = allPayments
-    .filter(({ payment }) => payment.status === "pending" || payment.status === "overdue")
+    .filter(
+      ({ payment }) =>
+        payment.status === "pending" || payment.status === "overdue",
+    )
     .reduce((sum, { payment }) => sum + Number(payment.amount), 0);
 
+  // Overdue invoices: explicitly overdue status, OR pending past due date
+  const overdueInvoices = allPayments.filter(
+    ({ payment }) =>
+      payment.status === "overdue" ||
+      (payment.status === "pending" &&
+        payment.dueDate != null &&
+        payment.dueDate < nowStr),
+  );
+  const overdueInvoiceCount = overdueInvoices.length;
+  const overdueAmount = overdueInvoices.reduce(
+    (sum, { payment }) => sum + Number(payment.amount),
+    0,
+  );
+
+  // MRR: payments paid in the current calendar month
+  const mrr = allPayments
+    .filter(
+      ({ payment }) =>
+        payment.status === "paid" &&
+        payment.paidDate != null &&
+        payment.paidDate >= currentMonthStart,
+    )
+    .reduce((sum, { payment }) => sum + Number(payment.amount), 0);
+
+  // ── Health Score (0–100) ───────────────────────────────────────────────────
+  // Four equally-weighted pillars, each 0–25 pts
+  const totalInvoices = allPayments.length;
+  const totalRevenuePlusOutstanding = totalRevenue + outstandingPayments;
+
+  // Revenue health: penalise overdue amount relative to total billed
+  const revenueScore =
+    totalRevenuePlusOutstanding === 0
+      ? 25
+      : Math.max(
+          0,
+          Math.round(
+            25 *
+              (1 -
+                Math.min(
+                  overdueAmount / Math.max(totalRevenuePlusOutstanding, 1),
+                  1,
+                )),
+          ),
+        );
+
+  // Delivery health: penalise delayed projects relative to total
+  const deliveryScore =
+    projects.length === 0
+      ? 25
+      : Math.max(
+          0,
+          Math.round(25 * (1 - delayedProjects / Math.max(projects.length, 1))),
+        );
+
+  // Client activity: active ratio
+  const clientActivityScore =
+    totalClients === 0
+      ? 25
+      : Math.round((activeClients / Math.max(totalClients, 1)) * 25);
+
+  // Payment status: penalise overdue invoices
+  const paymentScore =
+    totalInvoices === 0
+      ? 25
+      : Math.max(
+          0,
+          Math.round(
+            25 -
+              (overdueInvoiceCount / Math.max(totalInvoices, 1)) * 25,
+          ),
+        );
+
+  const healthScore = Math.min(
+    100,
+    revenueScore + deliveryScore + clientActivityScore + paymentScore,
+  );
+  const healthBreakdown = {
+    revenue: revenueScore,
+    delivery: deliveryScore,
+    clientActivity: clientActivityScore,
+    payments: paymentScore,
+  };
+
+  // ── Activity / Meetings / Notes ────────────────────────────────────────────
   const recentActivity = recentActivityRows.map(({ activity, clientName }) => ({
     ...activity,
     clientName: clientName ?? null,
@@ -147,20 +260,32 @@ router.get("/dashboard", async (req, res): Promise<void> => {
   }));
 
   res.json({
+    // Clients
     totalClients,
     activeClients,
+    inactiveClients,
+    // Projects
     projectsInProgress,
     completedProjects,
     delayedProjects,
+    completionRate,
     upcomingDeadlines,
+    projectsAtRisk,
+    projectsNeedingAttention,
+    // Payments
     invoicesAwaitingPayment,
     totalRevenue,
     outstandingPayments,
-    projectsAtRisk,
+    overdueInvoiceCount,
+    overdueAmount,
+    mrr,
+    // Health
+    healthScore,
+    healthBreakdown,
+    // Feeds
     recentActivity,
     upcomingMeetings,
     recentNotes,
-    projectsNeedingAttention,
   });
 });
 

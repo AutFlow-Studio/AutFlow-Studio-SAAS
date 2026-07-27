@@ -251,19 +251,25 @@ router.get("/ai/briefing", async (req, res): Promise<void> => {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const prompt = `Based on the workspace data below, generate a concise daily business briefing for today (${today}).
+  const prompt = `Based on the workspace data below, generate a concise executive business briefing for today (${today}).
 
 Structure your response as JSON with this exact shape:
 {
-  "headline": "One sentence summary of the business state today",
-  "urgentActions": ["action 1", "action 2"],
-  "riskAlerts": ["alert 1", "alert 2"],
-  "paymentIssues": ["issue 1"],
-  "clientFollowUps": ["client name — reason"],
-  "projectProblems": ["project name — issue"]
+  "headline": "One sentence executive summary of the overall business state today",
+  "goingWell": ["specific positive item 1", "specific positive item 2"],
+  "needsAttention": ["concern requiring attention 1", "concern 2"],
+  "criticalRisks": ["critical risk that needs immediate action 1"],
+  "recommendedActions": ["concrete recommended action 1", "action 2", "action 3"]
 }
 
-Be specific — use actual client names, project names, amounts. Max 5 items per array. If a category has nothing urgent, return an empty array.
+Rules:
+- Be specific — use actual client names, project names, dollar amounts, and dates from the data
+- goingWell: positive achievements, on-track projects, paid invoices, active clients — what IS working
+- needsAttention: non-urgent but important issues — slow progress, upcoming deadlines, quiet clients
+- criticalRisks: overdue invoices, overdue projects, at-risk deliverables, churn risks — what NEEDS immediate action
+- recommendedActions: concrete next steps the owner should take TODAY, in order of priority
+- Max 4 items per array. If a category has nothing relevant, return an empty array.
+- criticalRisks should only contain genuinely urgent items; empty array is fine if nothing is critical.
 
 WORKSPACE DATA:
 ${context}`;
