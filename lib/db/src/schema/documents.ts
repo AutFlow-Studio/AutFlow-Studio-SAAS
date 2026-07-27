@@ -4,6 +4,7 @@ import {
   serial,
   timestamp,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
@@ -23,6 +24,8 @@ export const documentsTable = pgTable("documents", {
   type: text("type").notNull().default("other"),
   url: text("url"),
   notes: text("notes"),
+  /** Whether this document is visible to the client in the Client Portal. */
+  sharedWithClient: boolean("shared_with_client").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true })
     .notNull()
     .defaultNow(),

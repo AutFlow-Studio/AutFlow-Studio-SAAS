@@ -43,3 +43,15 @@ export function requireOwner(req: Request, res: Response, next: NextFunction): v
   }
   next();
 }
+
+/**
+ * Middleware: require the request to have an authenticated CLIENT PORTAL session.
+ * Client portal sessions are completely separate from team sessions.
+ */
+export function requireClientPortalAuth(req: Request, res: Response, next: NextFunction): void {
+  if (!req.session?.clientPortalUserId) {
+    res.status(401).json({ error: "Client portal authentication required" });
+    return;
+  }
+  next();
+}

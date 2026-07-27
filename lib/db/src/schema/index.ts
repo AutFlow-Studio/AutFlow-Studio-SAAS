@@ -13,3 +13,5 @@ export * from "./users";
 export * from "./settings";
 export * from "./notifications";
 export * from "./password-reset-tokens";
+export * from "./client-portal-users";
+export * from "./client-portal-messages";

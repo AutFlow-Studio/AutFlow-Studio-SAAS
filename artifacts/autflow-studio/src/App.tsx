@@ -6,8 +6,10 @@ import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import { ThemeProvider } from '@/components/theme-provider';
 import { AgencyProfileProvider } from '@/components/agency-profile-provider';
 import { AuthProvider, useAuth } from '@/components/auth-provider';
+import { PortalAuthProvider, usePortalAuth } from '@/components/portal-auth-provider';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Layout } from '@/components/layout';
+import { PortalLayout } from '@/components/portal-layout';
 import LoginPage from '@/pages/login/index';
 import SignupPage from '@/pages/signup/index';
 import VerifyEmailPage from '@/pages/verify-email/index';
@@ -30,6 +32,15 @@ import SearchResults from '@/pages/search/index';
 import SettingsView from '@/pages/settings/index';
 import MeetingsList from '@/pages/meetings/index';
 
+// Client Portal pages
+import PortalLoginPage from '@/pages/portal/login';
+import PortalDashboard from '@/pages/portal/dashboard';
+import PortalProjects from '@/pages/portal/projects';
+import PortalProjectDetail from '@/pages/portal/project-detail';
+import PortalDocuments from '@/pages/portal/documents';
+import PortalPayments from '@/pages/portal/payments';
+import PortalMessages from '@/pages/portal/messages';
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -42,7 +53,9 @@ const queryClient = new QueryClient({
   },
 });
 
-function Router() {
+// ── Agency team routes ────────────────────────────────────────────────────────
+
+function AgencyRouter() {
   return (
     <Switch>
       <Route path="/" component={Dashboard} />
@@ -63,7 +76,7 @@ function Router() {
   );
 }
 
-function AuthGate() {
+function AgencyAuthGate() {
   const { user, loading } = useAuth();
   const [location] = useLocation();
   const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
@@ -106,7 +119,7 @@ function AuthGate() {
     return <LoginPage />;
   }
 
-  // Email verification gate — show verify-email page for unverified users
+  // Email verification gate
   if (!user.isEmailVerified) {
     return <VerifyEmailPage />;
   }
@@ -117,9 +130,67 @@ function AuthGate() {
 
   return (
     <Layout>
-      <Router />
+      <AgencyRouter />
     </Layout>
   );
+}
+
+// ── Client portal routes ──────────────────────────────────────────────────────
+
+function PortalRouter() {
+  return (
+    <Switch>
+      <Route path="/portal/projects/:id" component={PortalProjectDetail} />
+      <Route path="/portal/projects" component={PortalProjects} />
+      <Route path="/portal/documents" component={PortalDocuments} />
+      <Route path="/portal/payments" component={PortalPayments} />
+      <Route path="/portal/messages" component={PortalMessages} />
+      <Route path="/portal" component={PortalDashboard} />
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+function PortalGate() {
+  const { user, loading } = usePortalAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-sm">Loading…</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <PortalLoginPage />;
+  }
+
+  return (
+    <PortalLayout>
+      <PortalRouter />
+    </PortalLayout>
+  );
+}
+
+// ── Root routing — split between /portal/* and everything else ────────────────
+
+function RootRouter() {
+  const [location] = useLocation();
+  const isPortal = location.startsWith('/portal');
+
+  if (isPortal) {
+    return (
+      <PortalAuthProvider>
+        <PortalGate />
+      </PortalAuthProvider>
+    );
+  }
+
+  return <AgencyAuthGate />;
 }
 
 function App() {
@@ -131,7 +202,7 @@ function App() {
             <QueryClientProvider client={queryClient}>
               <TooltipProvider>
                 <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, '')}>
-                  <AuthGate />
+                  <RootRouter />
                 </WouterRouter>
                 <Toaster />
               </TooltipProvider>

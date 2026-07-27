@@ -3,6 +3,7 @@ import { requireAuth } from "../middleware/auth";
 import { apiRateLimiter } from "../middleware/rate-limit";
 import healthRouter from "./health";
 import authRouter from "./auth";
+import portalRouter from "./portal";
 import storageRouter from "./storage";
 import settingsApiRouter from "./settings-api";
 import clientsRouter from "./clients";
@@ -35,8 +36,14 @@ router.use(apiRateLimiter);
 router.use(healthRouter);
 router.use(authRouter);   // /auth/login, /auth/logout, /auth/me (me checks internally)
 
+// ── Client portal routes ──────────────────────────────────────────────────────
+// Mounted before the team auth gate — portal auth is handled internally by
+// requireClientPortalAuth middleware on each protected portal endpoint.
+// The portal-admin/* routes inside this router use requireAuth internally.
+router.use(portalRouter);
+
 // ── Auth gate ────────────────────────────────────────────────────────────────
-// All routes mounted below this line require a valid session.
+// All routes mounted below this line require a valid team session.
 router.use(requireAuth);
 
 // ── Protected routes ──────────────────────────────────────────────────────────

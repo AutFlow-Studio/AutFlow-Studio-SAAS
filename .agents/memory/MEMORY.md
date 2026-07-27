@@ -1,1 +1,2 @@
 - [AutFlow Studio import](autflow-studio-import.md) — how the zip was imported, port layout, gotchas with artifact dir conflicts and workflow setup.
+- [Client Portal feature](client-portal.md) — separate session keys, portal-only tables, strict workspace+clientId isolation on every query.

@@ -1,4 +1,6 @@
 import { useGetClient, useListProjects, useListPayments, useListDocuments, useCreateDocument, useListNotes, useCreateNote, useUpdateClient, useCreateProject, useCreatePayment, getGetClientQueryKey, getListProjectsQueryKey, getListPaymentsQueryKey, getListDocumentsQueryKey, getListNotesQueryKey, getGetDashboardQueryKey, type ClientInputStatus, type ProjectInputStatus, type ProjectInputPriority, type PaymentInputStatus, type DocumentInputType } from "@workspace/api-client-react";
+import { PortalAccessPanel } from "@/components/portal-access-panel";
+import { PortalMessagesPanel } from "@/components/portal-messages-panel";
 import { ClientHistory } from "@/components/client-history";
 import { PageHeader } from "@/components/page-header";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -382,6 +384,7 @@ export default function ClientDetail() {
           <TabsTrigger value="payments" className="py-2 px-4">Payments</TabsTrigger>
           <TabsTrigger value="documents" className="py-2 px-4">Documents</TabsTrigger>
           <TabsTrigger value="notes" className="py-2 px-4">Notes</TabsTrigger>
+          <TabsTrigger value="portal" className="py-2 px-4">Portal Access</TabsTrigger>
           <TabsTrigger value="history" className="py-2 px-4">History</TabsTrigger>
         </TabsList>
 
@@ -624,6 +627,11 @@ export default function ClientDetail() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="portal" className="m-0 space-y-6">
+            <PortalAccessPanel clientId={clientId} />
+            <PortalMessagesPanel clientId={clientId} />
           </TabsContent>
 
           <TabsContent value="history" className="m-0">

@@ -301,6 +301,39 @@ async function migrate() {
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_sessions_expire ON sessions (expire)`);
 
+    // ── Client Portal ─────────────────────────────────────────────────────
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS client_portal_users (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        client_id     INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        email         TEXT NOT NULL UNIQUE,
+        password_hash TEXT NOT NULL,
+        name          TEXT NOT NULL,
+        is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        last_login_at TIMESTAMPTZ
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_client_portal_users_workspace ON client_portal_users (workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_client_portal_users_client ON client_portal_users (client_id)`);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS client_portal_messages (
+        id           SERIAL PRIMARY KEY,
+        workspace_id INTEGER NOT NULL,
+        client_id    INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        sender_type  TEXT NOT NULL,
+        sender_name  TEXT NOT NULL,
+        message      TEXT NOT NULL,
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_client_portal_messages_client ON client_portal_messages (client_id, workspace_id)`);
+
+    await client.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS shared_with_client BOOLEAN NOT NULL DEFAULT FALSE`);
+
     console.log("✓ All tables and columns ensured.");
 
     // ── Migrate existing users: create workspaces for any without one ─────
