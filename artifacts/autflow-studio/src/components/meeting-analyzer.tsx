@@ -120,11 +120,13 @@ export function MeetingAnalyzer({
     setCreatingTaskIdx(idx);
     try {
       await createTask.mutateAsync({
-        title: task.title,
-        priority: task.priority,
-        notes: task.notes ?? undefined,
-        clientId: clientId ?? undefined,
-        status: "todo",
+        data: {
+          title: task.title,
+          priority: task.priority as "low" | "medium" | "high" | "urgent",
+          notes: task.notes ?? undefined,
+          clientId: clientId ?? undefined,
+          status: "todo",
+        },
       });
       setCreatedTaskIdxs((prev) => new Set([...prev, idx]));
       queryClient.invalidateQueries({ queryKey: getListTasksQueryKey() });

@@ -55,20 +55,7 @@ import {
 // Types
 // ---------------------------------------------------------------------------
 
-type DashboardStats = ReturnType<typeof useGetDashboard>["data"] & {
-  mrr: number;
-  overdueInvoiceCount: number;
-  overdueAmount: number;
-  completionRate: number;
-  healthScore: number;
-  inactiveClients: number;
-  healthBreakdown: {
-    revenue: number;
-    delivery: number;
-    clientActivity: number;
-    payments: number;
-  };
-};
+import type { DashboardStats } from "@workspace/api-client-react";
 
 // ---------------------------------------------------------------------------
 // Clear Data Dialog

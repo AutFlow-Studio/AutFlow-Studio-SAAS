@@ -61,7 +61,7 @@ router.post("/notes", async (req, res): Promise<void> => {
     const [client] = await db
       .select()
       .from(clientsTable)
-      .where(eq(clientsTable.id, note.clientId));
+      .where(and(eq(clientsTable.id, note.clientId), eq(clientsTable.workspaceId, wid)));
 
     await db.insert(activityTable).values({
       type: "note_added",
@@ -126,7 +126,7 @@ router.patch("/notes/:id", async (req, res): Promise<void> => {
   }
 
   const clientName = note.clientId
-    ? (await db.select().from(clientsTable).where(eq(clientsTable.id, note.clientId)))[0]?.companyName
+    ? (await db.select().from(clientsTable).where(and(eq(clientsTable.id, note.clientId), eq(clientsTable.workspaceId, wid))))[0]?.companyName
     : null;
 
   res.json(mapNote(note, clientName ?? null));

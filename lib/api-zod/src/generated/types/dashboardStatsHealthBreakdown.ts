@@ -6,7 +6,9 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface StatusCount {
-  status: string;
-  count: number;
-}
+export type DashboardStatsHealthBreakdown = {
+  revenue: number;
+  delivery: number;
+  clientActivity: number;
+  payments: number;
+};

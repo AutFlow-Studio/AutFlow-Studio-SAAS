@@ -74,6 +74,29 @@ Both workflows (`API Server` and `AutFlow Studio`) start automatically. The Repl
 - Port 8080 can get occupied by stale processes. Kill with `fuser -k 8080/tcp` then restart workflows.
 - The vite dev server proxies `/api` to `localhost:8080` — do NOT hardcode API URLs in frontend code.
 
+## Production Readiness
+
+The following was audited and fixed for SaaS readiness:
+
+- **BOLA fix**: `deliverables.ts` — all 4 endpoints now verify project workspace ownership via JOIN before returning/mutating data
+- **Workspace isolation**: `tasks.ts`, `payments.ts`, `notes.ts` — client/project name lookups now include `workspaceId` filter
+- **TypeScript**: Zero TS errors across all packages (5 pre-existing errors fixed)
+- **OpenAPI spec**: `DashboardStats` schema updated with all fields; types regenerated
+- **DB index**: `idx_deliverables_project_id` added to migration script
+- **Auth**: Signup, login, logout, password reset, email verification all functional
+- **AI**: Graceful 503 when `OPENAI_API_KEY` missing; workspace-scoped context
+- **Email**: Falls back to console.warn when `RESEND_API_KEY` not set
+
+## Environment variables needed for full functionality
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `DATABASE_URL` | ✅ Yes | PostgreSQL (Replit auto-injects) |
+| `SESSION_SECRET` | ✅ Yes | Cookie signing |
+| `RESEND_API_KEY` | Optional | Email delivery (password reset, verification) |
+| `OPENAI_API_KEY` | Optional | AI features (briefing, chat, health scores) |
+| `APP_URL` | Optional | Email link base URL (e.g. `https://yourapp.replit.app`) |
+
 ## Pointers
 
 - See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details

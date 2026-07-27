@@ -127,7 +127,8 @@ router.put(
       return;
     }
 
-    const { id } = req.params;
+    const rawId = req.params.id;
+    const id = Array.isArray(rawId) ? rawId[0] : rawId;
     if (!id || !UUID_RE.test(id)) {
       res.status(400).json({ error: "Invalid upload ID" });
       return;
@@ -144,7 +145,7 @@ router.put(
       .trim();
 
     try {
-      await saveLocalFile(id, body, ct);
+      await saveLocalFile(id as string, body, ct);
       res.status(200).json({ ok: true });
     } catch (error) {
       req.log.error({ err: error }, "Error saving local upload");

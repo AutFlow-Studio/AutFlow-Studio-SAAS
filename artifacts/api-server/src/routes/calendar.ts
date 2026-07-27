@@ -38,7 +38,7 @@ router.get("/calendar", async (req, res): Promise<void> => {
       .select({ payment: paymentsTable, clientName: clientsTable.companyName })
       .from(paymentsTable)
       .leftJoin(clientsTable, eq(paymentsTable.clientId, clientsTable.id))
-      .where(and(eq(paymentsTable.workspaceId, wid), sql`${paymentsTable.due_date} IS NOT NULL`)),
+      .where(and(eq(paymentsTable.workspaceId, wid), sql`${paymentsTable.dueDate} IS NOT NULL`)),
   ]);
 
   for (const { project, clientName } of projects) {

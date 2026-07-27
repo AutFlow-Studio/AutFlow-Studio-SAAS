@@ -1057,22 +1057,31 @@ components:
       required:
         - totalClients
         - activeClients
+        - inactiveClients
         - projectsInProgress
         - completedProjects
         - delayedProjects
+        - completionRate
         - upcomingDeadlines
         - invoicesAwaitingPayment
         - totalRevenue
         - outstandingPayments
+        - overdueInvoiceCount
+        - overdueAmount
+        - mrr
+        - healthScore
+        - healthBreakdown
         - projectsAtRisk
+        - projectsNeedingAttention
         - recentActivity
         - upcomingMeetings
         - recentNotes
-        - projectsNeedingAttention
       properties:
         totalClients:
           type: integer
         activeClients:
+          type: integer
+        inactiveClients:
           type: integer
         projectsInProgress:
           type: integer
@@ -1080,6 +1089,8 @@ components:
           type: integer
         delayedProjects:
           type: integer
+        completionRate:
+          type: number
         upcomingDeadlines:
           type: array
           items:
@@ -1090,7 +1101,31 @@ components:
           type: number
         outstandingPayments:
           type: number
+        overdueInvoiceCount:
+          type: integer
+        overdueAmount:
+          type: number
+        mrr:
+          type: number
+        healthScore:
+          type: number
+        healthBreakdown:
+          type: object
+          required: [revenue, delivery, clientActivity, payments]
+          properties:
+            revenue:
+              type: number
+            delivery:
+              type: number
+            clientActivity:
+              type: number
+            payments:
+              type: number
         projectsAtRisk:
+          type: array
+          items:
+            $ref: "#/components/schemas/Project"
+        projectsNeedingAttention:
           type: array
           items:
             $ref: "#/components/schemas/Project"
@@ -1106,10 +1141,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Note"
-        projectsNeedingAttention:
-          type: array
-          items:
-            $ref: "#/components/schemas/Project"
 
     # ─── Client ─────────────────────────────────────────────────────────────
     Client:

@@ -383,7 +383,7 @@ router.get("/ai/client-health/:clientId", async (req, res): Promise<void> => {
   const lastMeeting = meetings[0];
   const daysSinceLastMeeting = lastMeeting
     ? Math.floor(
-        (Date.now() - new Date(lastMeeting.m?.date ?? lastMeeting.date).getTime()) /
+        (Date.now() - new Date(lastMeeting.date).getTime()) /
           (1000 * 60 * 60 * 24),
       )
     : null;

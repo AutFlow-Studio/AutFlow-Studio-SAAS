@@ -263,6 +263,7 @@ async function migrate() {
 
     // ── Performance indexes ───────────────────────────────────────────────
 
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_project_id ON deliverables (project_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_clients_workspace_id ON clients (workspace_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_projects_workspace_id ON projects (workspace_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_tasks_workspace_id ON tasks (workspace_id)`);

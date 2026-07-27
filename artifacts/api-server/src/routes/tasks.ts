@@ -37,10 +37,10 @@ router.get("/tasks", async (req, res): Promise<void> => {
 
   const [clients, projects] = await Promise.all([
     clientIds.length > 0
-      ? db.select().from(clientsTable).where(inArray(clientsTable.id, clientIds))
+      ? db.select().from(clientsTable).where(and(inArray(clientsTable.id, clientIds), eq(clientsTable.workspaceId, wid)))
       : Promise.resolve([]),
     projectIds.length > 0
-      ? db.select().from(projectsTable).where(inArray(projectsTable.id, projectIds))
+      ? db.select().from(projectsTable).where(and(inArray(projectsTable.id, projectIds), eq(projectsTable.workspaceId, wid)))
       : Promise.resolve([]),
   ]);
 
@@ -93,10 +93,10 @@ router.post("/tasks", async (req, res): Promise<void> => {
 
   const [clients, projects] = await Promise.all([
     task.clientId
-      ? db.select().from(clientsTable).where(eq(clientsTable.id, task.clientId))
+      ? db.select().from(clientsTable).where(and(eq(clientsTable.id, task.clientId), eq(clientsTable.workspaceId, wid)))
       : Promise.resolve([]),
     task.projectId
-      ? db.select().from(projectsTable).where(eq(projectsTable.id, task.projectId))
+      ? db.select().from(projectsTable).where(and(eq(projectsTable.id, task.projectId), eq(projectsTable.workspaceId, wid)))
       : Promise.resolve([]),
   ]);
 
@@ -143,10 +143,10 @@ router.patch("/tasks/:id", async (req, res): Promise<void> => {
 
   const [clients, projects] = await Promise.all([
     task.clientId
-      ? db.select().from(clientsTable).where(eq(clientsTable.id, task.clientId))
+      ? db.select().from(clientsTable).where(and(eq(clientsTable.id, task.clientId), eq(clientsTable.workspaceId, wid)))
       : Promise.resolve([]),
     task.projectId
-      ? db.select().from(projectsTable).where(eq(projectsTable.id, task.projectId))
+      ? db.select().from(projectsTable).where(and(eq(projectsTable.id, task.projectId), eq(projectsTable.workspaceId, wid)))
       : Promise.resolve([]),
   ]);
 

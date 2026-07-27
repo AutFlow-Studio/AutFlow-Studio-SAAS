@@ -67,7 +67,7 @@ router.post("/payments", async (req, res): Promise<void> => {
   const [client] = await db
     .select()
     .from(clientsTable)
-    .where(eq(clientsTable.id, payment.clientId));
+    .where(and(eq(clientsTable.id, payment.clientId), eq(clientsTable.workspaceId, wid)));
 
   await db.insert(activityTable).values({
     type: "payment_added",
@@ -155,7 +155,7 @@ router.patch("/payments/:id", async (req, res): Promise<void> => {
   const [client] = await db
     .select()
     .from(clientsTable)
-    .where(eq(clientsTable.id, payment.clientId));
+    .where(and(eq(clientsTable.id, payment.clientId), eq(clientsTable.workspaceId, wid)));
 
   await db.insert(activityTable).values({
     type: "payment_updated",
