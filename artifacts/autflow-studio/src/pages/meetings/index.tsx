@@ -9,6 +9,7 @@ import {
   type MeetingUpdate,
   type Meeting,
 } from "@workspace/api-client-react";
+import { MeetingAnalyzer } from "@/components/meeting-analyzer";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +46,7 @@ import {
   Upload,
   X,
   Users,
+  Sparkles,
 } from "lucide-react";
 
 // ─── Attachment model ────────────────────────────────────────────────────────
@@ -699,6 +701,7 @@ export default function MeetingsList() {
   const queryClient = useQueryClient();
   const [clientFilter, setClientFilter] = useState("all");
   const [logOpen, setLogOpen] = useState(false);
+  const [analyzerOpen, setAnalyzerOpen] = useState(false);
 
   const { data: clients } = useListClients();
   const effectiveClientId = clientFilter === "all" ? undefined : parseInt(clientFilter, 10);
@@ -716,10 +719,22 @@ export default function MeetingsList() {
   return (
     <div className="space-y-6">
       <PageHeader title="Meetings" description="Log and manage client meetings with file attachments">
-        <Button className="gap-2" onClick={() => setLogOpen(true)}>
-          <Plus size={16} /> Log Meeting
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setAnalyzerOpen(true)}>
+            <Sparkles size={16} /> Analyse Notes
+          </Button>
+          <Button className="gap-2" onClick={() => setLogOpen(true)}>
+            <Plus size={16} /> Log Meeting
+          </Button>
+        </div>
       </PageHeader>
+
+      <MeetingAnalyzer
+        open={analyzerOpen}
+        onOpenChange={setAnalyzerOpen}
+        clientName={clientFilter !== "all" && clients ? clients.find(c => String(c.id) === clientFilter)?.companyName : undefined}
+        clientId={clientFilter !== "all" ? parseInt(clientFilter, 10) : undefined}
+      />
 
       <MeetingDialog
         open={logOpen}

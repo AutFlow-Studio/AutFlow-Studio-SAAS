@@ -22,6 +22,7 @@ import reportsRouter from "./reports";
 import adminRouter from "./admin";
 import notificationsRouter from "./notifications";
 import exportRouter from "./export";
+import aiRouter from "./ai";
 
 const router: IRouter = Router();
 
@@ -57,5 +58,6 @@ router.use(reportsRouter);
 router.use(adminRouter);
 router.use(notificationsRouter);
 router.use(exportRouter);
+router.use(aiRouter);
 
 export default router;

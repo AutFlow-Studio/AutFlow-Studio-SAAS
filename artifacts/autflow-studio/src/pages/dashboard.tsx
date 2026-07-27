@@ -1,6 +1,7 @@
 import { useGetDashboard } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/page-header";
 import { PageError } from "@/components/page-error";
+import { AIBriefing } from "@/components/ai-briefing";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Users, 
@@ -240,6 +241,11 @@ export default function Dashboard() {
       {showResetButton && (
         <ClearDataDialog open={resetDialogOpen} onOpenChange={setResetDialogOpen} />
       )}
+
+      {/* AI Briefing */}
+      <div className="print:hidden">
+        <AIBriefing />
+      </div>
 
       {/* Printable header -- only visible when printing */}
       <div className="hidden print:block mb-6">

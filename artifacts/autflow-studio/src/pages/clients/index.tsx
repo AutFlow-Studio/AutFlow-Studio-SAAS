@@ -1,4 +1,5 @@
 import { useListClients, useCreateClient, useUpdateClient, useDeleteClient, getListClientsQueryKey, getGetDashboardQueryKey, type Client, type ClientInputStatus } from "@workspace/api-client-react";
+import { ClientHealthBadge } from "@/components/client-health-badge";
 import { PageHeader } from "@/components/page-header";
 import { PageError } from "@/components/page-error";
 import { Card } from "@/components/ui/card";
@@ -340,9 +341,12 @@ export default function ClientsList() {
               </div>
               
               <div className="px-5 py-3 bg-secondary/30 border-t border-border/50 flex items-center justify-between">
-                <StatusBadge variant={getClientStatusVariant(client.status)}>
-                  {client.status}
-                </StatusBadge>
+                <div className="flex items-center gap-2">
+                  <StatusBadge variant={getClientStatusVariant(client.status)}>
+                    {client.status}
+                  </StatusBadge>
+                  <ClientHealthBadge clientId={client.id} clientName={client.companyName} />
+                </div>
                 {client.contractValue && (
                   <div className="text-sm font-semibold">
                     ${client.contractValue.toLocaleString()}

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
+import { AIAssistant } from "@/components/ai-assistant";
 import { 
   LayoutDashboard, 
   Users, 
@@ -405,6 +406,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </main>
+
+      {/* AI Assistant — floating panel */}
+      <AIAssistant />
     </div>
   );
 }
