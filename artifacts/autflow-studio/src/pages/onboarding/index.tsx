@@ -19,7 +19,7 @@ import {
   Building2,
   Palette,
   Settings2,
-  Database,
+  LayoutTemplate,
   CheckCircle2,
   Sparkles,
   LayoutDashboard,
@@ -27,6 +27,11 @@ import {
   FolderKanban,
   Receipt,
   X,
+  Briefcase,
+  Heart,
+  Laptop,
+  Check,
+  Wand2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -133,8 +138,70 @@ const STEP_META = [
   { icon: Building2, label: "Company" },
   { icon: Palette, label: "Brand" },
   { icon: Settings2, label: "Preferences" },
-  { icon: Database, label: "Data" },
+  { icon: LayoutTemplate, label: "Template" },
 ];
+
+// ─── Template definitions (mirrors backend TEMPLATE_META) ─────────────────────
+
+type TemplateColor = "violet" | "blue" | "rose" | "amber" | "emerald";
+
+const TEMPLATES: {
+  id: string;
+  name: string;
+  tagline: string;
+  icon: React.ElementType;
+  color: TemplateColor;
+  includes: string[];
+}[] = [
+  {
+    id: "digital-agency",
+    name: "Digital Agency",
+    tagline: "Clients, projects & campaigns",
+    icon: Palette,
+    color: "violet",
+    includes: ["4 active retainer clients", "5 branding & web projects", "Deliverables, invoices & tasks", "Meeting logs & notes"],
+  },
+  {
+    id: "consulting",
+    name: "Consulting Business",
+    tagline: "Engagements, reports & advisory",
+    icon: Briefcase,
+    color: "blue",
+    includes: ["4 enterprise advisory clients", "5 consulting engagements", "Board-ready deliverables", "Invoices & follow-up tasks"],
+  },
+  {
+    id: "clinic",
+    name: "Clinic / Healthcare",
+    tagline: "Appointments & revenue tracking",
+    icon: Heart,
+    color: "rose",
+    includes: ["4 client partners & cohorts", "Program-based workflows", "Follow-up tasks & care notes", "Session billing & payments"],
+  },
+  {
+    id: "freelancer",
+    name: "Freelancer",
+    tagline: "Projects, invoices & client comms",
+    icon: Laptop,
+    color: "amber",
+    includes: ["3 active freelance clients", "4 design & web projects", "Task lists & deadlines", "Project invoices & payments"],
+  },
+  {
+    id: "generic",
+    name: "Generic Business",
+    tagline: "A starting point for any service business",
+    icon: Building2,
+    color: "emerald",
+    includes: ["4 clients across industries", "5 varied service projects", "Full activity & doc library", "Meetings, payments & tasks"],
+  },
+];
+
+const COLOR_CLASSES: Record<TemplateColor, { icon: string; ring: string; badge: string }> = {
+  violet: { icon: "bg-violet-500/10 text-violet-600 dark:text-violet-400", ring: "ring-violet-400", badge: "bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800" },
+  blue:   { icon: "bg-blue-500/10 text-blue-600 dark:text-blue-400",       ring: "ring-blue-400",   badge: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
+  rose:   { icon: "bg-rose-500/10 text-rose-600 dark:text-rose-400",       ring: "ring-rose-400",   badge: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800" },
+  amber:  { icon: "bg-amber-500/10 text-amber-600 dark:text-amber-400",    ring: "ring-amber-400",  badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
+  emerald:{ icon: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", ring: "ring-emerald-400", badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" },
+};
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -306,6 +373,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const [saving, setSaving] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
+  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const [data, setData] = useState<WizardData>({
     agencyName: "",
@@ -336,8 +404,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     setStep((s) => s - 1);
   }
 
-  // Save all settings and mark onboarding complete
-  async function saveAndFinish(loadDemo: boolean) {
+  // Save all settings and optionally apply a business template
+  async function saveAndFinish(templateId: string | null) {
     setSaving(true);
     try {
       // Save agency settings
@@ -352,18 +420,20 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       });
       if (!settingsRes.ok) throw new Error("Failed to save settings");
 
-      // Load demo data if requested
-      if (loadDemo) {
+      // Apply the selected template if one was chosen
+      if (templateId) {
         setLoadingDemo(true);
-        const demoRes = await fetch("/api/admin/seed-demo", {
+        const tplRes = await fetch("/api/templates/apply", {
           method: "POST",
           credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ templateId }),
         });
         setLoadingDemo(false);
-        if (!demoRes.ok) {
+        if (!tplRes.ok) {
           toast({
-            title: "Demo data couldn't load",
-            description: "Your settings were saved. You can add demo data later from Settings.",
+            title: "Template couldn't load",
+            description: "Your settings were saved. You can add data later from Settings.",
             variant: "destructive",
           });
         }
@@ -427,15 +497,16 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <PreferencesStep data={data} patch={patch} onNext={goNext} onBack={goBack} />
           )}
           {step === 4 && (
-            <DataStep
+            <TemplateStep
               saving={saving}
               loadingDemo={loadingDemo}
-              onStartFresh={() => saveAndFinish(false)}
-              onLoadDemo={() => saveAndFinish(true)}
+              selectedTemplate={selectedTemplate}
+              onSelect={setSelectedTemplate}
+              onConfirm={() => saveAndFinish(selectedTemplate)}
               onBack={goBack}
             />
           )}
-          {step === 5 && <DoneStep onComplete={onComplete} />}
+          {step === 5 && <DoneStep onComplete={onComplete} appliedTemplate={selectedTemplate} />}
         </div>
       </div>
       </div>{/* end inner centering wrapper */}
@@ -771,147 +842,211 @@ function PreferencesStep({
   );
 }
 
-// ─── Step 4: Data choice ──────────────────────────────────────────────────────
+// ─── Step 4: Template picker ──────────────────────────────────────────────────
 
-function DataStep({
+function TemplateStep({
   saving,
   loadingDemo,
-  onStartFresh,
-  onLoadDemo,
+  selectedTemplate,
+  onSelect,
+  onConfirm,
   onBack,
 }: {
   saving: boolean;
   loadingDemo: boolean;
-  onStartFresh: () => void;
-  onLoadDemo: () => void;
+  selectedTemplate: string | null;
+  onSelect: (id: string | null) => void;
+  onConfirm: () => void;
   onBack: () => void;
 }) {
   const busy = saving || loadingDemo;
+  const chosen = selectedTemplate
+    ? TEMPLATES.find((t) => t.id === selectedTemplate) ?? null
+    : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold">Start with sample data?</h2>
+        <h2 className="text-lg font-semibold">Choose a business template</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Load a realistic dataset to explore every feature before adding your own clients.
+          Start with realistic sample data tailored to your industry — or jump in with a blank workspace.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {/* Start fresh */}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={onStartFresh}
-          className="group relative flex flex-col gap-3 p-4 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving && !loadingDemo && (
-            <div className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/80">
-              <Loader2 size={20} className="animate-spin text-primary" />
-            </div>
-          )}
-          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
-            <Sparkles size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
-          </div>
-          <div>
-            <p className="font-semibold text-sm">Start fresh</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Begin with a clean workspace. Add your real clients, projects, and payments as you go.
-            </p>
-          </div>
-        </button>
+      {/* Template grid */}
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {TEMPLATES.map((tpl) => {
+          const cls = COLOR_CLASSES[tpl.color];
+          const isSelected = selectedTemplate === tpl.id;
+          return (
+            <button
+              key={tpl.id}
+              type="button"
+              disabled={busy}
+              onClick={() => onSelect(isSelected ? null : tpl.id)}
+              className={`relative flex flex-col gap-2.5 p-3.5 rounded-xl border text-left transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
+                ${isSelected
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                  : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                }`}
+            >
+              {/* Selected checkmark */}
+              {isSelected && (
+                <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                  <Check size={11} className="text-primary-foreground" />
+                </span>
+              )}
 
-        {/* Load demo */}
+              {/* Icon + name */}
+              <div className="flex items-center gap-2.5">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${cls.icon}`}>
+                  <tpl.icon size={15} />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold leading-tight">{tpl.name}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight">{tpl.tagline}</p>
+                </div>
+              </div>
+
+              {/* Includes list */}
+              <ul className="space-y-1">
+                {tpl.includes.map((item) => (
+                  <li key={item} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
+                    <Check size={10} className="mt-0.5 flex-shrink-0 text-primary/60" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </button>
+          );
+        })}
+
+        {/* Start fresh option */}
         <button
           type="button"
           disabled={busy}
-          onClick={onLoadDemo}
-          className="group relative flex flex-col gap-3 p-4 rounded-xl border border-primary/40 bg-primary/5 hover:border-primary hover:bg-primary/10 transition-all text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          onClick={() => onSelect(null)}
+          className={`relative flex flex-col gap-2.5 p-3.5 rounded-xl border text-left transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2
+            ${selectedTemplate === null && !busy
+              ? "border-dashed border-primary/40 bg-primary/3 ring-1 ring-primary/20"
+              : "border-dashed border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/30"
+            }`}
         >
-          {loadingDemo && (
-            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 rounded-xl bg-background/90">
-              <Loader2 size={20} className="animate-spin text-primary" />
-              <span className="text-xs text-muted-foreground">Loading demo data…</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+              <Sparkles size={14} className="text-muted-foreground" />
             </div>
-          )}
-          <div className="flex items-center justify-between">
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Database size={18} className="text-primary" />
+            <div>
+              <p className="text-sm font-semibold leading-tight">Start with a blank workspace</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">
+                Skip the sample data — I'll add my own clients and projects from scratch.
+              </p>
             </div>
-            <span className="text-[10px] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-              Recommended
-            </span>
-          </div>
-          <div>
-            <p className="font-semibold text-sm">Load demo data</p>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-              Explore with 8 clients, 10 projects, invoices, tasks, meetings, and more — all realistic and ready to click through.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-1.5 mt-auto">
-            {["8 Clients", "10 Projects", "Invoices", "Tasks", "Meetings"].map((tag) => (
-              <span
-                key={tag}
-                className="text-[10px] bg-primary/10 text-primary border border-primary/20 px-1.5 py-0.5 rounded"
-              >
-                {tag}
-              </span>
-            ))}
           </div>
         </button>
       </div>
 
-      <div className="flex items-center gap-3 pt-1">
+      {/* Action row */}
+      <div className="flex items-center justify-between pt-1">
         <Button variant="ghost" size="sm" onClick={onBack} disabled={busy} className="gap-1.5">
           <ArrowLeft size={14} /> Back
         </Button>
-        <p className="text-[11px] text-muted-foreground">
-          Demo data can be cleared anytime from Settings → Export Data.
-        </p>
+
+        <Button
+          size="sm"
+          onClick={onConfirm}
+          disabled={busy}
+          className="gap-1.5 min-w-[160px]"
+        >
+          {busy ? (
+            <>
+              <Loader2 size={13} className="animate-spin" />
+              {loadingDemo ? "Applying template…" : "Saving…"}
+            </>
+          ) : chosen ? (
+            <>
+              <Wand2 size={13} />
+              Apply {chosen.name}
+            </>
+          ) : (
+            <>
+              <Sparkles size={13} />
+              Start fresh
+            </>
+          )}
+        </Button>
       </div>
+
+      {chosen && (
+        <p className="text-[11px] text-muted-foreground text-center -mt-2">
+          Sample data can be cleared anytime from Settings → Data Management.
+        </p>
+      )}
     </div>
   );
 }
 
 // ─── Step 5: Done ─────────────────────────────────────────────────────────────
 
-function DoneStep({ onComplete }: { onComplete: () => void }) {
+function DoneStep({
+  onComplete,
+  appliedTemplate,
+}: {
+  onComplete: () => void;
+  appliedTemplate: string | null;
+}) {
+  const tpl = appliedTemplate ? TEMPLATES.find((t) => t.id === appliedTemplate) ?? null : null;
+
   return (
     <div className="flex flex-col items-center text-center py-8 gap-6">
       <div className="relative">
         <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center border-4 border-green-500/30">
           <CheckCircle2 size={40} className="text-green-500" />
         </div>
-        {/* Animated ring */}
         <div className="absolute inset-0 rounded-full border-2 border-green-500/20 animate-ping" style={{ animationDuration: "2s" }} />
       </div>
 
       <div className="space-y-2">
         <h2 className="text-2xl font-bold">You're all set!</h2>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-          Your workspace is personalized and ready. Head to the dashboard to explore everything AutFlow Studio has to offer.
+          {tpl
+            ? `Your workspace is loaded with the ${tpl.name} template. Everything is ready to customize.`
+            : "Your workspace is configured and ready. Start adding your clients and projects whenever you are."}
         </p>
       </div>
 
       <div className="w-full space-y-2">
         <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
           <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
-          <span>Agency profile configured</span>
+          <span>Business profile configured</span>
         </div>
         <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
           <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
-          <span>Preferences saved</span>
+          <span>Preferences & notifications saved</span>
         </div>
-        <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
-          <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
-          <span>Notifications configured</span>
-        </div>
+        {tpl ? (
+          <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-primary/5 border border-primary/20">
+            <tpl.icon size={15} className="text-primary flex-shrink-0" />
+            <span><span className="font-medium">{tpl.name}</span> template applied — {tpl.includes[0].toLowerCase()}</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
+            <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
+            <span>Clean workspace — ready for your real data</span>
+          </div>
+        )}
       </div>
 
       <Button size="lg" onClick={onComplete} className="w-full gap-2">
         Open dashboard
         <ArrowRight size={16} />
       </Button>
+
+      {tpl && (
+        <p className="text-[11px] text-muted-foreground -mt-3">
+          All sample data can be cleared anytime from Settings → Data Management.
+        </p>
+      )}
     </div>
   );
 }
