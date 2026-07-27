@@ -14,9 +14,16 @@ localPort = 22583
 run = "pnpm --filter @workspace/autflow-studio run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/autflow-studio", "run", "build" ]
 serve = "static"
 publicDir = "artifacts/autflow-studio/dist/public"
+
+[services.production.build]
+args = ["pnpm", "--filter", "@workspace/autflow-studio", "run", "build"]
+
+[services.production.build.env]
+PORT = "22583"
+BASE_PATH = "/"
+NODE_ENV = "production"
 
 [[services.production.rewrites]]
 from = "/*"

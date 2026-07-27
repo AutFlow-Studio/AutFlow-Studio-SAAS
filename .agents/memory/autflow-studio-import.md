@@ -73,3 +73,13 @@ Managed workflows (do NOT use configureWorkflow for these):
 
 **Why:**
 The artifact system prevents duplicate id registration; moving the dir first lets createArtifact scaffold the toml + workflow, then source files are overlaid on top. AI integration requires upgrade so we use the user's own key.
+
+## Production deployment notes
+
+The frontend's Vite config requires `PORT` and `BASE_PATH` even during a static production build. Keep those variables in the web artifact's `[services.production.build.env]` block; development-only service env is not reliably inherited by the publish build.
+
+**Why:**
+Without build-time values, publishing fails before the frontend bundle is generated, while the same app can still appear healthy in Preview.
+
+**How to apply:**
+When changing the web artifact's production build command or environment, validate `artifact.toml` and run the build with `PORT=22583 BASE_PATH=/ NODE_ENV=production` before publishing.
