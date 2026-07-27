@@ -2,6 +2,9 @@ import { useGetDashboard } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/page-header";
 import { PageError } from "@/components/page-error";
 import { AIBriefing } from "@/components/ai-briefing";
+import { SectionErrorBoundary } from "@/components/error-boundary";
+import { useAgencyProfile } from "@/components/agency-profile-provider";
+import { getNicheConfig } from "@/lib/niche-config";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -472,6 +475,8 @@ export default function Dashboard() {
   const { data: rawStats, isLoading, isError } = useGetDashboard();
   const stats = rawStats as unknown as DashboardStats;
   const { user } = useAuth();
+  const { profile: agencyProfile } = useAgencyProfile();
+  const nicheConfig = getNicheConfig(agencyProfile.businessType);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
 
   const showResetButton = user?.role === "owner";
@@ -479,7 +484,7 @@ export default function Dashboard() {
   if (isError) {
     return (
       <div className="space-y-6">
-        <PageHeader title="Executive Command Center" description="Your agency at a glance" />
+        <PageHeader title={nicheConfig.dashboardTitle} description={nicheConfig.dashboardDescription} />
         <PageError message="Failed to load dashboard data." />
       </div>
     );
@@ -611,7 +616,7 @@ export default function Dashboard() {
 
       {/* ── Page Header ── */}
       <PageHeader
-        title="Executive Command Center"
+        title={nicheConfig.dashboardTitle}
         description={format(new Date(), "EEEE, MMMM do, yyyy")}
       >
         <div className="flex gap-2 print:hidden">
@@ -700,7 +705,7 @@ export default function Dashboard() {
           />
           <KPICard
             title="Total Revenue"
-            value={`$${stats.totalRevenue.toLocaleString()}`}
+            value={`$${(stats.totalRevenue ?? 0).toLocaleString()}`}
             subtitle="All-time paid invoices"
             icon={DollarSign}
             iconClass="text-emerald-400"
@@ -709,7 +714,7 @@ export default function Dashboard() {
           <KPICard
             title="Outstanding Invoices"
             value={stats.invoicesAwaitingPayment}
-            subtitle={`$${stats.outstandingPayments.toLocaleString()} pending`}
+            subtitle={`$${(stats.outstandingPayments ?? 0).toLocaleString()} pending`}
             icon={AlertCircle}
             iconClass={stats.invoicesAwaitingPayment > 0 ? "text-amber-500" : "text-muted-foreground"}
             cardClass={
@@ -743,7 +748,9 @@ export default function Dashboard() {
 
       {/* ── AI Briefing ── */}
       <div className="print:hidden">
-        <AIBriefing />
+        <SectionErrorBoundary>
+          <AIBriefing />
+        </SectionErrorBoundary>
       </div>
 
       {/* ── Risk Detection ── */}

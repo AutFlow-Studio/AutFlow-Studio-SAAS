@@ -9,10 +9,11 @@ import {
   meetingsTable,
   notesTable,
 } from "@workspace/db";
+import { requireAuth } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-router.get("/dashboard", async (req, res): Promise<void> => {
+router.get("/dashboard", requireAuth, async (req, res): Promise<void> => {
   const wid = req.session.workspaceId!;
   const now = new Date();
   const nowStr = now.toISOString().split("T")[0]!;

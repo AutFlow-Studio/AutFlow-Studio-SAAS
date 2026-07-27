@@ -1,4 +1,5 @@
 import React from "react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -8,6 +9,8 @@ interface ErrorBoundaryState {
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  /** When true, renders a compact inline error card instead of full-screen */
+  inline?: boolean;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
@@ -27,6 +30,32 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       if (this.props.fallback) return this.props.fallback;
+
+      // Inline / section-level error card
+      if (this.props.inline) {
+        return (
+          <div className="rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 flex items-start gap-3 text-sm text-destructive">
+            <AlertCircle size={16} className="shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="font-medium">This section failed to load.</p>
+              {this.state.error && (
+                <p className="text-xs text-destructive/70 mt-0.5 truncate">
+                  {this.state.error.message}
+                </p>
+              )}
+            </div>
+            <button
+              className="shrink-0 text-destructive/70 hover:text-destructive transition-colors"
+              onClick={() => this.setState({ hasError: false, error: null })}
+              title="Retry"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
+        );
+      }
+
+      // Full-page error
       return (
         <div className="min-h-screen bg-background flex items-center justify-center p-6">
           <div className="max-w-md w-full text-center space-y-4">
@@ -73,4 +102,13 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
     }
     return this.props.children;
   }
+}
+
+/**
+ * A lightweight section-level error boundary.
+ * Wraps any subtree; on error renders a compact inline error card
+ * that can be retried without reloading the page.
+ */
+export function SectionErrorBoundary({ children }: { children: React.ReactNode }) {
+  return <ErrorBoundary inline>{children}</ErrorBoundary>;
 }

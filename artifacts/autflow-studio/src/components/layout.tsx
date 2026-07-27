@@ -39,6 +39,7 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/components/auth-provider";
 import { useAgencyProfile } from "@/components/agency-profile-provider";
+import { getNicheConfig } from "@/lib/niche-config";
 import { formatDistanceToNow } from "date-fns";
 import {
   DropdownMenu,
@@ -67,16 +68,16 @@ function NotifIcon({ type }: { type: string }) {
   return <Icon size={14} className="shrink-0 mt-0.5 text-muted-foreground" />;
 }
 
-const NAV_ITEMS = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/clients", label: "Clients", icon: Users },
-  { href: "/projects", label: "Projects", icon: Briefcase },
-  { href: "/tasks", label: "Tasks", icon: CheckSquare },
-  { href: "/meetings", label: "Meetings", icon: CalendarDays },
-  { href: "/calendar", label: "Calendar", icon: CalendarDays },
-  { href: "/payments", label: "Payments", icon: CreditCard },
-  { href: "/documents", label: "Documents", icon: Files },
-  { href: "/reports", label: "Reports", icon: BarChart3 },
+const BASE_NAV_ITEMS = [
+  { href: "/", labelKey: "Dashboard" as const, icon: LayoutDashboard },
+  { href: "/clients", labelKey: "Clients" as const, icon: Users },
+  { href: "/projects", labelKey: "Projects" as const, icon: Briefcase },
+  { href: "/tasks", labelKey: "Tasks" as const, icon: CheckSquare },
+  { href: "/meetings", labelKey: "Meetings" as const, icon: CalendarDays },
+  { href: "/calendar", labelKey: "Calendar" as const, icon: CalendarDays },
+  { href: "/payments", labelKey: "Payments" as const, icon: CreditCard },
+  { href: "/documents", labelKey: "Documents" as const, icon: Files },
+  { href: "/reports", labelKey: "Reports" as const, icon: BarChart3 },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -85,7 +86,20 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const { user, logout } = useAuth();
   const { profile: agencyProfile } = useAgencyProfile();
+  const nicheConfig = getNicheConfig(agencyProfile.businessType);
   const queryClient = useQueryClient();
+
+  // Build nav items with niche-specific labels for clients and projects
+  const NAV_ITEMS = BASE_NAV_ITEMS.map((item) => ({
+    href: item.href,
+    icon: item.icon,
+    label:
+      item.labelKey === "Clients"
+        ? nicheConfig.navClientLabel
+        : item.labelKey === "Projects"
+        ? nicheConfig.navProjectLabel
+        : item.labelKey,
+  }));
 
   const initials = (user?.name ?? "")
     .split(/\s+/)
@@ -305,7 +319,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       You're all caught up.
                     </div>
                   ) : (
-                    notifications.map((n) => (
+                    notifications.map((n: (typeof notifications)[number]) => (
                       <div
                         key={n.id}
                         className={cn(

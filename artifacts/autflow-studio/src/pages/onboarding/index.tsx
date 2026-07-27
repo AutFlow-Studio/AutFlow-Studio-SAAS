@@ -159,7 +159,7 @@ const TEMPLATES: {
     tagline: "Clients, projects & campaigns",
     icon: Palette,
     color: "violet",
-    includes: ["4 active retainer clients", "5 branding & web projects", "Deliverables, invoices & tasks", "Meeting logs & notes"],
+    includes: ["Client workspace for retainer & project billing", "Project structure for branding, web & campaigns", "Deliverables, tasks & payment tracking", "Guided setup tasks to get you started"],
   },
   {
     id: "consulting",
@@ -167,15 +167,15 @@ const TEMPLATES: {
     tagline: "Engagements, reports & advisory",
     icon: Briefcase,
     color: "blue",
-    includes: ["4 enterprise advisory clients", "5 consulting engagements", "Board-ready deliverables", "Invoices & follow-up tasks"],
+    includes: ["Client workspace labelled for advisory engagements", "Engagement & report project structure", "Meeting notes and session tracking", "Guided setup tasks to get you started"],
   },
   {
     id: "clinic",
     name: "Clinic / Healthcare",
-    tagline: "Appointments & revenue tracking",
+    tagline: "Appointments, follow-ups & revenue",
     icon: Heart,
     color: "rose",
-    includes: ["4 client partners & cohorts", "Program-based workflows", "Follow-up tasks & care notes", "Session billing & payments"],
+    includes: ["Client & patient workspace with care terminology", "Care program structure with sessions & milestones", "Appointment and follow-up tracking", "Guided setup tasks to get you started"],
   },
   {
     id: "freelancer",
@@ -183,7 +183,7 @@ const TEMPLATES: {
     tagline: "Projects, invoices & client comms",
     icon: Laptop,
     color: "amber",
-    includes: ["3 active freelance clients", "4 design & web projects", "Task lists & deadlines", "Project invoices & payments"],
+    includes: ["Client workspace with project billing", "Project structure with scope & deadline tracking", "Task lists and milestone management", "Guided setup tasks to get you started"],
   },
   {
     id: "generic",
@@ -191,7 +191,7 @@ const TEMPLATES: {
     tagline: "A starting point for any service business",
     icon: Building2,
     color: "emerald",
-    includes: ["4 clients across industries", "5 varied service projects", "Full activity & doc library", "Meetings, payments & tasks"],
+    includes: ["General-purpose client and project workspace", "Full feature access: invoices, docs, meetings", "Task and activity tracking", "Guided setup tasks to get you started"],
   },
 ];
 
@@ -408,7 +408,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   async function saveAndFinish(templateId: string | null) {
     setSaving(true);
     try {
-      // Save agency settings
+      // Save agency settings — include businessType so niche config works
+      // even if the user skips the template step.
       const settingsRes = await fetch("/api/settings/agency", {
         method: "PUT",
         credentials: "include",
@@ -416,11 +417,12 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         body: JSON.stringify({
           ...data,
           onboardingCompleted: true,
+          businessType: templateId ?? "generic",
         }),
       });
       if (!settingsRes.ok) throw new Error("Failed to save settings");
 
-      // Apply the selected template if one was chosen
+      // Apply the selected template if one was chosen (seeds starter tasks + sets businessType)
       if (templateId) {
         setLoadingDemo(true);
         const tplRes = await fetch("/api/templates/apply", {
@@ -867,9 +869,9 @@ function TemplateStep({
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold">Choose a business template</h2>
+        <h2 className="text-lg font-semibold">Choose your industry</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Start with realistic sample data tailored to your industry — or jump in with a blank workspace.
+          Configure your workspace for your industry. Starts empty — your own real data goes in first.
         </p>
       </div>
 
@@ -979,7 +981,7 @@ function TemplateStep({
 
       {chosen && (
         <p className="text-[11px] text-muted-foreground text-center -mt-2">
-          Sample data can be cleared anytime from Settings → Data Management.
+          Your workspace starts empty — add your real clients and projects to get started.
         </p>
       )}
     </div>
@@ -1010,7 +1012,7 @@ function DoneStep({
         <h2 className="text-2xl font-bold">You're all set!</h2>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
           {tpl
-            ? `Your workspace is loaded with the ${tpl.name} template. Everything is ready to customize.`
+            ? `Your workspace is configured for ${tpl.name}. Your guided setup tasks are waiting — add your real clients and projects to get started.`
             : "Your workspace is configured and ready. Start adding your clients and projects whenever you are."}
         </p>
       </div>
@@ -1027,7 +1029,7 @@ function DoneStep({
         {tpl ? (
           <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-primary/5 border border-primary/20">
             <tpl.icon size={15} className="text-primary flex-shrink-0" />
-            <span><span className="font-medium">{tpl.name}</span> template applied — {tpl.includes[0].toLowerCase()}</span>
+            <span><span className="font-medium">{tpl.name}</span> workspace configured — guided tasks ready</span>
           </div>
         ) : (
           <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">

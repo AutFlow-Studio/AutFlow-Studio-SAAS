@@ -1,0 +1,74 @@
+I need you to fix two critical issues in AutFlow Studio.
+
+Issue 1: Industry/Niche Personalization
+
+Currently, during onboarding, users choose a niche (Agency, Clinic, Freelancer, Consulting, etc.), but the application does not actually customize the experience.
+
+Implement a real niche-based workspace setup:
+
+- After signup/onboarding, when the user selects a niche, create a workspace template customized for that niche.
+- Do NOT include fake demo numbers, revenue, clients, or statistics.
+- Every niche should start completely empty but with customized structure, labels, fields, workflows, and suggested templates.
+
+Examples:
+
+Clinic:
+- Replace generic clients with Patients/Clients terminology where appropriate.
+- Add clinic-focused fields:
+  - Treatment type
+  - Appointment status
+  - Follow-up date
+  - Patient notes
+  - Lead source
+- Add relevant starter workflows.
+
+Agency:
+- Add:
+  - Client projects
+  - Deliverables
+  - Campaign tracking
+  - Retainers
+  - Client approvals
+
+Freelancer:
+- Add:
+  - Projects
+  - Contracts
+  - Invoices
+  - Personal task management
+
+Consulting:
+- Add:
+  - Clients
+  - Engagements
+  - Sessions
+  - Reports
+
+The system architecture must remain unified. Use templates/configuration instead of creating separate apps.
+
+Issue 2: Application Crash
+
+Users are seeing:
+
+"Something went wrong
+An unexpected error occurred. Please refresh the page or contact support if the problem persists."
+
+Find the root cause and fix it.
+
+Requirements:
+- Check frontend console errors.
+- Check API errors and failed requests.
+- Check database queries and missing fields.
+- Check onboarding flow and workspace creation logic.
+- Add proper error handling so one failed component does not crash the whole app.
+- Show meaningful error messages in development.
+- Ensure production users see a graceful fallback.
+
+After fixing:
+1. Test signup.
+2. Test login.
+3. Test onboarding with every niche option.
+4. Test entering the dashboard after onboarding.
+5. Confirm no runtime errors.
+
+Do not just hide the error. Find and fix the underlying cause.

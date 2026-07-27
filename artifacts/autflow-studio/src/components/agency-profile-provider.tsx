@@ -4,17 +4,19 @@ export interface AgencyProfile {
   agencyName: string;
   agencyEmail: string;
   website: string;
+  businessType: string | null;
 }
 
 type AgencyProfileProviderState = {
   profile: AgencyProfile;
-  setProfile: (profile: AgencyProfile) => Promise<void>;
+  setProfile: (profile: Partial<AgencyProfile>) => Promise<void>;
 };
 
 export const DEFAULT_AGENCY_PROFILE: AgencyProfile = {
   agencyName: "AutFlow Studio",
   agencyEmail: "hello@autflowstudio.com",
   website: "https://autflowstudio.com",
+  businessType: null,
 };
 
 const AgencyProfileProviderContext = createContext<
@@ -26,6 +28,7 @@ function mapApiToProfile(data: Record<string, unknown>): AgencyProfile {
     agencyName: String(data.agencyName ?? "AutFlow Studio"),
     agencyEmail: String(data.agencyEmail ?? "hello@autflowstudio.com"),
     website: String(data.website ?? ""),
+    businessType: data.businessType ? String(data.businessType) : null,
   };
 }
 
@@ -37,13 +40,10 @@ export function AgencyProfileProvider({
   const [profile, setProfileState] = useState<AgencyProfile>(DEFAULT_AGENCY_PROFILE);
 
   useEffect(() => {
-    // Fetch from the API. On success, check if localStorage had prior data
-    // and migrate it once (then clear localStorage key so it's not re-applied).
     fetch("/api/settings/agency", { credentials: "include" })
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data) {
-          // Not yet authenticated — use localStorage fallback
           try {
             const raw = window.localStorage.getItem("autflow-studio-agency-profile");
             if (raw) setProfileState((p) => ({ ...p, ...JSON.parse(raw) }));
@@ -53,8 +53,7 @@ export function AgencyProfileProvider({
 
         const fromApi = mapApiToProfile(data);
 
-        // One-time localStorage migration: if the API still has defaults and
-        // localStorage has real data, migrate it to the server.
+        // One-time localStorage migration
         const isDefault =
           fromApi.agencyName === DEFAULT_AGENCY_PROFILE.agencyName &&
           fromApi.agencyEmail === DEFAULT_AGENCY_PROFILE.agencyEmail;
@@ -66,7 +65,6 @@ export function AgencyProfileProvider({
               const local = JSON.parse(raw) as Partial<AgencyProfile>;
               if (local.agencyName || local.agencyEmail || local.website) {
                 const merged = { ...DEFAULT_AGENCY_PROFILE, ...local };
-                // Fire-and-forget migrate to server
                 fetch("/api/settings/agency", {
                   method: "PUT",
                   credentials: "include",
@@ -84,7 +82,6 @@ export function AgencyProfileProvider({
         setProfileState(fromApi);
       })
       .catch(() => {
-        // Offline fallback
         try {
           const raw = window.localStorage.getItem("autflow-studio-agency-profile");
           if (raw) setProfileState((p) => ({ ...p, ...JSON.parse(raw) }));
@@ -92,19 +89,19 @@ export function AgencyProfileProvider({
       });
   }, []);
 
-  const setProfile = async (next: AgencyProfile): Promise<void> => {
+  const setProfile = async (next: Partial<AgencyProfile>): Promise<void> => {
+    const merged = { ...profile, ...next };
     const res = await fetch("/api/settings/agency", {
       method: "PUT",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(next),
+      body: JSON.stringify(merged),
     });
     if (res.ok) {
       const data = await res.json();
       setProfileState(mapApiToProfile(data));
     } else {
-      // Optimistic update even if server failed
-      setProfileState(next);
+      setProfileState(merged);
     }
   };
 
