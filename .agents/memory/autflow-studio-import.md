@@ -51,9 +51,13 @@ Uses `openai` npm package directly with user's `OPENAI_API_KEY` (gpt-4o-mini mod
 
 ## Workflow setup
 
-Managed workflows (do NOT use configureWorkflow for these):
+Managed artifact workflows (do NOT use configureWorkflow for these):
 - `artifacts/autflow-studio: web`
 - `artifacts/api-server: API Server`
+
+After a fresh GitHub import, artifacts exist on disk but are NOT registered in the Replit system. `listArtifacts()` returns empty. Fix: move the artifact dir to /tmp, call `createArtifact`, copy source files back, remove old standalone `.replit` workflows that would hold the ports, kill lingering processes on those ports, then restart managed workflows.
+
+The `jspdf` package must be installed as a dep of `@workspace/autflow-studio` — it is used in `src/pages/payments/index.tsx` but was missing from `package.json` in the repo.
 
 ## Import procedure (for future reference)
 
