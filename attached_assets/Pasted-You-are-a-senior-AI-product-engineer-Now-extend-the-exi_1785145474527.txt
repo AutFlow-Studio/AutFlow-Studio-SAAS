@@ -1,0 +1,188 @@
+You are a senior AI product engineer.
+
+Now extend the existing AutFlow SaaS application by adding an AI-powered business intelligence layer.
+
+IMPORTANT:
+Do not create a generic chatbot.
+The goal is to create an AI operating assistant that understands the company's data.
+
+The product positioning:
+
+"AutFlow is the operating system that remembers your business."
+
+==================================================
+OBJECTIVE
+==================================================
+
+Transform stored business data into actionable intelligence.
+
+The AI must only access the current workspace data.
+
+==================================================
+1. AI BUSINESS ASSISTANT
+==================================================
+
+Create an AI assistant inside the application.
+
+The assistant can answer questions about:
+
+Clients:
+- Client history
+- Client status
+- Recent activity
+
+
+Projects:
+- Delays
+- Progress
+- Risks
+
+
+Payments:
+- Revenue
+- Outstanding invoices
+- Expected income
+
+
+Tasks:
+- Priorities
+- Blockers
+
+
+Examples:
+
+"What needs my attention today?"
+
+"Which clients are at risk?"
+
+"Who owes money?"
+
+"Which projects are delayed?"
+
+"Summarize my business performance."
+
+
+==================================================
+2. DAILY AI BRIEFING
+==================================================
+
+Add a dashboard section:
+
+"Today's Business Briefing"
+
+
+Every day generate:
+
+- Important actions
+- Risk alerts
+- Payment issues
+- Client follow-ups
+- Project problems
+
+
+Example:
+
+"3 clients need follow-up."
+
+"2 invoices are overdue."
+
+"Project X is behind schedule."
+
+
+==================================================
+3. CLIENT INTELLIGENCE
+==================================================
+
+Add Client Health Score.
+
+
+Each client receives:
+
+- Health score
+- Status:
+  Healthy
+  Needs Attention
+  At Risk
+
+
+Calculate using:
+
+- Last interaction
+- Payment status
+- Project progress
+- Activity level
+
+
+Show reasons.
+
+Example:
+
+"At Risk because:
+No meeting for 30 days.
+Invoice overdue."
+
+
+==================================================
+4. AI MEETING ANALYSIS
+==================================================
+
+Improve Meetings feature.
+
+Add:
+
+Meeting AI Analyzer.
+
+
+Input:
+
+Meeting notes or transcript.
+
+
+Generate:
+
+- Summary
+- Decisions
+- Action items
+- Follow-up tasks
+- Important client information
+
+
+Allow creating tasks automatically.
+
+
+==================================================
+5. AI SMART SEARCH
+==================================================
+
+Upgrade search.
+
+Allow natural language queries.
+
+Examples:
+
+"Show clients who have not replied recently."
+
+"How much revenue is expected this month?"
+
+"Which projects are risky?"
+
+
+==================================================
+TECHNICAL REQUIREMENTS
+==================================================
+
+Use an external AI API.
+
+Keep AI responses scoped by workspace.
+
+Do not expose data between companies.
+
+Build clean reusable AI services.
+
+==================================================
+FINAL RESULT
+==================================================
+
+AutFlow should no longer feel like a database manager.
+
+It should feel like an intelligent business assistant.
