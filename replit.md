@@ -54,6 +54,18 @@ clients, projects, deliverables, payments, documents, meetings, notes, tasks, ac
 
 _Populate as you build — explicit user instructions worth remembering across sessions._
 
+## Initial Setup (Replit)
+
+Run once on a fresh environment:
+
+```sh
+pnpm install
+pnpm --filter @workspace/scripts run migrate
+pnpm --filter @workspace/scripts run seed   # optional demo data
+```
+
+Both workflows (`API Server` and `AutFlow Studio`) start automatically. The Replit built-in PostgreSQL database is used; `DATABASE_URL` is injected automatically.
+
 ## Gotchas
 
 - After any `lib/*` change, run `pnpm run typecheck:libs` before leaf artifact checks
