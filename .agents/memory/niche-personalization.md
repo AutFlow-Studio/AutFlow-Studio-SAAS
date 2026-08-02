@@ -10,6 +10,17 @@ It is set in two places:
 1. `PUT /api/settings/agency` — saved with `onboardingCompleted: true` + `businessType: templateId ?? "generic"` in the onboarding `saveAndFinish` function.
 2. `POST /api/templates/apply` — overwrites `businessType` after clearing workspace and seeding starter tasks.
 
+## New fields added to NicheConfig (2026-08-02)
+
+- `meetingTerm` / `meetingTermPlural` — e.g. "Appointment" / "Appointments" for clinic
+- `paymentTerm` / `paymentTermPlural` — e.g. "Billing" for clinic, "Invoice" for others
+- `navItems: NavItemKey[]` — ordered list of nav keys to show; layout.tsx filters BASE_NAV_ITEMS against this
+- `aiIndustryContext: string` — industry blurb injected into the AI system prompt
+
+Nav filtering is done in `layout.tsx`: BASE_NAV_ITEMS now use a `key: NavItemKey` field; NAV_ITEMS is built by filtering to `nicheConfig.navItems` order, then mapping all terminology labels (clients, projects, meetings, payments).
+
+AI system prompt is now dynamic: `getWorkspaceSystemPrompt(wid)` in `ai.ts` queries `agency_settings.business_type` and returns a per-industry system prompt from `INDUSTRY_CONTEXT` map. All 5 AI routes use it.
+
 ## What templates do (NOT demo data)
 
 Templates in `artifacts/api-server/src/routes/templates.ts`:

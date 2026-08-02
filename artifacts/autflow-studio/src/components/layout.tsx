@@ -39,7 +39,7 @@ import {
 } from "@workspace/api-client-react";
 import { useAuth } from "@/components/auth-provider";
 import { useAgencyProfile } from "@/components/agency-profile-provider";
-import { getNicheConfig } from "@/lib/niche-config";
+import { getNicheConfig, type NavItemKey } from "@/lib/niche-config";
 import { formatDistanceToNow } from "date-fns";
 import {
   DropdownMenu,
@@ -68,16 +68,16 @@ function NotifIcon({ type }: { type: string }) {
   return <Icon size={14} className="shrink-0 mt-0.5 text-muted-foreground" />;
 }
 
-const BASE_NAV_ITEMS = [
-  { href: "/", labelKey: "Dashboard" as const, icon: LayoutDashboard },
-  { href: "/clients", labelKey: "Clients" as const, icon: Users },
-  { href: "/projects", labelKey: "Projects" as const, icon: Briefcase },
-  { href: "/tasks", labelKey: "Tasks" as const, icon: CheckSquare },
-  { href: "/meetings", labelKey: "Meetings" as const, icon: CalendarDays },
-  { href: "/calendar", labelKey: "Calendar" as const, icon: CalendarDays },
-  { href: "/payments", labelKey: "Payments" as const, icon: CreditCard },
-  { href: "/documents", labelKey: "Documents" as const, icon: Files },
-  { href: "/reports", labelKey: "Reports" as const, icon: BarChart3 },
+const BASE_NAV_ITEMS: { key: NavItemKey; href: string; icon: React.ElementType }[] = [
+  { key: "dashboard", href: "/", icon: LayoutDashboard },
+  { key: "clients",   href: "/clients", icon: Users },
+  { key: "projects",  href: "/projects", icon: Briefcase },
+  { key: "tasks",     href: "/tasks", icon: CheckSquare },
+  { key: "meetings",  href: "/meetings", icon: CalendarDays },
+  { key: "calendar",  href: "/calendar", icon: CalendarDays },
+  { key: "payments",  href: "/payments", icon: CreditCard },
+  { key: "documents", href: "/documents", icon: Files },
+  { key: "reports",   href: "/reports", icon: BarChart3 },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -89,17 +89,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const nicheConfig = getNicheConfig(agencyProfile.businessType);
   const queryClient = useQueryClient();
 
-  // Build nav items with niche-specific labels for clients and projects
-  const NAV_ITEMS = BASE_NAV_ITEMS.map((item) => ({
-    href: item.href,
-    icon: item.icon,
-    label:
-      item.labelKey === "Clients"
-        ? nicheConfig.navClientLabel
-        : item.labelKey === "Projects"
-        ? nicheConfig.navProjectLabel
-        : item.labelKey,
-  }));
+  // Build nav items: filter to the niche's ordered set, then apply industry terminology
+  const NAV_ITEMS = nicheConfig.navItems
+    .map((key) => BASE_NAV_ITEMS.find((item) => item.key === key))
+    .filter((item): item is (typeof BASE_NAV_ITEMS)[number] => item !== undefined)
+    .map((item) => ({
+      href: item.href,
+      icon: item.icon,
+      label:
+        item.key === "clients"  ? nicheConfig.clientTermPlural :
+        item.key === "projects" ? nicheConfig.projectTermPlural :
+        item.key === "meetings" ? nicheConfig.meetingTermPlural :
+        item.key === "payments" ? nicheConfig.paymentTermPlural :
+        item.key === "dashboard" ? "Dashboard" :
+        item.key === "tasks"    ? "Tasks" :
+        item.key === "calendar" ? "Calendar" :
+        item.key === "documents"? "Documents" :
+        item.key === "reports"  ? "Reports" :
+        item.key,
+    }));
 
   const initials = (user?.name ?? "")
     .split(/\s+/)

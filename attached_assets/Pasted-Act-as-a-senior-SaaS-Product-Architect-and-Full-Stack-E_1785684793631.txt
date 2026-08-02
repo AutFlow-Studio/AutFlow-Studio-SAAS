@@ -1,0 +1,248 @@
+Act as a senior SaaS Product Architect and Full-Stack Engineer.
+
+The onboarding currently asks users to choose an industry, but **every option creates the exact same workspace**. This defeats the purpose of industry selection.
+
+I want **true industry-specific workspaces**, not just different labels.
+
+### Goal
+
+Each industry must have its own customized workspace, terminology, navigation, default modules, starter data, dashboards, forms, AI context, and workflows.
+
+The user should immediately feel that the product was built specifically for their business.
+
+---
+
+## 1. Digital Agency
+
+Primary focus:
+
+* Clients
+* Projects
+* Campaigns
+* Deliverables
+* Team
+* Invoices
+* Payments
+
+Navigation:
+
+* Dashboard
+* Clients
+* Projects
+* Campaigns
+* Tasks
+* Deliverables
+* Invoices
+* Team
+* Calendar
+* Documents
+* AI Assistant
+
+Dashboard should include:
+
+* Active clients
+* Active projects
+* Revenue
+* Outstanding invoices
+* Team workload
+* Upcoming deadlines
+
+AI should understand:
+
+* Clients
+* Campaigns
+* Deliverables
+* Deadlines
+* Team capacity
+* Revenue
+
+---
+
+## 2. Consulting Business
+
+Primary focus:
+
+* Clients
+* Engagements
+* Meetings
+* Reports
+* Recommendations
+* Contracts
+
+Navigation:
+
+* Dashboard
+* Clients
+* Engagements
+* Meetings
+* Reports
+* Tasks
+* Documents
+* Invoices
+* Calendar
+* AI Assistant
+
+Dashboard:
+
+* Active engagements
+* Upcoming meetings
+* Pending reports
+* Revenue
+* Contracts
+
+AI context:
+
+* Consulting engagements
+* Recommendations
+* Client history
+* Meeting summaries
+* Report generation
+
+---
+
+## 3. Clinic / Healthcare
+
+Replace "Clients" with **Patients** everywhere.
+
+Primary modules:
+
+* Patients
+* Appointments
+* Treatments
+* Medical Notes
+* Follow-ups
+* Billing
+
+Navigation:
+
+* Dashboard
+* Patients
+* Appointments
+* Treatments
+* Follow-ups
+* Billing
+* Documents
+* Calendar
+* AI Assistant
+
+Dashboard:
+
+* Today's appointments
+* Upcoming appointments
+* Follow-ups due
+* Active patients
+* Revenue
+
+AI should understand:
+
+* Patients
+* Appointments
+* Follow-ups
+* Treatments
+* Billing
+* Medical history stored in the workspace
+
+---
+
+## 4. Freelancer
+
+Primary modules:
+
+* Clients
+* Projects
+* Invoices
+* Contracts
+* Time Tracking
+* Tasks
+
+Navigation:
+
+* Dashboard
+* Clients
+* Projects
+* Time Tracking
+* Tasks
+* Invoices
+* Documents
+* AI Assistant
+
+Dashboard:
+
+* Current projects
+* Pending invoices
+* Monthly earnings
+* Upcoming deadlines
+
+AI context:
+
+* Freelance work
+* Projects
+* Time logs
+* Client communication
+* Invoices
+
+---
+
+## 5. Generic Business
+
+General-purpose workspace.
+
+Navigation:
+
+* Dashboard
+* Customers
+* Projects
+* Tasks
+* Documents
+* Calendar
+* Invoices
+* AI Assistant
+
+Dashboard:
+
+* Revenue
+* Customers
+* Active projects
+* Tasks
+* Team activity
+
+---
+
+## AI Customization
+
+The AI Assistant must automatically know which workspace type the user selected.
+
+Examples:
+
+Agency:
+"Which client has overdue invoices?"
+
+Clinic:
+"Which patients have appointments tomorrow?"
+
+Consulting:
+"Summarize my active engagements."
+
+Freelancer:
+"How much did I earn this month?"
+
+The AI should answer using the correct terminology and only reference the modules available in that workspace.
+
+---
+
+## Technical Requirements
+
+* Store the selected industry in the workspace configuration.
+* Load a different workspace configuration for each industry.
+* Allow each industry to have:
+
+  * Different navigation
+  * Different terminology
+  * Different database labels where appropriate (Clients → Patients)
+  * Different dashboard widgets
+  * Different starter templates
+  * Different default task templates
+  * Different AI context
+  * Different onboarding checklist
+* Build the architecture so new industries can be added easily in the future by creating a new configuration instead of modifying the entire application.
+* Keep one shared codebase while making each workspace feel purpose-built for its industry.

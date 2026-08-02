@@ -1,9 +1,23 @@
 /**
  * Niche configuration system.
- * Maps a workspace's businessType to UI terminology, empty-state copy,
- * and key feature labels so the app feels industry-specific without
- * requiring separate database schemas.
+ * Maps a workspace's businessType to UI terminology, navigation, empty-state copy,
+ * and AI context so the app feels purpose-built for each industry.
+ *
+ * To add a new industry: create a new config object and add it to NICHE_MAP.
+ * No other file needs to change.
  */
+
+/** Nav item keys — must match the keys in BASE_NAV_ITEMS in layout.tsx */
+export type NavItemKey =
+  | "dashboard"
+  | "clients"
+  | "projects"
+  | "tasks"
+  | "meetings"
+  | "calendar"
+  | "payments"
+  | "documents"
+  | "reports";
 
 export interface NicheConfig {
   id: string | null;
@@ -15,10 +29,16 @@ export interface NicheConfig {
   projectTerm: string;
   /** Plural label for "project" records */
   projectTermPlural: string;
-  /** Label shown in the sidebar nav */
-  navClientLabel: string;
-  /** Label shown in the sidebar nav */
-  navProjectLabel: string;
+  /** Singular label for a "meeting" record */
+  meetingTerm: string;
+  /** Plural label for "meeting" records */
+  meetingTermPlural: string;
+  /** Singular label for a "payment" record */
+  paymentTerm: string;
+  /** Plural label for "payment" records */
+  paymentTermPlural: string;
+  /** Ordered list of nav item keys to show in the sidebar */
+  navItems: NavItemKey[];
   /** Dashboard page heading */
   dashboardTitle: string;
   /** Dashboard page sub-description */
@@ -37,6 +57,12 @@ export interface NicheConfig {
   onboardingTagline: string;
   /** First steps shown in the empty dashboard */
   firstSteps: { icon: string; title: string; description: string; href: string }[];
+  /**
+   * Industry context injected into the AI system prompt.
+   * Tells the AI which workspace type it's operating in, what terminology to use,
+   * and which modules are active.
+   */
+  aiIndustryContext: string;
 }
 
 const AGENCY_CONFIG: NicheConfig = {
@@ -45,8 +71,11 @@ const AGENCY_CONFIG: NicheConfig = {
   clientTermPlural: "Clients",
   projectTerm: "Project",
   projectTermPlural: "Projects",
-  navClientLabel: "Clients",
-  navProjectLabel: "Projects",
+  meetingTerm: "Meeting",
+  meetingTermPlural: "Meetings",
+  paymentTerm: "Invoice",
+  paymentTermPlural: "Invoices",
+  navItems: ["dashboard", "clients", "projects", "tasks", "meetings", "calendar", "payments", "documents", "reports"],
   dashboardTitle: "Executive Command Center",
   dashboardDescription: "Your agency at a glance",
   emptyClientHeadline: "Add your first client",
@@ -60,6 +89,10 @@ const AGENCY_CONFIG: NicheConfig = {
     { icon: "Briefcase", title: "Create a project", description: "Link a project to a client, set a budget and deadline.", href: "/projects" },
     { icon: "CreditCard", title: "Send an invoice", description: "Track payments, retainers, and outstanding balances.", href: "/payments" },
   ],
+  aiIndustryContext: `This is a DIGITAL AGENCY workspace.
+Active modules: Clients, Projects, Tasks, Meetings, Invoices, Documents, Reports.
+Use this terminology: "Clients" (not customers/patients), "Projects" (campaigns, branding, web work), "Invoices" (not payments/billing), "Meetings" (client calls, check-ins).
+Key questions to answer: Which clients have overdue invoices? Which projects are delayed? What's the team workload? What's this month's revenue?`,
 };
 
 const CONSULTING_CONFIG: NicheConfig = {
@@ -68,8 +101,11 @@ const CONSULTING_CONFIG: NicheConfig = {
   clientTermPlural: "Clients",
   projectTerm: "Engagement",
   projectTermPlural: "Engagements",
-  navClientLabel: "Clients",
-  navProjectLabel: "Engagements",
+  meetingTerm: "Meeting",
+  meetingTermPlural: "Meetings",
+  paymentTerm: "Invoice",
+  paymentTermPlural: "Invoices",
+  navItems: ["dashboard", "clients", "projects", "meetings", "reports", "tasks", "documents", "payments", "calendar"],
   dashboardTitle: "Consulting Command Center",
   dashboardDescription: "Your practice at a glance",
   emptyClientHeadline: "Add your first client",
@@ -83,29 +119,40 @@ const CONSULTING_CONFIG: NicheConfig = {
     { icon: "Briefcase", title: "Create an engagement", description: "Define scope, timeline, and deliverables for your first project.", href: "/projects" },
     { icon: "FileText", title: "Log a meeting", description: "Record meeting notes and action items after each session.", href: "/meetings" },
   ],
+  aiIndustryContext: `This is a CONSULTING BUSINESS workspace.
+Active modules: Clients, Engagements, Meetings, Reports, Tasks, Documents, Invoices.
+Use this terminology: "Clients", "Engagements" (not projects — these are consulting mandates, strategy work, advisory retainers), "Meetings" (client sessions, workshops, reviews), "Invoices".
+Key questions to answer: What are the active engagements? Which clients have upcoming meetings? Are any reports overdue? What's the pending invoice value?`,
 };
 
 const CLINIC_CONFIG: NicheConfig = {
   id: "clinic",
-  clientTerm: "Client / Patient",
-  clientTermPlural: "Clients & Patients",
+  clientTerm: "Patient",
+  clientTermPlural: "Patients",
   projectTerm: "Care Program",
   projectTermPlural: "Care Programs",
-  navClientLabel: "Clients & Patients",
-  navProjectLabel: "Care Programs",
+  meetingTerm: "Appointment",
+  meetingTermPlural: "Appointments",
+  paymentTerm: "Billing",
+  paymentTermPlural: "Billing",
+  navItems: ["dashboard", "clients", "meetings", "tasks", "payments", "documents", "calendar"],
   dashboardTitle: "Practice Command Center",
   dashboardDescription: "Your clinic at a glance",
-  emptyClientHeadline: "Add your first client or patient",
-  emptyClientBody: "Track client organisations, patient cohorts, appointment contacts, and billing relationships.",
+  emptyClientHeadline: "Add your first patient",
+  emptyClientBody: "Track patients, appointment contacts, and billing relationships in one place.",
   emptyProjectHeadline: "Create your first care program",
-  emptyProjectBody: "Structure wellness programs, treatment programs, or recurring care plans with milestones and billing.",
+  emptyProjectBody: "Structure wellness programs, treatment plans, or recurring care with milestones and billing.",
   accentColor: "rose",
   onboardingTagline: "Appointments, follow-ups & revenue — all in one place",
   firstSteps: [
-    { icon: "Heart", title: "Add a client or patient", description: "Record client organisations or individual patient contacts.", href: "/clients" },
-    { icon: "Briefcase", title: "Set up a care program", description: "Create a structured program with sessions, deliverables, and billing.", href: "/projects" },
-    { icon: "Calendar", title: "Log an appointment", description: "Track session notes, action items, and follow-up dates.", href: "/meetings" },
+    { icon: "Heart", title: "Add a patient", description: "Record patient contact details and medical history notes.", href: "/clients" },
+    { icon: "Calendar", title: "Book an appointment", description: "Track session notes, action items, and follow-up dates.", href: "/meetings" },
+    { icon: "CreditCard", title: "Record billing", description: "Track treatment fees, outstanding balances, and payments.", href: "/payments" },
   ],
+  aiIndustryContext: `This is a CLINIC / HEALTHCARE PRACTICE workspace.
+Active modules: Patients, Appointments, Tasks, Billing, Documents, Calendar.
+Use this terminology: "Patients" (not clients/customers), "Appointments" (not meetings/projects), "Billing" (not invoices/payments), "Follow-ups" (not tasks).
+Key questions to answer: Which patients have appointments today or tomorrow? Who needs a follow-up? What are overdue billing amounts? Which patients haven't been seen recently?`,
 };
 
 const FREELANCER_CONFIG: NicheConfig = {
@@ -114,8 +161,11 @@ const FREELANCER_CONFIG: NicheConfig = {
   clientTermPlural: "Clients",
   projectTerm: "Project",
   projectTermPlural: "Projects",
-  navClientLabel: "Clients",
-  navProjectLabel: "Projects",
+  meetingTerm: "Meeting",
+  meetingTermPlural: "Meetings",
+  paymentTerm: "Invoice",
+  paymentTermPlural: "Invoices",
+  navItems: ["dashboard", "clients", "projects", "tasks", "payments", "documents", "calendar"],
   dashboardTitle: "Freelance Command Center",
   dashboardDescription: "Your freelance business at a glance",
   emptyClientHeadline: "Add your first client",
@@ -129,29 +179,40 @@ const FREELANCER_CONFIG: NicheConfig = {
     { icon: "Briefcase", title: "Create a project", description: "Define scope, rate, and deadline for the work.", href: "/projects" },
     { icon: "CreditCard", title: "Issue an invoice", description: "Track deposits, milestones, and final payments.", href: "/payments" },
   ],
+  aiIndustryContext: `This is a FREELANCER workspace.
+Active modules: Clients, Projects, Tasks, Invoices, Documents, Calendar.
+Use this terminology: "Clients", "Projects" (freelance contracts, engagements, gigs), "Invoices" (not payments/billing), "Tasks".
+Key questions to answer: How much did I earn this month? Which invoices are outstanding? What are my current projects and their deadlines? Which clients owe me money?`,
 };
 
 const GENERIC_CONFIG: NicheConfig = {
   id: "generic",
-  clientTerm: "Client",
-  clientTermPlural: "Clients",
+  clientTerm: "Customer",
+  clientTermPlural: "Customers",
   projectTerm: "Project",
   projectTermPlural: "Projects",
-  navClientLabel: "Clients",
-  navProjectLabel: "Projects",
+  meetingTerm: "Meeting",
+  meetingTermPlural: "Meetings",
+  paymentTerm: "Invoice",
+  paymentTermPlural: "Invoices",
+  navItems: ["dashboard", "clients", "projects", "tasks", "documents", "calendar", "payments"],
   dashboardTitle: "Business Command Center",
   dashboardDescription: "Your business at a glance",
-  emptyClientHeadline: "Add your first client",
-  emptyClientBody: "Manage client accounts, contacts, and billing relationships across all your service lines.",
+  emptyClientHeadline: "Add your first customer",
+  emptyClientBody: "Manage customer accounts, contacts, and billing relationships across all your service lines.",
   emptyProjectHeadline: "Create your first project",
   emptyProjectBody: "Track any service, engagement, or deliverable-based work with full billing and task management.",
   accentColor: "emerald",
   onboardingTagline: "A balanced starting point for any service business",
   firstSteps: [
-    { icon: "Users", title: "Add a client", description: "Create your first client with contact info and billing details.", href: "/clients" },
-    { icon: "Briefcase", title: "Create a project", description: "Link a project to a client and set a budget and deadline.", href: "/projects" },
+    { icon: "Users", title: "Add a customer", description: "Create your first customer with contact info and billing details.", href: "/clients" },
+    { icon: "Briefcase", title: "Create a project", description: "Link a project to a customer and set a budget and deadline.", href: "/projects" },
     { icon: "CreditCard", title: "Track payments", description: "Issue invoices and monitor outstanding balances.", href: "/payments" },
   ],
+  aiIndustryContext: `This is a GENERAL BUSINESS workspace.
+Active modules: Customers, Projects, Tasks, Documents, Calendar, Invoices.
+Use this terminology: "Customers" (not clients/patients), "Projects", "Invoices", "Tasks".
+Key questions to answer: What's the current revenue? How many active customers? What projects are in progress? What invoices are outstanding?`,
 };
 
 const DEFAULT_CONFIG: NicheConfig = AGENCY_CONFIG;

@@ -9,6 +9,7 @@ import {
   meetingsTable,
   activityTable,
   notesTable,
+  agencySettingsTable,
 } from "@workspace/db";
 import OpenAI from "openai";
 
@@ -165,11 +166,59 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
   return lines.join("\n");
 }
 
-const SYSTEM_PROMPT = `You are AutFlow's AI business assistant — an intelligent operating assistant for a digital agency. You have full access to the workspace's business data (clients, projects, payments, tasks, meetings). 
+// ── Industry-aware system prompt ─────────────────────────────────────────────
 
-Your job: give concise, actionable intelligence. Not generic advice. Reference actual client names, project names, amounts, and dates from the data. Be direct and specific. If asked about something not in the data, say so clearly.
+const INDUSTRY_CONTEXT: Record<string, string> = {
+  "digital-agency": `This is a DIGITAL AGENCY workspace.
+Active modules: Clients, Projects, Tasks, Meetings, Invoices, Documents, Reports.
+Use this terminology: "Clients" (not customers/patients), "Projects" (campaigns, branding, web work), "Invoices" (not payments/billing), "Meetings" (client calls, check-ins).
+Key questions to answer: Which clients have overdue invoices? Which projects are delayed? What's the team workload? What's this month's revenue?`,
+
+  agency: `This is a DIGITAL AGENCY workspace.
+Active modules: Clients, Projects, Tasks, Meetings, Invoices, Documents, Reports.
+Use this terminology: "Clients", "Projects", "Invoices", "Meetings".
+Key questions to answer: Which clients have overdue invoices? Which projects are delayed? What's this month's revenue?`,
+
+  consulting: `This is a CONSULTING BUSINESS workspace.
+Active modules: Clients, Engagements, Meetings, Reports, Tasks, Documents, Invoices.
+Use this terminology: "Clients", "Engagements" (not projects — consulting mandates, strategy work, advisory retainers), "Meetings" (sessions, workshops, reviews), "Invoices".
+Key questions to answer: What are the active engagements? Which clients have upcoming meetings? Are any reports overdue? What's the pending invoice value?`,
+
+  clinic: `This is a CLINIC / HEALTHCARE PRACTICE workspace.
+Active modules: Patients, Appointments, Tasks, Billing, Documents, Calendar.
+Use this terminology: "Patients" (not clients/customers), "Appointments" (not meetings/projects), "Billing" (not invoices/payments), "Follow-ups" (not tasks).
+Key questions to answer: Which patients have appointments today or tomorrow? Who needs a follow-up? What are overdue billing amounts? Which patients haven't been seen recently?`,
+
+  freelancer: `This is a FREELANCER workspace.
+Active modules: Clients, Projects, Tasks, Invoices, Documents, Calendar.
+Use this terminology: "Clients", "Projects" (freelance contracts, engagements, gigs), "Invoices" (not payments/billing), "Tasks".
+Key questions to answer: How much did I earn this month? Which invoices are outstanding? What are my current projects and their deadlines? Which clients owe me money?`,
+
+  generic: `This is a GENERAL BUSINESS workspace.
+Active modules: Customers, Projects, Tasks, Documents, Calendar, Invoices.
+Use this terminology: "Customers" (not clients/patients), "Projects", "Invoices", "Tasks".
+Key questions to answer: What's the current revenue? How many active customers? What projects are in progress? What invoices are outstanding?`,
+};
+
+async function getWorkspaceSystemPrompt(wid: number): Promise<string> {
+  const [settings] = await db
+    .select({ businessType: agencySettingsTable.businessType })
+    .from(agencySettingsTable)
+    .where(eq(agencySettingsTable.workspaceId, wid))
+    .limit(1);
+
+  const businessType = settings?.businessType ?? "digital-agency";
+  const industryContext =
+    INDUSTRY_CONTEXT[businessType] ?? INDUSTRY_CONTEXT["digital-agency"]!;
+
+  return `You are AutFlow's AI business assistant — an intelligent operating assistant. You have full access to the workspace's business data.
+
+${industryContext}
+
+Your job: give concise, actionable intelligence. Not generic advice. Reference actual names, amounts, and dates from the data. Be direct and specific. If asked about something not in the data, say so clearly.
 
 Format responses with clear sections when helpful. Use bullet points for lists. Keep answers focused and practical.`;
+}
 
 // ── 1. AI Chat Assistant (streaming SSE) ────────────────────────────────────
 
@@ -193,7 +242,10 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
   }
 
   const wid = req.session.workspaceId!;
-  const context = await buildWorkspaceContext(wid);
+  const [context, systemPrompt] = await Promise.all([
+    buildWorkspaceContext(wid),
+    getWorkspaceSystemPrompt(wid),
+  ]);
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -203,7 +255,7 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
     const messages: OpenAI.ChatCompletionMessageParam[] = [
       {
         role: "system",
-        content: `${SYSTEM_PROMPT}\n\n=== CURRENT WORKSPACE DATA ===\n${context}`,
+        content: `${systemPrompt}\n\n=== CURRENT WORKSPACE DATA ===\n${context}`,
       },
       ...history.slice(-10).map((h) => ({
         role: h.role,
@@ -247,7 +299,10 @@ router.get("/ai/briefing", async (req, res): Promise<void> => {
   }
 
   const wid = req.session.workspaceId!;
-  const context = await buildWorkspaceContext(wid);
+  const [context, systemPrompt] = await Promise.all([
+    buildWorkspaceContext(wid),
+    getWorkspaceSystemPrompt(wid),
+  ]);
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -280,7 +335,7 @@ ${context}`;
       max_tokens: 1024,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
     });
@@ -312,6 +367,7 @@ router.get("/ai/client-health/:clientId", async (req, res): Promise<void> => {
   }
 
   const wid = req.session.workspaceId!;
+  const systemPrompt = await getWorkspaceSystemPrompt(wid);
   const nowStr = new Date().toISOString().split("T")[0]!;
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
@@ -437,7 +493,7 @@ ${dataStr}`;
       max_tokens: 512,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
     });
@@ -472,6 +528,9 @@ router.post("/ai/analyze-meeting", async (req, res): Promise<void> => {
     return;
   }
 
+  const wid = req.session.workspaceId!;
+  const systemPrompt = await getWorkspaceSystemPrompt(wid);
+
   const prompt = `Analyze these meeting notes${clientName ? ` from a meeting with ${clientName}` : ""} and return structured JSON:
 {
   "summary": "<2-3 sentence summary of what was discussed>",
@@ -494,7 +553,7 @@ ${notes}`;
       max_tokens: 1024,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
     });
@@ -527,7 +586,10 @@ router.post("/ai/smart-search", async (req, res): Promise<void> => {
   }
 
   const wid = req.session.workspaceId!;
-  const context = await buildWorkspaceContext(wid);
+  const [context, systemPrompt] = await Promise.all([
+    buildWorkspaceContext(wid),
+    getWorkspaceSystemPrompt(wid),
+  ]);
 
   const prompt = `The user asked: "${query}"
 
@@ -551,7 +613,7 @@ ${context}`;
       max_tokens: 1024,
       response_format: { type: "json_object" },
       messages: [
-        { role: "system", content: SYSTEM_PROMPT },
+        { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
     });
