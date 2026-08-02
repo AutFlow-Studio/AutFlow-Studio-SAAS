@@ -17,6 +17,7 @@ export const tasksTable = pgTable("tasks", {
   title: text("title").notNull(),
   priority: text("priority").notNull().default("medium"),
   status: text("status").notNull().default("todo"),
+  sortOrder: integer("sort_order").notNull().default(0),
   deadline: date("deadline", { mode: "string" }),
   notes: text("notes"),
   clientId: integer("client_id").references(() => clientsTable.id, {

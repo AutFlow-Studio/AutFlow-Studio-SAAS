@@ -12,6 +12,7 @@ export interface TaskInput {
   title: string;
   priority: TaskInputPriority;
   status: TaskInputStatus;
+  sortOrder?: number;
   deadline?: string;
   notes?: string;
   clientId?: number;

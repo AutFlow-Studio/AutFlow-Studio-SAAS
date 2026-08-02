@@ -12,6 +12,7 @@ export interface TaskUpdate {
   title?: string;
   priority?: TaskUpdatePriority;
   status?: TaskUpdateStatus;
+  sortOrder?: number;
   deadline?: string;
   notes?: string;
   clientId?: number;

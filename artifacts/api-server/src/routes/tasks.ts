@@ -30,7 +30,7 @@ router.get("/tasks", async (req, res): Promise<void> => {
     .select()
     .from(tasksTable)
     .where(and(...conditions))
-    .orderBy(sql`${tasksTable.createdAt} DESC`);
+    .orderBy(tasksTable.sortOrder, tasksTable.createdAt);
 
   const clientIds = [...new Set(tasks.map((t) => t.clientId).filter(Boolean) as number[])];
   const projectIds = [...new Set(tasks.map((t) => t.projectId).filter(Boolean) as number[])];

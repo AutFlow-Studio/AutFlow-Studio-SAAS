@@ -623,6 +623,7 @@ export interface Task {
   title: string;
   priority: TaskPriority;
   status: TaskStatus;
+  sortOrder?: number;
   /** @nullable */
   deadline?: string | null;
   /** @nullable */
@@ -661,6 +662,7 @@ export interface TaskInput {
   title: string;
   priority: TaskInputPriority;
   status: TaskInputStatus;
+  sortOrder?: number;
   deadline?: string;
   notes?: string;
   clientId?: number;
@@ -690,6 +692,7 @@ export interface TaskUpdate {
   title?: string;
   priority?: TaskUpdatePriority;
   status?: TaskUpdateStatus;
+  sortOrder?: number;
   deadline?: string;
   notes?: string;
   clientId?: number;

@@ -83,7 +83,7 @@ router.get("/calendar", async (req, res): Promise<void> => {
 
   events.sort((a, b) => a.date.localeCompare(b.date));
 
-  res.json({ events });
+  res.json(events);
 });
 
 export default router;

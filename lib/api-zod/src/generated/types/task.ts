@@ -13,6 +13,7 @@ export interface Task {
   title: string;
   priority: TaskPriority;
   status: TaskStatus;
+  sortOrder?: number;
   /** @nullable */
   deadline?: string | null;
   /** @nullable */

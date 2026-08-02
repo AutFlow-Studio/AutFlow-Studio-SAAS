@@ -1729,6 +1729,8 @@ components:
         status:
           type: string
           enum: [todo, in_progress, done]
+        sortOrder:
+          type: integer
         deadline:
           type: ["string", "null"]
         notes:
@@ -1756,6 +1758,8 @@ components:
         status:
           type: string
           enum: [todo, in_progress, done]
+        sortOrder:
+          type: integer
         deadline:
           type: string
         notes:
@@ -1776,6 +1780,8 @@ components:
         status:
           type: string
           enum: [todo, in_progress, done]
+        sortOrder:
+          type: integer
         deadline:
           type: string
         notes:
