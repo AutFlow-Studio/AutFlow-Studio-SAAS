@@ -31,6 +31,9 @@ import {
   Package,
   UserCog,
   Bot,
+  Heart,
+  Stethoscope,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -86,6 +89,12 @@ const BASE_NAV_ITEMS: { key: NavItemKey; href: string; icon: React.ElementType }
   { key: "reports",       href: "/reports",        icon: BarChart3 },
   { key: "team",          href: "/team",           icon: UserCog },
   { key: "ai-assistant",  href: "/ai-assistant",   icon: Bot },
+  // Clinic-specific
+  { key: "patients",      href: "/patients",       icon: Heart },
+  { key: "appointments",  href: "/appointments",   icon: CalendarDays },
+  { key: "treatments",    href: "/treatments",     icon: Stethoscope },
+  { key: "followups",     href: "/followups",      icon: Bell },
+  { key: "clinic-billing",href: "/clinic-billing", icon: CreditCard },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -118,6 +127,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
         item.key === "deliverables"  ? "Deliverables" :
         item.key === "team"          ? "Team" :
         item.key === "ai-assistant"  ? "AI Assistant" :
+        item.key === "patients"      ? "Patients" :
+        item.key === "appointments"  ? "Appointments" :
+        item.key === "treatments"    ? "Treatments" :
+        item.key === "followups"     ? "Follow-ups" :
+        item.key === "clinic-billing" ? "Billing" :
         item.key,
     }));
 

@@ -16,3 +16,8 @@ export * from "./notifications";
 export * from "./password-reset-tokens";
 export * from "./client-portal-users";
 export * from "./client-portal-messages";
+export * from "./clinic-patients";
+export * from "./clinic-appointments";
+export * from "./clinic-treatments";
+export * from "./clinic-followups";
+export * from "./clinic-billing";

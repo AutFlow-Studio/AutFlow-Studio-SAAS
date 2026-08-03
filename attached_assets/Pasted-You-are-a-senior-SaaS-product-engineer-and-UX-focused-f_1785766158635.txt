@@ -1,0 +1,374 @@
+You are a senior SaaS product engineer and UX-focused full-stack developer.
+
+Your task is to transform the application into a specialized **Clinic / Healthcare Workspace MVP**.
+
+The goal is NOT to create a generic CRM with different names.
+
+The goal is to make the workspace feel specifically designed for clinics.
+
+This is an MVP, so prioritize:
+
+* Real usability
+* Clean experience
+* Strong demo value
+* Simple maintainable architecture
+
+Avoid unnecessary complexity.
+
+---
+
+# Core Goal
+
+When a user selects:
+
+"Clinic / Healthcare"
+
+during onboarding, the application should load a dedicated clinic workspace.
+
+The user should feel:
+
+"This system was built for my clinic."
+
+---
+
+# Terminology Changes
+
+Inside the clinic workspace, use healthcare terminology.
+
+Replace:
+
+Client → Patient
+
+Project → Treatment Plan (where applicable)
+
+Meeting → Appointment
+
+Task → Clinic Task
+
+Invoice → Billing
+
+Notes → Medical Notes
+
+Keep terminology consistent across:
+
+* Sidebar
+* Pages
+* Buttons
+* Forms
+* Empty states
+* Dashboard
+
+---
+
+# Clinic Navigation
+
+Create a clinic-specific navigation:
+
+Dashboard
+
+Patients
+
+Appointments
+
+Treatments
+
+Follow-ups
+
+Billing
+
+Documents
+
+Tasks
+
+Calendar
+
+AI Assistant
+
+Settings
+
+Hide irrelevant modules from other industries.
+
+---
+
+# Clinic Dashboard
+
+Create a healthcare-focused dashboard.
+
+Include:
+
+## Today's Overview
+
+* Today's appointments
+* Upcoming appointments
+* Completed appointments
+
+## Patient Overview
+
+* Total patients
+* New patients
+* Patients needing follow-up
+
+## Financial Overview
+
+* Revenue
+* Pending payments
+
+## Activity
+
+* Recent patient activity
+* Recent treatments
+* Recent tasks
+
+The dashboard should immediately show what needs attention.
+
+---
+
+# Patients Module
+
+Create a dedicated patient management system.
+
+Each patient should include:
+
+* Full name
+* Phone number
+* Email
+* Date of birth
+* Gender
+* Address
+* Status
+* Notes
+* Created date
+
+Patient profile should contain:
+
+## Overview
+
+Basic patient information.
+
+## Appointments
+
+Previous and upcoming appointments.
+
+## Treatments
+
+Treatment history.
+
+## Billing
+
+Payment information.
+
+## Documents
+
+Uploaded files.
+
+## Activity Timeline
+
+Important actions related to the patient.
+
+---
+
+# Appointments Module
+
+Create appointment management.
+
+Each appointment includes:
+
+* Patient
+* Date
+* Time
+* Appointment type
+* Status
+* Notes
+
+Statuses:
+
+* Scheduled
+* Completed
+* Cancelled
+* Missed
+
+Features:
+
+* Create appointment
+* Edit appointment
+* View appointments
+* Filter by date and status
+
+---
+
+# Treatments Module
+
+Create treatment tracking.
+
+Each treatment includes:
+
+* Patient
+* Treatment name
+* Date
+* Status
+* Notes
+* Cost
+
+Allow viewing the patient's treatment history.
+
+---
+
+# Follow-ups Module
+
+Create a simple follow-up management system.
+
+Each follow-up includes:
+
+* Patient
+* Reason
+* Due date
+* Status
+* Notes
+
+Statuses:
+
+* Pending
+* Completed
+
+The dashboard should show overdue follow-ups.
+
+---
+
+# Billing Module
+
+Create basic clinic billing.
+
+Include:
+
+* Patient invoices
+* Payment status
+* Amount
+* Due date
+
+Statuses:
+
+* Paid
+* Pending
+* Overdue
+
+Display simple revenue information.
+
+Do not build complex accounting.
+
+---
+
+# Documents Module
+
+Allow storing patient-related documents.
+
+Examples:
+
+* Reports
+* Files
+* Attachments
+
+Keep it simple for MVP.
+
+---
+
+# Tasks Module
+
+Adapt tasks for clinic operations.
+
+Examples:
+
+* Call patient
+* Prepare appointment
+* Send follow-up reminder
+
+Tasks should connect to:
+
+* Patients
+* Appointments
+
+---
+
+# Calendar
+
+Create a clinic calendar view.
+
+Show:
+
+* Appointments
+* Follow-ups
+* Tasks
+
+---
+
+# Empty States
+
+Create healthcare-specific empty states.
+
+Examples:
+
+"No patients yet"
+
+"Add your first patient to start managing care."
+
+"No appointments scheduled"
+
+"Create your first appointment."
+
+Avoid generic workspace messages.
+
+---
+
+# Database Requirements
+
+Reuse the existing core architecture.
+
+Do not create a completely separate application.
+
+Add clinic-specific entities:
+
+Patient
+
+Appointment
+
+Treatment
+
+FollowUp
+
+BillingRecord
+
+Connect them with the workspace.
+
+Every record must belong to the correct workspace.
+
+---
+
+# MVP Requirements
+
+Do NOT build:
+
+* Complex medical records
+* Insurance systems
+* Multiple doctors management
+* Advanced permissions
+* External healthcare integrations
+
+Focus on a strong demo-ready clinic workspace.
+
+---
+
+# Final Validation
+
+Before finishing:
+
+Check that:
+
+* Clinic users see clinic terminology.
+* Patients replace generic clients.
+* Dashboard shows clinic information.
+* Appointments work correctly.
+* Treatments can be tracked.
+* Follow-ups work.
+* Billing works.
+* No agency-specific wording remains.
+
+The final result should feel like a lightweight but premium Clinic Management MVP built on the same AI Workspace engine.

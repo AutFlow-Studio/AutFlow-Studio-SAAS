@@ -21,7 +21,13 @@ export type NavItemKey =
   | "documents"
   | "reports"
   | "team"
-  | "ai-assistant";
+  | "ai-assistant"
+  // Clinic-specific keys
+  | "patients"
+  | "appointments"
+  | "treatments"
+  | "followups"
+  | "clinic-billing";
 
 export interface NicheConfig {
   id: string | null;
@@ -168,19 +174,19 @@ const CLINIC_CONFIG: NicheConfig = {
   id: "clinic",
   clientTerm: "Patient",
   clientTermPlural: "Patients",
-  projectTerm: "Care Program",
-  projectTermPlural: "Care Programs",
+  projectTerm: "Treatment Plan",
+  projectTermPlural: "Treatment Plans",
   meetingTerm: "Appointment",
   meetingTermPlural: "Appointments",
   paymentTerm: "Billing",
   paymentTermPlural: "Billing",
-  navItems: ["dashboard", "clients", "meetings", "tasks", "payments", "documents", "calendar"],
-  dashboardTitle: "Practice Command Center",
+  navItems: ["dashboard", "patients", "appointments", "treatments", "followups", "clinic-billing", "documents", "tasks", "calendar", "ai-assistant"],
+  dashboardTitle: "Practice Overview",
   dashboardDescription: "Your clinic at a glance",
-  emptyClientHeadline: "Add your first patient",
-  emptyClientBody: "Track patients, appointment contacts, and billing relationships in one place.",
-  emptyProjectHeadline: "Create your first care program",
-  emptyProjectBody: "Structure wellness programs, treatment plans, or recurring care with milestones and billing.",
+  emptyClientHeadline: "No patients yet",
+  emptyClientBody: "Add your first patient to start managing care.",
+  emptyProjectHeadline: "No treatment plans yet",
+  emptyProjectBody: "Create a treatment plan to track care milestones.",
   emptyCampaignHeadline: "No campaigns yet",
   emptyCampaignBody: "Track outreach or awareness campaigns here.",
   emptyDeliverableHeadline: "No deliverables yet",
@@ -188,14 +194,14 @@ const CLINIC_CONFIG: NicheConfig = {
   accentColor: "rose",
   onboardingTagline: "Appointments, follow-ups & revenue — all in one place",
   firstSteps: [
-    { icon: "Heart", title: "Add a patient", description: "Record patient contact details and medical history notes.", href: "/clients" },
-    { icon: "Calendar", title: "Book an appointment", description: "Track session notes, action items, and follow-up dates.", href: "/meetings" },
-    { icon: "CreditCard", title: "Record billing", description: "Track treatment fees, outstanding balances, and payments.", href: "/payments" },
+    { icon: "Heart", title: "Add a patient", description: "Record patient contact details and medical notes.", href: "/patients" },
+    { icon: "Calendar", title: "Book an appointment", description: "Schedule and track patient appointments.", href: "/appointments" },
+    { icon: "CreditCard", title: "Record billing", description: "Track treatment fees, outstanding balances, and payments.", href: "/clinic-billing" },
   ],
   aiIndustryContext: `This is a CLINIC / HEALTHCARE PRACTICE workspace.
-Active modules: Patients, Appointments, Tasks, Billing, Documents, Calendar.
-Use this terminology: "Patients" (not clients/customers), "Appointments" (not meetings/projects), "Billing" (not invoices/payments), "Follow-ups" (not tasks).
-Key questions to answer: Which patients have appointments today or tomorrow? Who needs a follow-up? What are overdue billing amounts? Which patients haven't been seen recently?`,
+Active modules: Patients, Appointments, Treatments, Follow-ups, Billing, Documents, Tasks, Calendar.
+Use this terminology: "Patients" (not clients/customers), "Appointments" (not meetings), "Treatments", "Follow-ups", "Billing" (not invoices/payments).
+Key questions to answer: Which patients have appointments today or tomorrow? Who needs a follow-up? What are overdue billing amounts? Which treatments are in progress?`,
 };
 
 const FREELANCER_CONFIG: NicheConfig = {

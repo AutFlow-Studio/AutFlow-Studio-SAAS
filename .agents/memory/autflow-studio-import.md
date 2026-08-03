@@ -26,32 +26,42 @@ pnpm --filter @workspace/scripts run migrate   # migrate + create admin
 The project was transformed into a digital agency operating system. Added:
 
 ### Backend
-- `lib/db/src/schema/campaigns.ts` — campaigns table (type, goal, budget, startDate, endDate, status, performanceNotes, results, clientId, projectId, workspaceId)
+- `lib/db/src/schema/campaigns.ts` — campaigns table
 - `artifacts/api-server/src/routes/campaigns.ts` — full CRUD API for campaigns
-- `artifacts/api-server/src/routes/team.ts` — GET /team (workspace members + workload stats), PATCH /team/:id/role
+- `artifacts/api-server/src/routes/team.ts` — GET /team, PATCH /team/:id/role
 
 ### Frontend — Navigation
-- `niche-config.ts` updated: digital-agency nav now includes campaigns, deliverables, team, ai-assistant
-- `layout.tsx` updated: new nav icons (Megaphone, Package, UserCog, Bot)
-- `App.tsx` updated: routes for /campaigns, /deliverables, /team, /ai-assistant
+- `niche-config.ts` updated: digital-agency nav includes campaigns, deliverables, team, ai-assistant
+- `layout.tsx` updated: new nav icons; clinic nav keys added (patients, appointments, treatments, followups, clinic-billing)
+- `App.tsx` updated: SmartDashboard renders ClinicDashboard when businessType=clinic
 
-### Frontend — New Pages
-- `src/pages/campaigns/index.tsx` — full CRUD campaigns list (filter by status/type/client)
-- `src/pages/deliverables/index.tsx` — workspace-wide deliverables view (aggregates across all projects)
-- `src/pages/team/index.tsx` — team management (roles, workload stats, overload detection)
-- `src/pages/ai-assistant/index.tsx` — full-page AI chat with agency-specific prompt suggestions
+### Frontend — Agency pages
+- `src/pages/campaigns/index.tsx`, `deliverables/`, `team/`, `ai-assistant/`
 
-### Frontend — Dashboard
-- Added useQuery for campaigns data
-- Added Campaign Performance KPI card (active campaigns, total budget)
-- Added Deliverables and Team quick-link KPI cards
-- Added "Campaign" quick action button
-- Updated quick actions to include campaigns
+## Clinic workspace (added later)
 
-### Onboarding
-- Updated digital-agency template tagline and feature list to reflect agency OS capabilities
+### Clinic DB tables (5 new, in `lib/db/src/schema/clinic-*.ts`)
+clinic_patients, clinic_appointments, clinic_treatments, clinic_followups, clinic_billing
+All scoped by workspace_id. Migration is idempotent (CREATE TABLE IF NOT EXISTS).
+
+### Clinic API routes (`artifacts/api-server/src/routes/clinic/`)
+- GET/POST/PUT/DELETE `/api/clinic/patients`, `/api/clinic/appointments`, `/api/clinic/treatments`, `/api/clinic/followups`, `/api/clinic/billing`
+- GET `/api/clinic/dashboard` — today's appts, patient counts, billing summary, overdue followups
+
+### Clinic frontend pages (`artifacts/autflow-studio/src/pages/clinic/`)
+- `dashboard/index.tsx` — healthcare-focused dashboard (today, patients, financials, activity)
+- `patients/index.tsx` — patient list with search, add/delete
+- `patients/detail.tsx` — tabbed patient profile (overview, appointments, treatments, billing)
+- `appointments/index.tsx` — grouped by date, status management
+- `treatments/index.tsx` — treatment tracking with cost
+- `followups/index.tsx` — overdue alerts, complete/delete
+- `billing/index.tsx` — revenue/pending/overdue summary cards + records
+
+### Niche config (clinic)
+navItems: dashboard, patients, appointments, treatments, followups, clinic-billing, documents, tasks, calendar, ai-assistant
+SmartDashboard in App.tsx renders ClinicDashboard when businessType === 'clinic'.
 
 ## Known pre-existing TS errors
-Several pre-existing files (meetings, payments, projects, reports, search, tasks) have `implicit any` TS errors that existed before this work. Not introduced by these changes.
+Several pre-existing files (meetings, payments, projects, reports, search, tasks) have `implicit any` TS errors. Not introduced by our changes.
 
-**Why:** The niche-config NavItemKey type required adding the 4 new keys before they could appear in any nav. All other niches (consulting, clinic, freelancer, generic) were also updated with emptyCampaignHeadline/emptyDeliverableHeadline fields to satisfy the expanded NicheConfig interface.
+**Why:** The niche-config NavItemKey type requires adding new keys before they appear in nav. All niches were updated with emptyCampaignHeadline/emptyDeliverableHeadline fields when the interface was expanded.

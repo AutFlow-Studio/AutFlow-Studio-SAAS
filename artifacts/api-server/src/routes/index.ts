@@ -27,6 +27,14 @@ import exportRouter from "./export";
 import aiRouter from "./ai";
 import campaignsRouter from "./campaigns";
 import teamRouter from "./team";
+import {
+  clinicPatientsRouter,
+  clinicAppointmentsRouter,
+  clinicTreatmentsRouter,
+  clinicFollowupsRouter,
+  clinicBillingRouter,
+  clinicDashboardRouter,
+} from "./clinic/index";
 
 const router: IRouter = Router();
 
@@ -72,5 +80,11 @@ router.use(exportRouter);
 router.use(aiRouter);
 router.use(campaignsRouter);
 router.use(teamRouter);
+router.use(clinicPatientsRouter);
+router.use(clinicAppointmentsRouter);
+router.use(clinicTreatmentsRouter);
+router.use(clinicFollowupsRouter);
+router.use(clinicBillingRouter);
+router.use(clinicDashboardRouter);
 
 export default router;

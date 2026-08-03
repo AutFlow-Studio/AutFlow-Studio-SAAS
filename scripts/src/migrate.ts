@@ -361,6 +361,91 @@ async function migrate() {
       console.log(`✓ Workspace created for existing user: ${user.email} (workspace ${wsId})`);
     }
 
+    // ── Clinic-specific tables ────────────────────────────────────────────
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS clinic_patients (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        name          TEXT NOT NULL,
+        phone         TEXT,
+        email         TEXT,
+        date_of_birth DATE,
+        gender        TEXT,
+        address       TEXT,
+        status        TEXT NOT NULL DEFAULT 'active',
+        notes         TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS clinic_appointments (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        patient_id    INTEGER NOT NULL REFERENCES clinic_patients(id) ON DELETE CASCADE,
+        date          DATE NOT NULL,
+        time          TEXT NOT NULL,
+        type          TEXT NOT NULL DEFAULT 'consultation',
+        status        TEXT NOT NULL DEFAULT 'scheduled',
+        notes         TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS clinic_treatments (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        patient_id    INTEGER NOT NULL REFERENCES clinic_patients(id) ON DELETE CASCADE,
+        name          TEXT NOT NULL,
+        date          DATE NOT NULL,
+        status        TEXT NOT NULL DEFAULT 'planned',
+        notes         TEXT,
+        cost          NUMERIC(15,2),
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS clinic_followups (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        patient_id    INTEGER NOT NULL REFERENCES clinic_patients(id) ON DELETE CASCADE,
+        reason        TEXT NOT NULL,
+        due_date      DATE NOT NULL,
+        status        TEXT NOT NULL DEFAULT 'pending',
+        notes         TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS clinic_billing (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        patient_id    INTEGER NOT NULL REFERENCES clinic_patients(id) ON DELETE CASCADE,
+        description   TEXT NOT NULL,
+        amount        NUMERIC(15,2) NOT NULL,
+        status        TEXT NOT NULL DEFAULT 'pending',
+        due_date      DATE,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clinic_patients_workspace ON clinic_patients(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clinic_appointments_workspace ON clinic_appointments(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clinic_appointments_date ON clinic_appointments(date)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clinic_followups_workspace ON clinic_followups(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clinic_billing_workspace ON clinic_billing(workspace_id)`);
+
+    console.log("✓ Clinic tables ensured.");
+
     // Mark all existing users as email-verified (they were already using the app)
     await client.query(`
       UPDATE users
