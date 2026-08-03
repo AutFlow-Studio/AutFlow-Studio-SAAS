@@ -31,6 +31,10 @@ import TasksList from '@/pages/tasks/index';
 import SearchResults from '@/pages/search/index';
 import SettingsView from '@/pages/settings/index';
 import MeetingsList from '@/pages/meetings/index';
+import CampaignsList from '@/pages/campaigns/index';
+import DeliverablesView from '@/pages/deliverables/index';
+import TeamView from '@/pages/team/index';
+import AIAssistantPage from '@/pages/ai-assistant/index';
 
 // Client Portal pages
 import PortalLoginPage from '@/pages/portal/login';
@@ -63,6 +67,10 @@ function AgencyRouter() {
       <Route path="/clients/:id" component={ClientDetail} />
       <Route path="/projects" component={ProjectsList} />
       <Route path="/projects/:id" component={ProjectDetail} />
+      <Route path="/campaigns" component={CampaignsList} />
+      <Route path="/deliverables" component={DeliverablesView} />
+      <Route path="/team" component={TeamView} />
+      <Route path="/ai-assistant" component={AIAssistantPage} />
       <Route path="/payments" component={PaymentsList} />
       <Route path="/meetings" component={MeetingsList} />
       <Route path="/calendar" component={CalendarView} />

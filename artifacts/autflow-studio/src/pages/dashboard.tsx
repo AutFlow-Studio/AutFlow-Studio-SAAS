@@ -30,7 +30,12 @@ import {
   XCircle,
   AlertTriangle,
   Flame,
+  Megaphone,
+  Package,
+  UserCog,
+  Bot,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { format, differenceInDays } from "date-fns";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
@@ -494,9 +499,23 @@ export default function Dashboard() {
     return <DashboardSkeleton />;
   }
 
+  // ── Campaign stats ────────────────────────────────────────────────────────
+  const { data: campaigns = [] } = useQuery<{ status: string; budget?: number | null }[]>({
+    queryKey: ["/api/campaigns"],
+    queryFn: async () => {
+      const res = await fetch("/api/campaigns", { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+  });
+  const activeCampaigns = campaigns.filter((c) => c.status === "active").length;
+  const planningCampaigns = campaigns.filter((c) => c.status === "planning").length;
+  const totalCampaignBudget = campaigns.reduce((sum, c) => sum + (c.budget ?? 0), 0);
+
   const quickActions = [
     { label: "New Client", icon: Users, href: "/clients" },
     { label: "New Project", icon: Briefcase, href: "/projects" },
+    { label: "Campaign", icon: Megaphone, href: "/campaigns" },
     { label: "New Invoice", icon: CreditCard, href: "/payments" },
   ];
 
@@ -742,6 +761,31 @@ export default function Dashboard() {
                 ? { label: `${stats.delayedProjects} delayed`, variant: "destructive" }
                 : undefined
             }
+          />
+          <KPICard
+            title="Active Campaigns"
+            value={activeCampaigns}
+            subtitle={planningCampaigns > 0 ? `${planningCampaigns} in planning` : campaigns.length > 0 ? `${campaigns.length} total` : "No campaigns yet"}
+            icon={Megaphone}
+            iconClass="text-violet-500"
+            href="/campaigns"
+            badge={totalCampaignBudget > 0 ? { label: `$${totalCampaignBudget.toLocaleString()} budget` } : undefined}
+          />
+          <KPICard
+            title="Deliverables"
+            value="Track"
+            subtitle="Approvals, revisions & ownership"
+            icon={Package}
+            iconClass="text-blue-500"
+            href="/deliverables"
+          />
+          <KPICard
+            title="Team"
+            value="Manage"
+            subtitle="Roles, workload & availability"
+            icon={UserCog}
+            iconClass="text-teal-500"
+            href="/team"
           />
         </div>
       </div>

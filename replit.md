@@ -1,6 +1,6 @@
 # AutFlow Studio
 
-An agency owner operating system — manage clients, projects, payments, documents, meetings, tasks, calendar, notifications, and reports in one place.
+A premium digital agency operating system — manage clients, projects, campaigns, deliverables, team, invoices, documents, tasks, calendar, reports, and AI-powered operations in one place.
 
 ## Run & Operate
 

@@ -27,6 +27,10 @@ import {
   ListTodo,
   CheckCheck,
   Trash2,
+  Megaphone,
+  Package,
+  UserCog,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -69,15 +73,19 @@ function NotifIcon({ type }: { type: string }) {
 }
 
 const BASE_NAV_ITEMS: { key: NavItemKey; href: string; icon: React.ElementType }[] = [
-  { key: "dashboard", href: "/", icon: LayoutDashboard },
-  { key: "clients",   href: "/clients", icon: Users },
-  { key: "projects",  href: "/projects", icon: Briefcase },
-  { key: "tasks",     href: "/tasks", icon: CheckSquare },
-  { key: "meetings",  href: "/meetings", icon: CalendarDays },
-  { key: "calendar",  href: "/calendar", icon: CalendarDays },
-  { key: "payments",  href: "/payments", icon: CreditCard },
-  { key: "documents", href: "/documents", icon: Files },
-  { key: "reports",   href: "/reports", icon: BarChart3 },
+  { key: "dashboard",     href: "/",              icon: LayoutDashboard },
+  { key: "clients",       href: "/clients",        icon: Users },
+  { key: "projects",      href: "/projects",       icon: Briefcase },
+  { key: "campaigns",     href: "/campaigns",      icon: Megaphone },
+  { key: "deliverables",  href: "/deliverables",   icon: Package },
+  { key: "tasks",         href: "/tasks",          icon: CheckSquare },
+  { key: "meetings",      href: "/meetings",       icon: CalendarDays },
+  { key: "calendar",      href: "/calendar",       icon: CalendarDays },
+  { key: "payments",      href: "/payments",       icon: CreditCard },
+  { key: "documents",     href: "/documents",      icon: Files },
+  { key: "reports",       href: "/reports",        icon: BarChart3 },
+  { key: "team",          href: "/team",           icon: UserCog },
+  { key: "ai-assistant",  href: "/ai-assistant",   icon: Bot },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
@@ -97,15 +105,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
       href: item.href,
       icon: item.icon,
       label:
-        item.key === "clients"  ? nicheConfig.clientTermPlural :
-        item.key === "projects" ? nicheConfig.projectTermPlural :
-        item.key === "meetings" ? nicheConfig.meetingTermPlural :
-        item.key === "payments" ? nicheConfig.paymentTermPlural :
-        item.key === "dashboard" ? "Dashboard" :
-        item.key === "tasks"    ? "Tasks" :
-        item.key === "calendar" ? "Calendar" :
-        item.key === "documents"? "Documents" :
-        item.key === "reports"  ? "Reports" :
+        item.key === "clients"       ? nicheConfig.clientTermPlural :
+        item.key === "projects"      ? nicheConfig.projectTermPlural :
+        item.key === "meetings"      ? nicheConfig.meetingTermPlural :
+        item.key === "payments"      ? nicheConfig.paymentTermPlural :
+        item.key === "dashboard"     ? "Dashboard" :
+        item.key === "tasks"         ? "Tasks" :
+        item.key === "calendar"      ? "Calendar" :
+        item.key === "documents"     ? "Documents" :
+        item.key === "reports"       ? "Reports" :
+        item.key === "campaigns"     ? "Campaigns" :
+        item.key === "deliverables"  ? "Deliverables" :
+        item.key === "team"          ? "Team" :
+        item.key === "ai-assistant"  ? "AI Assistant" :
         item.key,
     }));
 
@@ -153,6 +165,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const NavLinks = ({ onClickItem }: { onClickItem?: () => void }) => (
+    <>
+      {NAV_ITEMS.map((item) => {
+        const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
+        return (
+          <Link
+            key={item.href}
+            href={item.href}
+            onClick={onClickItem}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+              isActive
+                ? "bg-primary/10 text-primary"
+                : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+            )}
+          >
+            <item.icon size={16} className={cn(isActive ? "text-primary" : "text-muted-foreground")} />
+            {item.label}
+          </Link>
+        );
+      })}
+    </>
+  );
+
   return (
     <div className="flex h-screen w-full bg-background overflow-hidden selection:bg-primary/30">
       {/* Mobile Nav Overlay */}
@@ -187,25 +223,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="px-3 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Workspace
           </div>
-          {NAV_ITEMS.map((item) => {
-            const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileNavOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  isActive
-                    ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
-                )}
-              >
-                <item.icon size={16} className={cn(isActive ? "text-primary" : "text-muted-foreground")} />
-                {item.label}
-              </Link>
-            );
-          })}
+          <NavLinks onClickItem={() => setMobileNavOpen(false)} />
         </div>
         <div className="p-4 border-t border-border/50">
           <Link href="/settings" onClick={() => setMobileNavOpen(false)} className={cn(
@@ -235,20 +253,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <div className="px-3 pb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Workspace
           </div>
-          {NAV_ITEMS.map((item) => {
-            const isActive = location === item.href || (item.href !== "/" && location.startsWith(item.href));
-            return (
-              <Link key={item.href} href={item.href} className={cn(
-                "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                isActive 
-                  ? "bg-primary/10 text-primary" 
-                  : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
-              )}>
-                <item.icon size={16} className={cn(isActive ? "text-primary" : "text-muted-foreground")} />
-                {item.label}
-              </Link>
-            );
-          })}
+          <NavLinks />
         </div>
         
         <div className="p-4 border-t border-border/50">
@@ -282,7 +287,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <input 
                 type="search" 
                 name="q"
-                placeholder="Search clients, projects, invoices..." 
+                placeholder="Search clients, projects, campaigns..." 
                 className="w-full h-10 pl-10 pr-4 bg-secondary/50 border border-transparent rounded-full text-sm focus:outline-none focus:bg-background focus:border-primary/30 focus:ring-1 focus:ring-primary/30 transition-all placeholder:text-muted-foreground/70"
                 defaultValue={new URLSearchParams(window.location.search).get("q") || ""}
               />

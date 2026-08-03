@@ -12,12 +12,16 @@ export type NavItemKey =
   | "dashboard"
   | "clients"
   | "projects"
+  | "campaigns"
+  | "deliverables"
   | "tasks"
   | "meetings"
   | "calendar"
   | "payments"
   | "documents"
-  | "reports";
+  | "reports"
+  | "team"
+  | "ai-assistant";
 
 export interface NicheConfig {
   id: string | null;
@@ -51,6 +55,14 @@ export interface NicheConfig {
   emptyProjectHeadline: string;
   /** Empty-state body on the projects list */
   emptyProjectBody: string;
+  /** Empty-state headline on the campaigns list */
+  emptyCampaignHeadline: string;
+  /** Empty-state body on the campaigns list */
+  emptyCampaignBody: string;
+  /** Empty-state headline on the deliverables list */
+  emptyDeliverableHeadline: string;
+  /** Empty-state body on the deliverables list */
+  emptyDeliverableBody: string;
   /** Colour accent used on niche-specific UI accents */
   accentColor: string;
   /** Short descriptor shown in onboarding */
@@ -75,24 +87,47 @@ const AGENCY_CONFIG: NicheConfig = {
   meetingTermPlural: "Meetings",
   paymentTerm: "Invoice",
   paymentTermPlural: "Invoices",
-  navItems: ["dashboard", "clients", "projects", "tasks", "meetings", "calendar", "payments", "documents", "reports"],
-  dashboardTitle: "Executive Command Center",
-  dashboardDescription: "Your agency at a glance",
-  emptyClientHeadline: "Add your first client",
-  emptyClientBody: "Track retainer clients, project-based accounts, and all their contacts in one place.",
-  emptyProjectHeadline: "Start your first project",
-  emptyProjectBody: "Create projects for branding, web, campaigns, or any deliverable-driven work.",
-  accentColor: "violet",
-  onboardingTagline: "Clients, projects & campaigns — ready on day one",
-  firstSteps: [
-    { icon: "Users", title: "Add a client", description: "Create your first client account with contact details and billing info.", href: "/clients" },
-    { icon: "Briefcase", title: "Create a project", description: "Link a project to a client, set a budget and deadline.", href: "/projects" },
-    { icon: "CreditCard", title: "Send an invoice", description: "Track payments, retainers, and outstanding balances.", href: "/payments" },
+  navItems: [
+    "dashboard",
+    "clients",
+    "projects",
+    "campaigns",
+    "deliverables",
+    "tasks",
+    "payments",
+    "team",
+    "calendar",
+    "documents",
+    "reports",
+    "ai-assistant",
   ],
-  aiIndustryContext: `This is a DIGITAL AGENCY workspace.
-Active modules: Clients, Projects, Tasks, Meetings, Invoices, Documents, Reports.
-Use this terminology: "Clients" (not customers/patients), "Projects" (campaigns, branding, web work), "Invoices" (not payments/billing), "Meetings" (client calls, check-ins).
-Key questions to answer: Which clients have overdue invoices? Which projects are delayed? What's the team workload? What's this month's revenue?`,
+  dashboardTitle: "Agency Command Center",
+  dashboardDescription: "Your agency at a glance — clients, revenue, campaigns, and deadlines",
+  emptyClientHeadline: "Add your first client",
+  emptyClientBody: "Add your first client and start building long-term relationships. Track retainers, projects, campaigns, and invoices all in one place.",
+  emptyProjectHeadline: "Create your first project",
+  emptyProjectBody: "Create your first project and organize delivery from day one. Link it to a client, set a budget, and track every deliverable.",
+  emptyCampaignHeadline: "Launch your first campaign",
+  emptyCampaignBody: "Track SEO, paid ads, social media, and every other campaign you run for clients — goals, budgets, and results in one place.",
+  emptyDeliverableHeadline: "No deliverables yet",
+  emptyDeliverableBody: "Deliverables appear here when added to projects. Track websites, brand identities, ad creatives, and more — with owner, due date, and approval status.",
+  accentColor: "violet",
+  onboardingTagline: "Clients, projects & campaigns — built for agencies that deliver",
+  firstSteps: [
+    { icon: "Users", title: "Add your first client", description: "Create a client account with contact details, industry, and contract value.", href: "/clients" },
+    { icon: "Briefcase", title: "Create a project", description: "Link a project to a client, assign a budget, deadline, and team owner.", href: "/projects" },
+    { icon: "Megaphone", title: "Start a campaign", description: "Track an SEO, paid ads, or social media campaign with goals and performance notes.", href: "/campaigns" },
+    { icon: "CreditCard", title: "Send an invoice", description: "Track retainers, milestone invoices, and outstanding balances.", href: "/payments" },
+  ],
+  aiIndustryContext: `This is a DIGITAL AGENCY workspace — an agency operating system for marketing, branding, web design, automation, and growth agencies.
+Active modules: Clients, Projects, Campaigns, Deliverables, Tasks, Invoices, Team, Calendar, Documents, Reports.
+Terminology: "Clients" (not customers/patients), "Projects" (branding, web, campaigns, automation work), "Campaigns" (SEO, paid ads, social media, email marketing, brand awareness, lead generation), "Deliverables" (websites, landing pages, logos, ad creatives, reports, video), "Invoices" (not payments/billing), "Team" (designers, developers, copywriters, media buyers, strategists).
+Agency-specific intelligence:
+- Client Health: factor in project delays, unpaid invoices, communication, and contract value. Flag clients as Healthy / Needs Attention / At Risk.
+- Workload: identify overloaded team members and upcoming bottlenecks.
+- Revenue: track monthly revenue, outstanding invoices, and profit estimates.
+- Deadlines: surface projects near deadline, deliverables pending approval, and campaigns launching soon.
+Key questions to answer: Which clients need attention this week? Which invoices are overdue? Which projects are behind schedule? What's the team workload? Which deliverables are waiting for approval? Which campaigns are underperforming? What's this month's revenue? Which clients are at risk of churning?`,
 };
 
 const CONSULTING_CONFIG: NicheConfig = {
@@ -105,13 +140,17 @@ const CONSULTING_CONFIG: NicheConfig = {
   meetingTermPlural: "Meetings",
   paymentTerm: "Invoice",
   paymentTermPlural: "Invoices",
-  navItems: ["dashboard", "clients", "projects", "meetings", "reports", "tasks", "documents", "payments", "calendar"],
+  navItems: ["dashboard", "clients", "projects", "meetings", "tasks", "payments", "documents", "reports", "calendar"],
   dashboardTitle: "Consulting Command Center",
   dashboardDescription: "Your practice at a glance",
   emptyClientHeadline: "Add your first client",
   emptyClientBody: "Track enterprise clients, advisory relationships, and key stakeholder contacts.",
   emptyProjectHeadline: "Start your first engagement",
   emptyProjectBody: "Create engagements for strategy projects, reports, or advisory retainers.",
+  emptyCampaignHeadline: "No campaigns yet",
+  emptyCampaignBody: "Track client-facing campaigns and initiatives here.",
+  emptyDeliverableHeadline: "No deliverables yet",
+  emptyDeliverableBody: "Add deliverables to your engagements to track reports, presentations, and outputs.",
   accentColor: "blue",
   onboardingTagline: "Engagements, reports & advisory — structured for impact",
   firstSteps: [
@@ -142,6 +181,10 @@ const CLINIC_CONFIG: NicheConfig = {
   emptyClientBody: "Track patients, appointment contacts, and billing relationships in one place.",
   emptyProjectHeadline: "Create your first care program",
   emptyProjectBody: "Structure wellness programs, treatment plans, or recurring care with milestones and billing.",
+  emptyCampaignHeadline: "No campaigns yet",
+  emptyCampaignBody: "Track outreach or awareness campaigns here.",
+  emptyDeliverableHeadline: "No deliverables yet",
+  emptyDeliverableBody: "Add program deliverables and milestones here.",
   accentColor: "rose",
   onboardingTagline: "Appointments, follow-ups & revenue — all in one place",
   firstSteps: [
@@ -172,6 +215,10 @@ const FREELANCER_CONFIG: NicheConfig = {
   emptyClientBody: "Keep your client roster organised with contacts, project history, and payment records.",
   emptyProjectHeadline: "Create your first project",
   emptyProjectBody: "Track project scope, milestones, invoices, and deadlines for each client.",
+  emptyCampaignHeadline: "No campaigns yet",
+  emptyCampaignBody: "Track client campaigns and marketing work here.",
+  emptyDeliverableHeadline: "No deliverables yet",
+  emptyDeliverableBody: "Add deliverables to your projects to track design assets, code, and content.",
   accentColor: "amber",
   onboardingTagline: "Project workflow, invoices & client comms — simplified",
   firstSteps: [
@@ -202,6 +249,10 @@ const GENERIC_CONFIG: NicheConfig = {
   emptyClientBody: "Manage customer accounts, contacts, and billing relationships across all your service lines.",
   emptyProjectHeadline: "Create your first project",
   emptyProjectBody: "Track any service, engagement, or deliverable-based work with full billing and task management.",
+  emptyCampaignHeadline: "No campaigns yet",
+  emptyCampaignBody: "Track marketing campaigns and initiatives here.",
+  emptyDeliverableHeadline: "No deliverables yet",
+  emptyDeliverableBody: "Add deliverables to your projects to track outputs and approvals.",
   accentColor: "emerald",
   onboardingTagline: "A balanced starting point for any service business",
   firstSteps: [

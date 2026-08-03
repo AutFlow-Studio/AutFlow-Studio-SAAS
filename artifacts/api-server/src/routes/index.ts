@@ -25,6 +25,8 @@ import templatesRouter from "./templates";
 import notificationsRouter from "./notifications";
 import exportRouter from "./export";
 import aiRouter from "./ai";
+import campaignsRouter from "./campaigns";
+import teamRouter from "./team";
 
 const router: IRouter = Router();
 
@@ -68,5 +70,7 @@ router.use(templatesRouter);
 router.use(notificationsRouter);
 router.use(exportRouter);
 router.use(aiRouter);
+router.use(campaignsRouter);
+router.use(teamRouter);
 
 export default router;

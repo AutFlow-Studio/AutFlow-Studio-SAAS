@@ -156,10 +156,10 @@ const TEMPLATES: {
   {
     id: "digital-agency",
     name: "Digital Agency",
-    tagline: "Clients, projects & campaigns",
+    tagline: "Built for marketing, branding, web & automation agencies",
     icon: Palette,
     color: "violet",
-    includes: ["Client workspace for retainer & project billing", "Project structure for branding, web & campaigns", "Deliverables, tasks & payment tracking", "Guided setup tasks to get you started"],
+    includes: ["Clients, Projects, Campaigns & Deliverables", "Team management with workload tracking", "Invoices, payments & revenue reporting", "AI assistant for agency operations intelligence"],
   },
   {
     id: "consulting",
