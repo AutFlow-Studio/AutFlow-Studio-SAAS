@@ -1,0 +1,283 @@
+You are a senior AI product engineer specializing in AI assistants for business applications.
+
+Your task is to build the **Clinic AI Assistant layer** for the Clinic / Healthcare Workspace.
+
+The goal is to transform the clinic workspace from a simple management system into an intelligent assistant that understands the clinic's operations.
+
+This is an MVP.
+
+Focus on:
+
+* Useful AI features
+* Real business value
+* Simple implementation
+* Strong demo experience
+
+Do not build unnecessary AI complexity.
+
+---
+
+# AI Assistant Identity
+
+The AI should behave as:
+
+"An intelligent clinic operations assistant."
+
+It is not a generic chatbot.
+
+It understands:
+
+* Patients
+* Appointments
+* Treatments
+* Follow-ups
+* Billing
+* Tasks
+* Calendar
+* Clinic activity
+
+The AI should answer using clinic terminology.
+
+---
+
+# AI Context
+
+Create a clinic-specific AI context system.
+
+Before answering, the AI should understand:
+
+Current workspace:
+
+* Clinic name
+* Industry type
+* Current date
+
+Clinic data:
+
+* Number of patients
+* Upcoming appointments
+* Recent treatments
+* Pending follow-ups
+* Outstanding payments
+* Tasks
+
+---
+
+# AI Questions
+
+The user should be able to ask:
+
+## Patient Management
+
+Examples:
+
+"How many patients do we have?"
+
+"Show patients who need follow-up."
+
+"Which patients haven't visited recently?"
+
+"Summarize this patient's history."
+
+---
+
+## Appointments
+
+Examples:
+
+"What appointments do I have today?"
+
+"Who is scheduled tomorrow?"
+
+"Show cancelled appointments."
+
+"Which appointments were missed?"
+
+---
+
+## Treatments
+
+Examples:
+
+"Show recent treatments."
+
+"Which treatments are currently active?"
+
+"Summarize this patient's treatment history."
+
+---
+
+## Billing
+
+Examples:
+
+"How much revenue did we make this month?"
+
+"Show unpaid bills."
+
+"Which patients have pending payments?"
+
+---
+
+## Tasks
+
+Examples:
+
+"What should I do today?"
+
+"Show overdue clinic tasks."
+
+"Create a follow-up task for this patient."
+
+---
+
+# AI Actions
+
+The AI should not only answer.
+
+Allow simple actions:
+
+Create a task.
+
+Create a follow-up.
+
+Create an appointment.
+
+Update task status.
+
+Generate summaries.
+
+Generate reports.
+
+Example:
+
+User:
+
+"Create a follow-up for Ahmed next Monday."
+
+AI:
+
+Creates the follow-up automatically.
+
+---
+
+# Daily Clinic Summary
+
+Create an AI-generated daily summary.
+
+Example:
+
+"Good morning. Today you have:
+
+8 appointments scheduled.
+
+3 patients require follow-up.
+
+2 pending payments need attention.
+
+5 tasks waiting."
+
+---
+
+# Smart Insights
+
+Add simple AI insights.
+
+Examples:
+
+"Your missed appointments increased this week."
+
+"You have 10 patients without follow-up."
+
+"Revenue is lower than last month."
+
+"Several appointments are still unconfirmed."
+
+---
+
+# AI Dashboard Widget
+
+Add an AI section to the clinic dashboard.
+
+Examples:
+
+Today's AI Summary
+
+Important Alerts
+
+Recommended Actions
+
+Upcoming Priorities
+
+---
+
+# AI Response Style
+
+The AI should be:
+
+* Clear
+* Short
+* Action-oriented
+* Professional
+
+Avoid long generic explanations.
+
+Focus on helping the clinic owner save time.
+
+---
+
+# Data Safety
+
+The AI must only use data from the current clinic workspace.
+
+Do not expose information outside the user's workspace.
+
+Do not invent medical information.
+
+Only summarize stored data.
+
+---
+
+# Technical Requirements
+
+Create a reusable AI service architecture.
+
+Avoid hardcoding clinic logic everywhere.
+
+The system should allow future industries to have their own AI context.
+
+Example:
+
+Clinic:
+"You are a clinic operations assistant."
+
+Agency:
+"You are an agency operations assistant."
+
+---
+
+# MVP Scope
+
+Do NOT build:
+
+* Medical diagnosis
+* Treatment recommendations
+* Advanced healthcare automation
+* External medical integrations
+
+Focus only on clinic management intelligence.
+
+---
+
+# Final Validation
+
+Verify:
+
+* AI understands clinic entities.
+* AI answers using patient/appointment terminology.
+* AI can read workspace data.
+* AI can perform simple actions.
+* AI summaries are useful.
+* AI does not behave like a generic chatbot.
+
+The final result should feel like a clinic manager assistant inside the application.

@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql, desc, lte } from "drizzle-orm";
+import { eq, and, sql, desc, lte, gte, ilike } from "drizzle-orm";
 import {
   db,
   clientsTable,
@@ -10,6 +10,11 @@ import {
   activityTable,
   notesTable,
   agencySettingsTable,
+  clinicPatientsTable,
+  clinicAppointmentsTable,
+  clinicFollowupsTable,
+  clinicTreatmentsTable,
+  clinicBillingTable,
 } from "@workspace/db";
 import OpenAI from "openai";
 
@@ -21,7 +26,18 @@ function getOpenAI(): OpenAI {
   return new OpenAI({ apiKey });
 }
 
-// ── Gather workspace context snapshot ────────────────────────────────────────
+// ── Business-type helper ─────────────────────────────────────────────────────
+
+async function getBusinessType(wid: number): Promise<string> {
+  const [settings] = await db
+    .select({ businessType: agencySettingsTable.businessType })
+    .from(agencySettingsTable)
+    .where(eq(agencySettingsTable.workspaceId, wid))
+    .limit(1);
+  return settings?.businessType ?? "digital-agency";
+}
+
+// ── Agency workspace context ──────────────────────────────────────────────────
 
 async function buildWorkspaceContext(wid: number): Promise<string> {
   const now = new Date();
@@ -96,9 +112,10 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
   const overdueTasks = tasks.filter(
     (t) => t.deadline && t.deadline < nowStr && t.status !== "done",
   );
-  const highPriorityTasks = openTasks.filter((t) => t.priority === "high" || t.priority === "urgent");
+  const highPriorityTasks = openTasks.filter(
+    (t) => t.priority === "high" || t.priority === "urgent",
+  );
 
-  // Clients with no meeting in last 30 days
   const clientsWithRecentMeeting = new Set(
     meetings
       .filter(({ m }) => new Date(m.date) >= thirtyDaysAgo)
@@ -149,18 +166,207 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
     `Open: ${openTasks.length} | Overdue: ${overdueTasks.length} | High-priority: ${highPriorityTasks.length}`,
     ...overdueTasks
       .slice(0, 10)
-      .map((t) => `- [OVERDUE] "${t.title}" | priority: ${t.priority} | due: ${t.deadline}`),
+      .map(
+        (t) =>
+          `- [OVERDUE] "${t.title}" | priority: ${t.priority} | due: ${t.deadline}`,
+      ),
     ...highPriorityTasks
       .slice(0, 10)
-      .map((t) => `- [HIGH] "${t.title}" | status: ${t.status} | due: ${t.deadline ?? "none"}`),
+      .map(
+        (t) =>
+          `- [HIGH] "${t.title}" | status: ${t.status} | due: ${t.deadline ?? "none"}`,
+      ),
     ``,
     `=== CLIENTS NEEDING FOLLOW-UP (no meeting in 30 days) ===`,
     ...clientsNeedingFollowUp.map((c) => `- ${c.companyName} (${c.status})`),
     ``,
     `=== RECENT ACTIVITY (last 30 events) ===`,
     ...recentActivity.map(
-      (a) => `- [${new Date(a.createdAt).toISOString().split("T")[0]}] ${a.description}`,
+      (a) =>
+        `- [${new Date(a.createdAt).toISOString().split("T")[0]}] ${a.description}`,
     ),
+  ];
+
+  return lines.join("\n");
+}
+
+// ── Clinic workspace context ──────────────────────────────────────────────────
+
+async function buildClinicContext(wid: number): Promise<string> {
+  const nowStr = new Date().toISOString().split("T")[0]!;
+  const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0]!;
+
+  const [
+    patients,
+    todayAppts,
+    upcomingAppts,
+    pendingFollowups,
+    recentTreatments,
+    billing,
+    tasks,
+  ] = await Promise.all([
+    db
+      .select()
+      .from(clinicPatientsTable)
+      .where(eq(clinicPatientsTable.workspaceId, wid)),
+
+    db
+      .select({
+        a: clinicAppointmentsTable,
+        patientName: clinicPatientsTable.name,
+      })
+      .from(clinicAppointmentsTable)
+      .leftJoin(
+        clinicPatientsTable,
+        eq(clinicAppointmentsTable.patientId, clinicPatientsTable.id),
+      )
+      .where(
+        and(
+          eq(clinicAppointmentsTable.workspaceId, wid),
+          eq(clinicAppointmentsTable.date, nowStr),
+        ),
+      )
+      .orderBy(clinicAppointmentsTable.time),
+
+    db
+      .select({
+        a: clinicAppointmentsTable,
+        patientName: clinicPatientsTable.name,
+      })
+      .from(clinicAppointmentsTable)
+      .leftJoin(
+        clinicPatientsTable,
+        eq(clinicAppointmentsTable.patientId, clinicPatientsTable.id),
+      )
+      .where(
+        and(
+          eq(clinicAppointmentsTable.workspaceId, wid),
+          gte(clinicAppointmentsTable.date, nowStr),
+          lte(clinicAppointmentsTable.date, sevenDaysFromNow),
+        ),
+      )
+      .orderBy(clinicAppointmentsTable.date, clinicAppointmentsTable.time)
+      .limit(20),
+
+    db
+      .select({
+        f: clinicFollowupsTable,
+        patientName: clinicPatientsTable.name,
+      })
+      .from(clinicFollowupsTable)
+      .leftJoin(
+        clinicPatientsTable,
+        eq(clinicFollowupsTable.patientId, clinicPatientsTable.id),
+      )
+      .where(
+        and(
+          eq(clinicFollowupsTable.workspaceId, wid),
+          eq(clinicFollowupsTable.status, "pending"),
+        ),
+      )
+      .orderBy(clinicFollowupsTable.dueDate)
+      .limit(20),
+
+    db
+      .select({
+        t: clinicTreatmentsTable,
+        patientName: clinicPatientsTable.name,
+      })
+      .from(clinicTreatmentsTable)
+      .leftJoin(
+        clinicPatientsTable,
+        eq(clinicTreatmentsTable.patientId, clinicPatientsTable.id),
+      )
+      .where(eq(clinicTreatmentsTable.workspaceId, wid))
+      .orderBy(desc(clinicTreatmentsTable.date))
+      .limit(15),
+
+    db
+      .select()
+      .from(clinicBillingTable)
+      .where(eq(clinicBillingTable.workspaceId, wid)),
+
+    db.select().from(tasksTable).where(eq(tasksTable.workspaceId, wid)),
+  ]);
+
+  const overdueFollowups = pendingFollowups.filter(
+    ({ f }) => f.dueDate < nowStr,
+  );
+  const activePatients = patients.filter((p) => p.status === "active");
+  const paidRevenue = billing
+    .filter((b) => b.status === "paid")
+    .reduce((s, b) => s + Number(b.amount), 0);
+  const pendingAmount = billing
+    .filter((b) => b.status === "pending" || b.status === "overdue")
+    .reduce((s, b) => s + Number(b.amount), 0);
+  const overdueAmount = billing
+    .filter(
+      (b) =>
+        b.status === "overdue" ||
+        (b.status === "pending" && b.dueDate && b.dueDate < nowStr),
+    )
+    .reduce((s, b) => s + Number(b.amount), 0);
+  const openTasks = tasks.filter((t) => t.status !== "done");
+  const overdueTasks = tasks.filter(
+    (t) => t.deadline && t.deadline < nowStr && t.status !== "done",
+  );
+  const activeTreatments = recentTreatments.filter(
+    ({ t }) => t.status === "in-progress" || t.status === "planned",
+  );
+
+  const lines: string[] = [
+    `Today: ${nowStr}`,
+    ``,
+    `=== PATIENTS (${patients.length} total, ${activePatients.length} active) ===`,
+    ...patients
+      .slice(0, 30)
+      .map(
+        (p) =>
+          `- ${p.name} | status: ${p.status} | dob: ${p.dateOfBirth ?? "unknown"} | gender: ${p.gender ?? "unknown"} | phone: ${p.phone ?? "N/A"}`,
+      ),
+    ``,
+    `=== TODAY'S APPOINTMENTS (${todayAppts.length}) ===`,
+    todayAppts.length === 0
+      ? "- No appointments today"
+      : todayAppts
+          .map(
+            ({ a, patientName }) =>
+              `- ${a.time} | ${patientName ?? "Unknown"} | type: ${a.type} | status: ${a.status}`,
+          )
+          .join("\n"),
+    ``,
+    `=== UPCOMING APPOINTMENTS NEXT 7 DAYS (${upcomingAppts.length}) ===`,
+    ...upcomingAppts.map(
+      ({ a, patientName }) =>
+        `- ${a.date} ${a.time} | ${patientName ?? "Unknown"} | type: ${a.type} | status: ${a.status}`,
+    ),
+    ``,
+    `=== PENDING FOLLOW-UPS (${pendingFollowups.length} total, ${overdueFollowups.length} overdue) ===`,
+    ...pendingFollowups.map(
+      ({ f, patientName }) =>
+        `- ${patientName ?? "Unknown"} | reason: ${f.reason} | due: ${f.dueDate} | ${f.dueDate < nowStr ? "OVERDUE" : "upcoming"}`,
+    ),
+    ``,
+    `=== RECENT TREATMENTS (${recentTreatments.length}, ${activeTreatments.length} active/planned) ===`,
+    ...recentTreatments.map(
+      ({ t, patientName }) =>
+        `- ${patientName ?? "Unknown"} | "${t.name}" | date: ${t.date} | status: ${t.status} | cost: ${t.cost ? "$" + Number(t.cost).toLocaleString() : "N/A"}`,
+    ),
+    ``,
+    `=== BILLING SUMMARY ===`,
+    `Revenue collected: $${paidRevenue.toLocaleString()}`,
+    `Pending payments: $${pendingAmount.toLocaleString()} across ${billing.filter((b) => b.status === "pending" || b.status === "overdue").length} records`,
+    `Overdue amount: $${overdueAmount.toLocaleString()}`,
+    ``,
+    `=== TASKS (${openTasks.length} open, ${overdueTasks.length} overdue) ===`,
+    ...openTasks
+      .slice(0, 10)
+      .map(
+        (t) =>
+          `- "${t.title}" | priority: ${t.priority} | status: ${t.status} | due: ${t.deadline ?? "none"}${t.deadline && t.deadline < nowStr ? " [OVERDUE]" : ""}`,
+      ),
   ];
 
   return lines.join("\n");
@@ -184,10 +390,34 @@ Active modules: Clients, Engagements, Meetings, Reports, Tasks, Documents, Invoi
 Use this terminology: "Clients", "Engagements" (not projects — consulting mandates, strategy work, advisory retainers), "Meetings" (sessions, workshops, reviews), "Invoices".
 Key questions to answer: What are the active engagements? Which clients have upcoming meetings? Are any reports overdue? What's the pending invoice value?`,
 
-  clinic: `This is a CLINIC / HEALTHCARE PRACTICE workspace.
-Active modules: Patients, Appointments, Tasks, Billing, Documents, Calendar.
-Use this terminology: "Patients" (not clients/customers), "Appointments" (not meetings/projects), "Billing" (not invoices/payments), "Follow-ups" (not tasks).
-Key questions to answer: Which patients have appointments today or tomorrow? Who needs a follow-up? What are overdue billing amounts? Which patients haven't been seen recently?`,
+  clinic: `You are an intelligent CLINIC OPERATIONS ASSISTANT — not a generic chatbot.
+
+This clinic has full management capabilities: Patients, Appointments, Treatments, Follow-ups, Billing, Tasks, and Calendar.
+
+Always use clinical terminology:
+- "Patients" (not clients/customers)
+- "Appointments" (not meetings)
+- "Treatments" (not projects)
+- "Follow-ups" (patient check-ins, post-treatment reviews)
+- "Billing" (not invoices/payments)
+
+You can answer questions about:
+- Patient counts, demographics, and status
+- Today's and upcoming appointment schedule
+- Treatment plans (active, completed, planned)
+- Follow-up reminders and overdue follow-ups
+- Billing — revenue collected, outstanding payments, overdue amounts
+- Tasks and to-do items for the clinic team
+
+You can also take ACTIONS when explicitly requested:
+- Create a follow-up for a patient (use create_followup tool)
+- Schedule an appointment (use create_appointment tool)
+- Create a task (use create_task tool)
+
+When creating anything, confirm what was created with the patient name and date.
+If a patient name doesn't match any record, say so and ask for clarification.
+
+Be concise, clinical, and action-oriented. Never invent patient data — only report what's in the system.`,
 
   freelancer: `This is a FREELANCER workspace.
 Active modules: Clients, Projects, Tasks, Invoices, Documents, Calendar.
@@ -201,13 +431,7 @@ Key questions to answer: What's the current revenue? How many active customers? 
 };
 
 async function getWorkspaceSystemPrompt(wid: number): Promise<string> {
-  const [settings] = await db
-    .select({ businessType: agencySettingsTable.businessType })
-    .from(agencySettingsTable)
-    .where(eq(agencySettingsTable.workspaceId, wid))
-    .limit(1);
-
-  const businessType = settings?.businessType ?? "digital-agency";
+  const businessType = await getBusinessType(wid);
   const industryContext =
     INDUSTRY_CONTEXT[businessType] ?? INDUSTRY_CONTEXT["digital-agency"]!;
 
@@ -220,10 +444,247 @@ Your job: give concise, actionable intelligence. Not generic advice. Reference a
 Format responses with clear sections when helpful. Use bullet points for lists. Keep answers focused and practical.`;
 }
 
-// ── 1. AI Chat Assistant (streaming SSE) ────────────────────────────────────
+// ── Clinic tools (OpenAI function calling) ────────────────────────────────────
+
+const CLINIC_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "create_followup",
+      description:
+        "Create a follow-up reminder for a patient. Use when the user asks to schedule a follow-up, remind about a patient check-in, or create a post-treatment review.",
+      parameters: {
+        type: "object",
+        properties: {
+          patientNameQuery: {
+            type: "string",
+            description: "Patient name (full or partial) to search for",
+          },
+          reason: {
+            type: "string",
+            description:
+              "Reason for the follow-up (e.g. 'Post-treatment check', 'Blood test results review')",
+          },
+          dueDate: {
+            type: "string",
+            description: "Due date in YYYY-MM-DD format",
+          },
+          notes: { type: "string", description: "Optional additional notes" },
+        },
+        required: ["patientNameQuery", "reason", "dueDate"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_appointment",
+      description:
+        "Schedule a new appointment for a patient. Use when the user asks to book, schedule, or add an appointment.",
+      parameters: {
+        type: "object",
+        properties: {
+          patientNameQuery: {
+            type: "string",
+            description: "Patient name (full or partial) to search for",
+          },
+          date: {
+            type: "string",
+            description: "Appointment date in YYYY-MM-DD format",
+          },
+          time: {
+            type: "string",
+            description: "Appointment time in HH:MM format (24-hour)",
+          },
+          type: {
+            type: "string",
+            description:
+              "Appointment type: consultation, checkup, follow-up, treatment, procedure",
+          },
+          notes: { type: "string", description: "Optional notes" },
+        },
+        required: ["patientNameQuery", "date", "time"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "create_task",
+      description:
+        "Create a clinic task or reminder. Use when the user asks to add a task, to-do item, or reminder.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Task title" },
+          priority: {
+            type: "string",
+            enum: ["low", "medium", "high"],
+            description: "Task priority",
+          },
+          deadline: {
+            type: "string",
+            description: "Optional deadline in YYYY-MM-DD format",
+          },
+          notes: { type: "string", description: "Optional notes" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+];
+
+// ── Tool execution ─────────────────────────────────────────────────────────────
+
+interface ActionResult {
+  type: string;
+  success: boolean;
+  entity: string;
+  detail: string;
+}
+
+async function executeClinicTool(
+  name: string,
+  args: Record<string, unknown>,
+  wid: number,
+): Promise<ActionResult> {
+  try {
+    if (name === "create_followup") {
+      const { patientNameQuery, reason, dueDate, notes } = args as {
+        patientNameQuery: string;
+        reason: string;
+        dueDate: string;
+        notes?: string;
+      };
+
+      const found = await db
+        .select()
+        .from(clinicPatientsTable)
+        .where(
+          and(
+            eq(clinicPatientsTable.workspaceId, wid),
+            ilike(clinicPatientsTable.name, `%${patientNameQuery}%`),
+          ),
+        )
+        .limit(1);
+
+      if (!found[0]) {
+        return {
+          type: "create_followup",
+          success: false,
+          entity: "Follow-up",
+          detail: `Patient matching "${patientNameQuery}" was not found in the system.`,
+        };
+      }
+
+      await db.insert(clinicFollowupsTable).values({
+        workspaceId: wid,
+        patientId: found[0].id,
+        reason,
+        dueDate,
+        status: "pending",
+        notes: notes ?? null,
+      });
+
+      return {
+        type: "create_followup",
+        success: true,
+        entity: "Follow-up",
+        detail: `Follow-up for ${found[0].name} — due ${dueDate} (${reason})`,
+      };
+    }
+
+    if (name === "create_appointment") {
+      const { patientNameQuery, date, time, type: apptType, notes } = args as {
+        patientNameQuery: string;
+        date: string;
+        time: string;
+        type?: string;
+        notes?: string;
+      };
+
+      const found = await db
+        .select()
+        .from(clinicPatientsTable)
+        .where(
+          and(
+            eq(clinicPatientsTable.workspaceId, wid),
+            ilike(clinicPatientsTable.name, `%${patientNameQuery}%`),
+          ),
+        )
+        .limit(1);
+
+      if (!found[0]) {
+        return {
+          type: "create_appointment",
+          success: false,
+          entity: "Appointment",
+          detail: `Patient matching "${patientNameQuery}" was not found in the system.`,
+        };
+      }
+
+      await db.insert(clinicAppointmentsTable).values({
+        workspaceId: wid,
+        patientId: found[0].id,
+        date,
+        time,
+        type: apptType ?? "consultation",
+        status: "scheduled",
+        notes: notes ?? null,
+      });
+
+      return {
+        type: "create_appointment",
+        success: true,
+        entity: "Appointment",
+        detail: `Appointment for ${found[0].name} on ${date} at ${time} (${apptType ?? "consultation"})`,
+      };
+    }
+
+    if (name === "create_task") {
+      const { title, priority, deadline, notes } = args as {
+        title: string;
+        priority?: string;
+        deadline?: string;
+        notes?: string;
+      };
+
+      await db.insert(tasksTable).values({
+        workspaceId: wid,
+        title,
+        status: "todo",
+        priority: (priority as "low" | "medium" | "high") ?? "medium",
+        deadline: deadline ?? null,
+        notes: notes ?? null,
+      });
+
+      return {
+        type: "create_task",
+        success: true,
+        entity: "Task",
+        detail: `Task "${title}" created${deadline ? ` — due ${deadline}` : ""}`,
+      };
+    }
+
+    return {
+      type: name,
+      success: false,
+      entity: "Unknown",
+      detail: "Unknown tool name.",
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { type: name, success: false, entity: name, detail: `Error: ${msg}` };
+  }
+}
+
+// ── 1. AI Chat Assistant (streaming SSE with clinic tool calling) ─────────────
 
 router.post("/ai/chat", async (req, res): Promise<void> => {
-  const { message, history = [] } = req.body as {
+  const {
+    message,
+    history = [],
+  } = req.body as {
     message: string;
     history?: Array<{ role: "user" | "assistant"; content: string }>;
   };
@@ -242,10 +703,17 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
   }
 
   const wid = req.session.workspaceId!;
-  const [context, systemPrompt] = await Promise.all([
-    buildWorkspaceContext(wid),
+
+  const [businessType, systemPrompt] = await Promise.all([
+    getBusinessType(wid),
     getWorkspaceSystemPrompt(wid),
   ]);
+
+  const isClinic = businessType === "clinic";
+
+  const context = isClinic
+    ? await buildClinicContext(wid)
+    : await buildWorkspaceContext(wid);
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -257,24 +725,104 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
         role: "system",
         content: `${systemPrompt}\n\n=== CURRENT WORKSPACE DATA ===\n${context}`,
       },
-      ...history.slice(-10).map((h) => ({
+      ...(history.slice(-10).map((h) => ({
         role: h.role,
         content: h.content,
-      })) as OpenAI.ChatCompletionMessageParam[],
+      })) as OpenAI.ChatCompletionMessageParam[]),
       { role: "user", content: message },
     ];
 
-    const stream = await openai.chat.completions.create({
+    // ── Phase 1: Stream (with tools if clinic) ────────────────────────────────
+    const stream1 = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       max_tokens: 1024,
       messages,
+      tools: isClinic ? CLINIC_TOOLS : undefined,
+      tool_choice: isClinic ? "auto" : undefined,
       stream: true,
     });
 
-    for await (const chunk of stream) {
-      const content = chunk.choices[0]?.delta?.content;
-      if (content) {
-        res.write(`data: ${JSON.stringify({ content })}\n\n`);
+    let finishReason = "";
+    const toolCallDeltas: Record<
+      number,
+      { id: string; name: string; arguments: string }
+    > = {};
+
+    for await (const chunk of stream1) {
+      const choice = chunk.choices[0];
+      if (!choice) continue;
+
+      if (choice.finish_reason) finishReason = choice.finish_reason;
+
+      const delta = choice.delta;
+
+      // Stream content chunks to client
+      if (delta.content) {
+        res.write(`data: ${JSON.stringify({ content: delta.content })}\n\n`);
+      }
+
+      // Accumulate tool call deltas
+      if (delta.tool_calls) {
+        for (const tc of delta.tool_calls) {
+          const idx = tc.index ?? 0;
+          if (!toolCallDeltas[idx]) {
+            toolCallDeltas[idx] = { id: "", name: "", arguments: "" };
+          }
+          if (tc.id) toolCallDeltas[idx]!.id = tc.id;
+          if (tc.function?.name) toolCallDeltas[idx]!.name += tc.function.name;
+          if (tc.function?.arguments)
+            toolCallDeltas[idx]!.arguments += tc.function.arguments;
+        }
+      }
+    }
+
+    // ── Phase 2: Execute tools and stream follow-up ───────────────────────────
+    if (finishReason === "tool_calls" && Object.keys(toolCallDeltas).length > 0) {
+      const assistantToolCalls: OpenAI.ChatCompletionMessageToolCall[] = [];
+      const toolResults: OpenAI.ChatCompletionToolMessageParam[] = [];
+
+      for (const tc of Object.values(toolCallDeltas)) {
+        let parsedArgs: Record<string, unknown> = {};
+        try {
+          parsedArgs = JSON.parse(tc.arguments);
+        } catch {
+          /* malformed args — pass empty */
+        }
+
+        const result = await executeClinicTool(tc.name, parsedArgs, wid);
+
+        // Emit action event to client
+        res.write(`data: ${JSON.stringify({ action: result })}\n\n`);
+
+        assistantToolCalls.push({
+          id: tc.id,
+          type: "function",
+          function: { name: tc.name, arguments: tc.arguments },
+        });
+        toolResults.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content: JSON.stringify(result),
+        });
+      }
+
+      // Stream follow-up response after tool execution
+      const stream2 = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        max_tokens: 512,
+        messages: [
+          ...messages,
+          { role: "assistant", tool_calls: assistantToolCalls },
+          ...toolResults,
+        ],
+        stream: true,
+      });
+
+      for await (const chunk of stream2) {
+        const content = chunk.choices[0]?.delta?.content;
+        if (content) {
+          res.write(`data: ${JSON.stringify({ content })}\n\n`);
+        }
       }
     }
 
@@ -287,7 +835,106 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
   }
 });
 
-// ── 2. Daily Business Briefing ───────────────────────────────────────────────
+// ── 2. Clinic Daily Summary (for dashboard widget) ────────────────────────────
+
+router.get("/ai/clinic-summary", async (req, res): Promise<void> => {
+  const wid = req.session.workspaceId!;
+  const nowStr = new Date().toISOString().split("T")[0]!;
+  const context = await buildClinicContext(wid);
+
+  // Try AI-generated summary; fall back to data-driven if no key
+  try {
+    const openai = getOpenAI();
+
+    const prompt = `Based on the clinic data below, generate a concise daily summary for the clinic owner.
+
+Return JSON with this exact shape:
+{
+  "greeting": "Good morning" or "Good afternoon" or "Good evening",
+  "headline": "One sentence summary of today's clinic state (mention appointment count, follow-up count, etc.)",
+  "alerts": ["urgent item 1", "urgent item 2"],
+  "recommendedActions": ["concrete action 1", "action 2", "action 3"],
+  "upcomingPriorities": ["priority 1", "priority 2"]
+}
+
+Rules:
+- Use actual numbers from the data (appointment count, patient names for overdue items, dollar amounts)
+- alerts: overdue follow-ups, missed appointments, overdue billing — urgent items only (max 3)
+- recommendedActions: top 3 concrete things to do today, in priority order
+- upcomingPriorities: key items for today or this week (max 3)
+- If alerts is empty (good day), still provide recommendedActions based on what's coming up
+- Be specific and clinical. No generic advice.
+
+CLINIC DATA:
+${context}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_tokens: 600,
+      response_format: { type: "json_object" },
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a clinic operations assistant generating a concise daily briefing. Be specific, use actual data.",
+        },
+        { role: "user", content: prompt },
+      ],
+    });
+
+    const raw = completion.choices[0]?.message?.content ?? "{}";
+    const summary = JSON.parse(raw);
+    res.json({ summary, generatedAt: new Date().toISOString(), aiGenerated: true });
+  } catch (err) {
+    // Data-driven fallback when no API key
+    const isNoKey =
+      err instanceof Error && err.message.includes("OPENAI_API_KEY");
+
+    if (!isNoKey) {
+      const msg = err instanceof Error ? err.message : "Summary failed";
+      res.status(500).json({ error: msg });
+      return;
+    }
+
+    // Build a summary purely from DB data
+    const lines = context.split("\n");
+    const todayCount =
+      lines
+        .find((l) => l.startsWith("=== TODAY'S APPOINTMENTS"))
+        ?.match(/\((\d+)\)/)?.[1] ?? "0";
+    const followupLine = lines.find((l) =>
+      l.startsWith("=== PENDING FOLLOW-UPS"),
+    );
+    const overdueFollowups =
+      followupLine?.match(/(\d+) overdue/)?.[1] ?? "0";
+    const pendingFollowups = followupLine?.match(/(\d+) total/)?.[1] ?? "0";
+
+    res.json({
+      summary: {
+        greeting: (() => {
+          const h = new Date().getHours();
+          return h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+        })(),
+        headline: `Today you have ${todayCount} appointment${Number(todayCount) !== 1 ? "s" : ""} scheduled and ${pendingFollowups} pending follow-up${Number(pendingFollowups) !== 1 ? "s" : ""}.`,
+        alerts:
+          Number(overdueFollowups) > 0
+            ? [`${overdueFollowups} follow-up${Number(overdueFollowups) > 1 ? "s are" : " is"} overdue`]
+            : [],
+        recommendedActions: [
+          "Review today's appointment schedule",
+          ...(Number(pendingFollowups) > 0
+            ? ["Check and assign pending follow-ups"]
+            : []),
+        ],
+        upcomingPriorities: [`${todayCount} appointments scheduled today`],
+      },
+      generatedAt: new Date().toISOString(),
+      aiGenerated: false,
+    });
+  }
+});
+
+// ── 3. Daily Business Briefing ───────────────────────────────────────────────
 
 router.get("/ai/briefing", async (req, res): Promise<void> => {
   let openai: OpenAI;
@@ -349,7 +996,7 @@ ${context}`;
   }
 });
 
-// ── 3. Client Health Score ───────────────────────────────────────────────────
+// ── 4. Client Health Score ───────────────────────────────────────────────────
 
 router.get("/ai/client-health/:clientId", async (req, res): Promise<void> => {
   const clientId = parseInt(req.params.clientId ?? "", 10);
@@ -369,7 +1016,6 @@ router.get("/ai/client-health/:clientId", async (req, res): Promise<void> => {
   const wid = req.session.workspaceId!;
   const systemPrompt = await getWorkspaceSystemPrompt(wid);
   const nowStr = new Date().toISOString().split("T")[0]!;
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const [clients, projects, payments, meetings, activity, tasks] =
     await Promise.all([
@@ -377,7 +1023,10 @@ router.get("/ai/client-health/:clientId", async (req, res): Promise<void> => {
         .select()
         .from(clientsTable)
         .where(
-          and(eq(clientsTable.id, clientId), eq(clientsTable.workspaceId, wid)),
+          and(
+            eq(clientsTable.id, clientId),
+            eq(clientsTable.workspaceId, wid),
+          ),
         ),
       db
         .select()
@@ -507,7 +1156,7 @@ ${dataStr}`;
   }
 });
 
-// ── 4. AI Meeting Analyzer ───────────────────────────────────────────────────
+// ── 5. AI Meeting Analyzer ───────────────────────────────────────────────────
 
 router.post("/ai/analyze-meeting", async (req, res): Promise<void> => {
   const { notes, clientName } = req.body as {
@@ -567,7 +1216,7 @@ ${notes}`;
   }
 });
 
-// ── 5. AI Smart Search ───────────────────────────────────────────────────────
+// ── 6. AI Smart Search ───────────────────────────────────────────────────────
 
 router.post("/ai/smart-search", async (req, res): Promise<void> => {
   const { query } = req.body as { query: string };
