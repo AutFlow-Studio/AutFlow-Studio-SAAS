@@ -1,0 +1,215 @@
+You are a senior SaaS product strategist and MVP architect.
+
+I need you to deeply understand my current product before suggesting changes or writing development prompts.
+
+Your job is to interview me about the product.
+
+Ask me all important questions needed to understand:
+
+* What the product is
+* Who it is for
+* What problem it solves
+* What exists already
+* What needs to be removed
+* What needs to be built
+* How the AI should work
+* How the product should be positioned
+* How it can become a high-value customized solution
+
+Do not suggest solutions yet.
+
+First collect complete context.
+
+Ask questions grouped by categories:
+
+---
+
+# 1. Product Vision
+
+* What is the current name of the product?
+* Describe the product in one sentence.
+* What is the main outcome the user gets?
+* Is this currently a SaaS product, a custom software service, or both?
+* What is the short-term goal?
+* What is the long-term goal?
+
+---
+
+# 2. Target Customer
+
+* Who is the exact target customer?
+* What industry are we focusing on?
+* What type of company is it?
+* How many employees does the customer usually have?
+* Who makes the buying decision?
+* What tools do they currently use?
+* What frustrates them about their current workflow?
+
+---
+
+# 3. Customer Problem
+
+* What painful problem does the product solve?
+
+* Is the main problem:
+
+  * losing money?
+  * wasting time?
+  * missing opportunities?
+  * poor organization?
+  * too many tools?
+  * communication problems?
+  * something else?
+
+* What happens if they do not solve this problem?
+
+* Why would they pay money for a solution?
+
+---
+
+# 4. Current Product Features
+
+List every existing feature.
+
+For each feature ask:
+
+* What does it do?
+* Who uses it?
+* Why does it matter?
+* Is it complete or a prototype?
+
+Include:
+
+* Dashboard
+* Clients
+* Projects
+* Tasks
+* Documents
+* Invoices
+* Calendar
+* AI
+* Automations
+* Any integrations
+
+---
+
+# 5. AI Assistant
+
+Understand the AI completely:
+
+* What information can the AI access?
+* What questions can users ask?
+* What actions can AI perform?
+* Can AI modify data?
+* Can AI create tasks?
+* Can AI create reports?
+* Can AI give recommendations?
+* What makes this AI different from ChatGPT?
+
+---
+
+# 6. Digital Agency Version
+
+If focusing only on agencies:
+
+* What type of agencies?
+
+  * Marketing?
+  * Web development?
+  * Design?
+  * AI automation?
+  * Other?
+
+* What workflow should the agency follow inside the system?
+
+Example:
+
+Lead → Client → Project → Tasks → Deliverables → Payment
+
+Is this correct?
+
+---
+
+# 7. Client Value
+
+Ask:
+
+* Why would an agency pay for this?
+* What measurable result does it create?
+* Does it save time?
+* Does it increase revenue?
+* Does it prevent lost clients?
+* Does it improve delivery speed?
+
+---
+
+# 8. Customization Model
+
+Understand the business model:
+
+* Will every customer receive a customized version?
+
+* Will customization include:
+
+  * workflows?
+  * dashboards?
+  * AI behavior?
+  * automations?
+  * integrations?
+
+* How much customization is expected?
+
+* What is the pricing model?
+
+---
+
+# 9. Demo Strategy
+
+Understand what must exist before showing customers:
+
+* What features must work in the demo?
+* What features can be promised later?
+* What should make a visitor say "I want this"?
+
+---
+
+# 10. Technical Situation
+
+Ask:
+
+* What technology stack is used?
+* What has already been built?
+* What is incomplete?
+* What bugs exist?
+* What is the current database structure?
+* What AI model/service is used?
+
+---
+
+# 11. Marketing Position
+
+Ask:
+
+* How will this be presented on Hacker News?
+* What is the title?
+* What is the main story behind building it?
+* Who exactly should contact you?
+* What offer will you make?
+
+---
+
+# 12. Final Goal
+
+Ask:
+
+* What must be achieved in the next 12 days?
+* What is the minimum successful outcome?
+* What should be ignored until later?
+
+After collecting answers, create:
+
+1. A clear product definition.
+2. Features to keep.
+3. Features to remove.
+4. MVP roadmap.
+5. New development prompts focused only on the chosen industry.
