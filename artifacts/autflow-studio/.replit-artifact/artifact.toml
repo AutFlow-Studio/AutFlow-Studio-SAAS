@@ -1,7 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "AutFlow Studio"
-description = "An agency owner operating system — manage clients, projects, payments, documents, meetings, tasks, calendar, notifications, and reports in one place. Built with React + Vite + Tailwind CSS + shadcn/ui frontend and an Express 5 API backend with PostgreSQL."
+description = "An agency owner operating system — manage clients, projects, payments, documents, meetings, tasks, calendar, notifications, and reports in one place. Built with React + Vite + Tailwind CSS + shadcn/ui."
 version = "1.0.0"
 id = "artifacts/autflow-studio"
 router = "path"

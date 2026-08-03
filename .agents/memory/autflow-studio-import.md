@@ -63,8 +63,10 @@ The `jspdf` package must be installed as a dep of `@workspace/autflow-studio` �
 
 1. Move the freshly-scaffolded artifact dir to `/tmp/<name>-backup` before calling `createArtifact` if files were already copied.
 2. After `createArtifact` succeeds, copy backed-up src files into the new scaffold.
-3. Run `pnpm install` → `pnpm --filter @workspace/scripts run migrate` → `pnpm --filter @workspace/scripts run seed`.
-4. Restart both workflows.
+3. For api-server (Express, not React): remove scaffold React files (`src/App.tsx`, `src/main.tsx`, `src/index.css`, `src/components`, `src/hooks`, `src/pages`) after restoring — esbuild will fail on case-sensitive `./app` import if `App.tsx` coexists.
+4. The api-server artifact.toml must be fixed after `createArtifact`: port 8080 (not scaffold's assigned port), no BASE_PATH env, production config uses `node --enable-source-maps artifacts/api-server/dist/index.mjs` (not static serve).
+5. Run `pnpm install` → `pnpm --filter @workspace/scripts run migrate` → `pnpm --filter @workspace/scripts run seed`.
+6. Restart both workflows via `WorkflowsRestart` using exact managed names.
 
 ## Key gotchas
 
