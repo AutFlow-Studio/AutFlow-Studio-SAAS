@@ -21,3 +21,5 @@ export * from "./clinic-appointments";
 export * from "./clinic-treatments";
 export * from "./clinic-followups";
 export * from "./clinic-billing";
+export * from "./time-entries";
+export * from "./milestones";

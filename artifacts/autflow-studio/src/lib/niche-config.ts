@@ -22,6 +22,8 @@ export type NavItemKey =
   | "reports"
   | "team"
   | "ai-assistant"
+  | "time-tracking"
+  | "milestones"
   // Clinic-specific keys
   | "patients"
   | "appointments"
@@ -214,28 +216,47 @@ const FREELANCER_CONFIG: NicheConfig = {
   meetingTermPlural: "Meetings",
   paymentTerm: "Invoice",
   paymentTermPlural: "Invoices",
-  navItems: ["dashboard", "clients", "projects", "tasks", "payments", "documents", "calendar"],
-  dashboardTitle: "Freelance Command Center",
-  dashboardDescription: "Your freelance business at a glance",
-  emptyClientHeadline: "Add your first client",
-  emptyClientBody: "Keep your client roster organised with contacts, project history, and payment records.",
-  emptyProjectHeadline: "Create your first project",
-  emptyProjectBody: "Track project scope, milestones, invoices, and deadlines for each client.",
+  navItems: [
+    "dashboard",
+    "clients",
+    "projects",
+    "tasks",
+    "milestones",
+    "time-tracking",
+    "payments",
+    "documents",
+    "calendar",
+    "ai-assistant",
+  ],
+  dashboardTitle: "Freelance Dev Workspace",
+  dashboardDescription: "Your projects, invoices, and deadlines — at a glance",
+  emptyClientHeadline: "No clients yet",
+  emptyClientBody: "Add your first client and start managing projects, invoices, and documents all in one place.",
+  emptyProjectHeadline: "No projects yet",
+  emptyProjectBody: "Create your first client project. Define the scope, deadline, budget, and break it down into tasks and milestones.",
   emptyCampaignHeadline: "No campaigns yet",
   emptyCampaignBody: "Track client campaigns and marketing work here.",
   emptyDeliverableHeadline: "No deliverables yet",
-  emptyDeliverableBody: "Add deliverables to your projects to track design assets, code, and content.",
-  accentColor: "amber",
-  onboardingTagline: "Project workflow, invoices & client comms — simplified",
+  emptyDeliverableBody: "Add deliverables to your projects to track code, designs, and other outputs.",
+  accentColor: "indigo",
+  onboardingTagline: "Clients, projects & invoices — built for independent developers",
   firstSteps: [
-    { icon: "Users", title: "Add a client", description: "Create your first client record with contact and billing details.", href: "/clients" },
-    { icon: "Briefcase", title: "Create a project", description: "Define scope, rate, and deadline for the work.", href: "/projects" },
-    { icon: "CreditCard", title: "Issue an invoice", description: "Track deposits, milestones, and final payments.", href: "/payments" },
+    { icon: "Users", title: "Add your first client", description: "Create a client record with contact details and billing info.", href: "/clients" },
+    { icon: "Briefcase", title: "Create a project", description: "Define scope, deadline, and budget for the work.", href: "/projects" },
+    { icon: "Flag", title: "Set milestones", description: "Break your project into milestones like 'Frontend complete' or 'Deployed'.", href: "/milestones" },
+    { icon: "Clock", title: "Track your time", description: "Log hours per project to back up your invoices.", href: "/time-tracking" },
+    { icon: "CreditCard", title: "Send an invoice", description: "Track deposits, milestone invoices, and final payments.", href: "/payments" },
   ],
-  aiIndustryContext: `This is a FREELANCER workspace.
-Active modules: Clients, Projects, Tasks, Invoices, Documents, Calendar.
-Use this terminology: "Clients", "Projects" (freelance contracts, engagements, gigs), "Invoices" (not payments/billing), "Tasks".
-Key questions to answer: How much did I earn this month? Which invoices are outstanding? What are my current projects and their deadlines? Which clients owe me money?`,
+  aiIndustryContext: `This is a FREELANCE DEVELOPER workspace — built for independent software developers who manage clients, projects, tasks, and invoices solo.
+Active modules: Clients, Projects, Tasks, Milestones, Time Tracking, Invoices, Documents, Calendar.
+Terminology: "Clients" (companies or individuals who hire me), "Projects" (freelance contracts and gigs), "Milestones" (Frontend complete, Backend integration, Deployment, etc.), "Time Tracking" (hours logged per project), "Invoices" (not payments/billing), "Tasks" (Build auth, Fix bug, Deploy update, Review client feedback).
+Freelancer-specific intelligence:
+- Revenue: track monthly earnings, outstanding invoices, and overdue payments.
+- Project health: deadlines approaching, projects behind schedule, scope creep risks.
+- Time: hours tracked this week, hours per project, billable vs non-billable.
+- Milestones: which milestones are due soon, which are blocking delivery.
+- Client risk: clients with overdue invoices or stalled projects.
+Key questions to answer: How much did I earn this month? Which invoices are outstanding? What projects are near their deadline? Which milestones are overdue? How many hours did I log this week? Which clients owe me money?`,
 };
 
 const GENERIC_CONFIG: NicheConfig = {

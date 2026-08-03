@@ -34,6 +34,8 @@ import {
   Heart,
   Stethoscope,
   ClipboardList,
+  Clock,
+  Flag,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -89,6 +91,9 @@ const BASE_NAV_ITEMS: { key: NavItemKey; href: string; icon: React.ElementType }
   { key: "reports",       href: "/reports",        icon: BarChart3 },
   { key: "team",          href: "/team",           icon: UserCog },
   { key: "ai-assistant",  href: "/ai-assistant",   icon: Bot },
+  // Freelancer-specific
+  { key: "time-tracking", href: "/time-tracking",  icon: Clock },
+  { key: "milestones",    href: "/milestones",     icon: Flag },
   // Clinic-specific
   { key: "patients",      href: "/patients",       icon: Heart },
   { key: "appointments",  href: "/appointments",   icon: CalendarDays },
@@ -132,6 +137,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         item.key === "treatments"    ? "Treatments" :
         item.key === "followups"     ? "Follow-ups" :
         item.key === "clinic-billing" ? "Billing" :
+        item.key === "time-tracking" ? "Time Tracking" :
+        item.key === "milestones"    ? "Milestones" :
         item.key,
     }));
 

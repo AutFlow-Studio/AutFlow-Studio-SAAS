@@ -40,13 +40,18 @@ import type {
   ListActivityParams,
   ListClientsParams,
   ListMeetingsParams,
+  ListMilestonesParams,
   ListNotesParams,
   ListPaymentsParams,
   ListProjectsParams,
   ListTasksParams,
+  ListTimeEntriesParams,
   Meeting,
   MeetingInput,
   MeetingUpdate,
+  Milestone,
+  MilestoneInput,
+  MilestoneUpdate,
   Note,
   NoteInput,
   NoteUpdate,
@@ -68,6 +73,9 @@ import type {
   Task,
   TaskInput,
   TaskUpdate,
+  TimeEntry,
+  TimeEntryInput,
+  TimeEntryUpdate,
   TimelineEvent
 } from './api.schemas';
 
@@ -3084,6 +3092,602 @@ export const useDeleteTask = <TError = ErrorType<unknown>,
         TContext
       > => {
       return useMutation(getDeleteTaskMutationOptions(options));
+    }
+
+export const getListTimeEntriesUrl = (params?: ListTimeEntriesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/time-entries?${stringifiedParams}` : `/api/time-entries`
+}
+
+/**
+ * @summary List time entries
+ */
+export const listTimeEntries = async (params?: ListTimeEntriesParams, options?: RequestInit): Promise<TimeEntry[]> => {
+
+  return customFetch<TimeEntry[]>(getListTimeEntriesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListTimeEntriesQueryKey = (params?: ListTimeEntriesParams,) => {
+    return [
+    `/api/time-entries`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListTimeEntriesQueryOptions = <TData = Awaited<ReturnType<typeof listTimeEntries>>, TError = ErrorType<unknown>>(params?: ListTimeEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTimeEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListTimeEntriesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listTimeEntries>>> = ({ signal }) => listTimeEntries(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listTimeEntries>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListTimeEntriesQueryResult = NonNullable<Awaited<ReturnType<typeof listTimeEntries>>>
+export type ListTimeEntriesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List time entries
+ */
+
+export function useListTimeEntries<TData = Awaited<ReturnType<typeof listTimeEntries>>, TError = ErrorType<unknown>>(
+ params?: ListTimeEntriesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listTimeEntries>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListTimeEntriesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateTimeEntryUrl = () => {
+
+
+
+
+  return `/api/time-entries`
+}
+
+/**
+ * @summary Create a time entry
+ */
+export const createTimeEntry = async (timeEntryInput: TimeEntryInput, options?: RequestInit): Promise<TimeEntry> => {
+
+  return customFetch<TimeEntry>(getCreateTimeEntryUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(timeEntryInput)
+  }
+);}
+
+
+
+
+
+export const getCreateTimeEntryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTimeEntry>>, TError,{data: BodyType<TimeEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createTimeEntry>>, TError,{data: BodyType<TimeEntryInput>}, TContext> => {
+
+const mutationKey = ['createTimeEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createTimeEntry>>, {data: BodyType<TimeEntryInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createTimeEntry(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateTimeEntryMutationResult = NonNullable<Awaited<ReturnType<typeof createTimeEntry>>>
+    export type CreateTimeEntryMutationBody = BodyType<TimeEntryInput>
+    export type CreateTimeEntryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a time entry
+ */
+export const useCreateTimeEntry = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createTimeEntry>>, TError,{data: BodyType<TimeEntryInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createTimeEntry>>,
+        TError,
+        {data: BodyType<TimeEntryInput>},
+        TContext
+      > => {
+      return useMutation(getCreateTimeEntryMutationOptions(options));
+    }
+
+export const getUpdateTimeEntryUrl = (id: number,) => {
+
+
+
+
+  return `/api/time-entries/${id}`
+}
+
+/**
+ * @summary Update a time entry
+ */
+export const updateTimeEntry = async (id: number,
+    timeEntryUpdate: TimeEntryUpdate, options?: RequestInit): Promise<TimeEntry> => {
+
+  return customFetch<TimeEntry>(getUpdateTimeEntryUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(timeEntryUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateTimeEntryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTimeEntry>>, TError,{id: number;data: BodyType<TimeEntryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateTimeEntry>>, TError,{id: number;data: BodyType<TimeEntryUpdate>}, TContext> => {
+
+const mutationKey = ['updateTimeEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateTimeEntry>>, {id: number;data: BodyType<TimeEntryUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateTimeEntry(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateTimeEntryMutationResult = NonNullable<Awaited<ReturnType<typeof updateTimeEntry>>>
+    export type UpdateTimeEntryMutationBody = BodyType<TimeEntryUpdate>
+    export type UpdateTimeEntryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a time entry
+ */
+export const useUpdateTimeEntry = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateTimeEntry>>, TError,{id: number;data: BodyType<TimeEntryUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateTimeEntry>>,
+        TError,
+        {id: number;data: BodyType<TimeEntryUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateTimeEntryMutationOptions(options));
+    }
+
+export const getDeleteTimeEntryUrl = (id: number,) => {
+
+
+
+
+  return `/api/time-entries/${id}`
+}
+
+/**
+ * @summary Delete a time entry
+ */
+export const deleteTimeEntry = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteTimeEntryUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteTimeEntryMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTimeEntry>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteTimeEntry>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteTimeEntry'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteTimeEntry>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteTimeEntry(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteTimeEntryMutationResult = NonNullable<Awaited<ReturnType<typeof deleteTimeEntry>>>
+
+    export type DeleteTimeEntryMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a time entry
+ */
+export const useDeleteTimeEntry = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteTimeEntry>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteTimeEntry>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteTimeEntryMutationOptions(options));
+    }
+
+export const getListMilestonesUrl = (params?: ListMilestonesParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/milestones?${stringifiedParams}` : `/api/milestones`
+}
+
+/**
+ * @summary List milestones
+ */
+export const listMilestones = async (params?: ListMilestonesParams, options?: RequestInit): Promise<Milestone[]> => {
+
+  return customFetch<Milestone[]>(getListMilestonesUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getListMilestonesQueryKey = (params?: ListMilestonesParams,) => {
+    return [
+    `/api/milestones`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getListMilestonesQueryOptions = <TData = Awaited<ReturnType<typeof listMilestones>>, TError = ErrorType<unknown>>(params?: ListMilestonesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMilestones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getListMilestonesQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof listMilestones>>> = ({ signal }) => listMilestones(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof listMilestones>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type ListMilestonesQueryResult = NonNullable<Awaited<ReturnType<typeof listMilestones>>>
+export type ListMilestonesQueryError = ErrorType<unknown>
+
+
+/**
+ * @summary List milestones
+ */
+
+export function useListMilestones<TData = Awaited<ReturnType<typeof listMilestones>>, TError = ErrorType<unknown>>(
+ params?: ListMilestonesParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof listMilestones>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getListMilestonesQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
+
+export const getCreateMilestoneUrl = () => {
+
+
+
+
+  return `/api/milestones`
+}
+
+/**
+ * @summary Create a milestone
+ */
+export const createMilestone = async (milestoneInput: MilestoneInput, options?: RequestInit): Promise<Milestone> => {
+
+  return customFetch<Milestone>(getCreateMilestoneUrl(),
+  {
+    ...options,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(milestoneInput)
+  }
+);}
+
+
+
+
+
+export const getCreateMilestoneMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMilestone>>, TError,{data: BodyType<MilestoneInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof createMilestone>>, TError,{data: BodyType<MilestoneInput>}, TContext> => {
+
+const mutationKey = ['createMilestone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof createMilestone>>, {data: BodyType<MilestoneInput>}> = (props) => {
+          const {data} = props ?? {};
+
+          return  createMilestone(data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type CreateMilestoneMutationResult = NonNullable<Awaited<ReturnType<typeof createMilestone>>>
+    export type CreateMilestoneMutationBody = BodyType<MilestoneInput>
+    export type CreateMilestoneMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Create a milestone
+ */
+export const useCreateMilestone = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof createMilestone>>, TError,{data: BodyType<MilestoneInput>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof createMilestone>>,
+        TError,
+        {data: BodyType<MilestoneInput>},
+        TContext
+      > => {
+      return useMutation(getCreateMilestoneMutationOptions(options));
+    }
+
+export const getUpdateMilestoneUrl = (id: number,) => {
+
+
+
+
+  return `/api/milestones/${id}`
+}
+
+/**
+ * @summary Update a milestone
+ */
+export const updateMilestone = async (id: number,
+    milestoneUpdate: MilestoneUpdate, options?: RequestInit): Promise<Milestone> => {
+
+  return customFetch<Milestone>(getUpdateMilestoneUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...options?.headers },
+    body: JSON.stringify(milestoneUpdate)
+  }
+);}
+
+
+
+
+
+export const getUpdateMilestoneMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMilestone>>, TError,{id: number;data: BodyType<MilestoneUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateMilestone>>, TError,{id: number;data: BodyType<MilestoneUpdate>}, TContext> => {
+
+const mutationKey = ['updateMilestone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateMilestone>>, {id: number;data: BodyType<MilestoneUpdate>}> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateMilestone(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateMilestoneMutationResult = NonNullable<Awaited<ReturnType<typeof updateMilestone>>>
+    export type UpdateMilestoneMutationBody = BodyType<MilestoneUpdate>
+    export type UpdateMilestoneMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Update a milestone
+ */
+export const useUpdateMilestone = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateMilestone>>, TError,{id: number;data: BodyType<MilestoneUpdate>}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateMilestone>>,
+        TError,
+        {id: number;data: BodyType<MilestoneUpdate>},
+        TContext
+      > => {
+      return useMutation(getUpdateMilestoneMutationOptions(options));
+    }
+
+export const getDeleteMilestoneUrl = (id: number,) => {
+
+
+
+
+  return `/api/milestones/${id}`
+}
+
+/**
+ * @summary Delete a milestone
+ */
+export const deleteMilestone = async (id: number, options?: RequestInit): Promise<void> => {
+
+  return customFetch<void>(getDeleteMilestoneUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteMilestoneMutationOptions = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMilestone>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteMilestone>>, TError,{id: number}, TContext> => {
+
+const mutationKey = ['deleteMilestone'];
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteMilestone>>, {id: number}> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteMilestone(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteMilestoneMutationResult = NonNullable<Awaited<ReturnType<typeof deleteMilestone>>>
+
+    export type DeleteMilestoneMutationError = ErrorType<unknown>
+
+    /**
+ * @summary Delete a milestone
+ */
+export const useDeleteMilestone = <TError = ErrorType<unknown>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteMilestone>>, TError,{id: number}, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteMilestone>>,
+        TError,
+        {id: number},
+        TContext
+      > => {
+      return useMutation(getDeleteMilestoneMutationOptions(options));
     }
 
 export const getGetClientTimelineUrl = (clientId: number,) => {

@@ -699,6 +699,93 @@ export interface TaskUpdate {
   projectId?: number;
 }
 
+export interface TimeEntry {
+  id: number;
+  /** @nullable */
+  projectId?: number | null;
+  /** @nullable */
+  projectName?: string | null;
+  date: string;
+  durationMinutes: number;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TimeEntryInput {
+  projectId?: number;
+  date: string;
+  durationMinutes: number;
+  notes?: string;
+}
+
+export interface TimeEntryUpdate {
+  projectId?: number | null;
+  date?: string;
+  durationMinutes?: number;
+  notes?: string | null;
+}
+
+export type MilestoneStatus = typeof MilestoneStatus[keyof typeof MilestoneStatus];
+
+
+export const MilestoneStatus = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+} as const;
+
+export interface Milestone {
+  id: number;
+  /** @nullable */
+  projectId?: number | null;
+  /** @nullable */
+  projectName?: string | null;
+  name: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  dueDate?: string | null;
+  status: MilestoneStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MilestoneInputStatus = typeof MilestoneInputStatus[keyof typeof MilestoneInputStatus];
+
+
+export const MilestoneInputStatus = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+} as const;
+
+export interface MilestoneInput {
+  projectId?: number;
+  name: string;
+  description?: string;
+  dueDate?: string;
+  status?: MilestoneInputStatus;
+}
+
+export type MilestoneUpdateStatus = typeof MilestoneUpdateStatus[keyof typeof MilestoneUpdateStatus];
+
+
+export const MilestoneUpdateStatus = {
+  pending: 'pending',
+  in_progress: 'in_progress',
+  completed: 'completed',
+} as const;
+
+export interface MilestoneUpdate {
+  projectId?: number | null;
+  name?: string;
+  description?: string | null;
+  dueDate?: string | null;
+  status?: MilestoneUpdateStatus;
+}
+
 export interface TimelineEvent {
   id: number;
   /** @nullable */
@@ -855,6 +942,15 @@ clientId?: number;
 
 export type ListTasksParams = {
 clientId?: number;
+projectId?: number;
+status?: string;
+};
+
+export type ListTimeEntriesParams = {
+projectId?: number;
+};
+
+export type ListMilestonesParams = {
 projectId?: number;
 status?: string;
 };

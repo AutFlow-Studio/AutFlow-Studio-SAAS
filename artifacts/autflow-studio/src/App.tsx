@@ -35,6 +35,8 @@ import CampaignsList from '@/pages/campaigns/index';
 import DeliverablesView from '@/pages/deliverables/index';
 import TeamView from '@/pages/team/index';
 import AIAssistantPage from '@/pages/ai-assistant/index';
+import TimeTrackingPage from '@/pages/time-tracking/index';
+import MilestonesPage from '@/pages/milestones/index';
 
 // Clinic pages
 import ClinicDashboard from '@/pages/clinic/dashboard/index';
@@ -95,6 +97,8 @@ function AgencyRouter() {
       <Route path="/documents" component={DocumentsList} />
       <Route path="/reports" component={ReportsView} />
       <Route path="/tasks" component={TasksList} />
+      <Route path="/time-tracking" component={TimeTrackingPage} />
+      <Route path="/milestones" component={MilestonesPage} />
       <Route path="/search" component={SearchResults} />
       <Route path="/settings" component={SettingsView} />
       {/* Clinic routes */}

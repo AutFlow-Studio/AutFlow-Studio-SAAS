@@ -335,6 +335,43 @@ async function migrate() {
 
     await client.query(`ALTER TABLE documents ADD COLUMN IF NOT EXISTS shared_with_client BOOLEAN NOT NULL DEFAULT FALSE`);
 
+    // ── Freelancer: time entries ──────────────────────────────────────────────
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS time_entries (
+        id               SERIAL PRIMARY KEY,
+        workspace_id     INTEGER,
+        project_id       INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+        date             DATE NOT NULL,
+        duration_minutes INTEGER NOT NULL,
+        notes            TEXT,
+        created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_time_entries_workspace ON time_entries(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_time_entries_project ON time_entries(project_id)`);
+    await client.query(`ALTER TABLE time_entries ADD COLUMN IF NOT EXISTS workspace_id INTEGER`);
+
+    // ── Freelancer: milestones ─────────────────────────────────────────────────
+
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS milestones (
+        id           SERIAL PRIMARY KEY,
+        workspace_id INTEGER,
+        project_id   INTEGER REFERENCES projects(id) ON DELETE CASCADE,
+        name         TEXT NOT NULL,
+        description  TEXT,
+        due_date     DATE,
+        status       TEXT NOT NULL DEFAULT 'pending',
+        created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_milestones_workspace ON milestones(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_milestones_project ON milestones(project_id)`);
+    await client.query(`ALTER TABLE milestones ADD COLUMN IF NOT EXISTS workspace_id INTEGER`);
+
     console.log("✓ All tables and columns ensured.");
 
     // ── Migrate existing users: create workspaces for any without one ─────

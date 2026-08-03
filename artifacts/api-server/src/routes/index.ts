@@ -27,6 +27,8 @@ import exportRouter from "./export";
 import aiRouter from "./ai";
 import campaignsRouter from "./campaigns";
 import teamRouter from "./team";
+import timeEntriesRouter from "./time-entries";
+import milestonesRouter from "./milestones";
 import {
   clinicPatientsRouter,
   clinicAppointmentsRouter,
@@ -80,6 +82,8 @@ router.use(exportRouter);
 router.use(aiRouter);
 router.use(campaignsRouter);
 router.use(teamRouter);
+router.use(timeEntriesRouter);
+router.use(milestonesRouter);
 router.use(clinicPatientsRouter);
 router.use(clinicAppointmentsRouter);
 router.use(clinicTreatmentsRouter);

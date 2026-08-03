@@ -1,0 +1,416 @@
+You are a senior SaaS product engineer and UX-focused full-stack developer.
+
+Your task is to transform the application into a specialized **Freelance Developer Workspace MVP**.
+
+The goal is NOT to create a generic project management tool.
+
+The goal is to create a workspace designed specifically for independent software developers who manage clients, projects, tasks, deadlines, and payments.
+
+This should feel like a product built for freelance developers.
+
+Focus on:
+
+* Practical workflow
+* Clean UX
+* Strong demo value
+* Simple maintainable architecture
+
+Avoid unnecessary complexity.
+
+---
+
+# Core Goal
+
+When a user selects:
+
+"Freelancer Developer"
+
+during onboarding, the application should load a dedicated freelancer workspace.
+
+The user should feel:
+
+"This system understands how I work as a freelance developer."
+
+---
+
+# Terminology
+
+Use freelancer developer terminology.
+
+Main concepts:
+
+Clients
+
+Projects
+
+Tasks
+
+Milestones
+
+Time Tracking
+
+Invoices
+
+Documents
+
+Deadlines
+
+Use these terms consistently across:
+
+* Sidebar
+* Dashboard
+* Buttons
+* Forms
+* Empty states
+* Reports
+
+---
+
+# Freelancer Navigation
+
+Create a freelancer-specific navigation:
+
+Dashboard
+
+Clients
+
+Projects
+
+Tasks
+
+Time Tracking
+
+Invoices
+
+Documents
+
+Calendar
+
+AI Assistant
+
+Settings
+
+Hide unnecessary modules from other industries.
+
+---
+
+# Freelancer Dashboard
+
+Create a dashboard focused on a solo developer's daily work.
+
+Include:
+
+## Project Overview
+
+* Active projects
+* Completed projects
+* Projects near deadline
+
+## Client Overview
+
+* Active clients
+* Recent client activity
+
+## Financial Overview
+
+* Monthly income
+* Pending invoices
+* Paid invoices
+
+## Productivity Overview
+
+* Tasks completed
+* Hours tracked
+* Upcoming deadlines
+
+## Activity
+
+* Recent updates
+* Recent tasks
+
+The dashboard should immediately answer:
+
+"What should I focus on today?"
+
+---
+
+# Clients Module
+
+Create a client management system designed for freelancers.
+
+Each client should include:
+
+* Name
+* Company (optional)
+* Email
+* Phone
+* Notes
+* Project history
+* Invoice history
+* Created date
+
+Client profile should contain:
+
+## Overview
+
+Client information.
+
+## Projects
+
+All projects connected to this client.
+
+## Invoices
+
+Payments and billing.
+
+## Documents
+
+Contracts and files.
+
+## Activity
+
+Recent actions.
+
+---
+
+# Projects Module
+
+Create a developer-focused project system.
+
+Each project should include:
+
+* Project name
+* Client
+* Description
+* Status
+* Deadline
+* Budget
+* Created date
+
+Project statuses:
+
+* Planning
+* In Progress
+* Review
+* Completed
+* Archived
+
+Each project should contain:
+
+Tasks
+
+Milestones
+
+Documents
+
+Time entries
+
+Invoices
+
+---
+
+# Tasks Module
+
+Adapt tasks for freelance development.
+
+Task examples:
+
+* Build authentication
+* Fix bug
+* Deploy update
+* Review client feedback
+
+Each task includes:
+
+* Title
+* Description
+* Project
+* Priority
+* Status
+* Deadline
+
+Statuses:
+
+* To Do
+* In Progress
+* Done
+
+---
+
+# Milestones Module
+
+Create milestone tracking.
+
+Each milestone includes:
+
+* Project
+* Name
+* Description
+* Due date
+* Status
+
+Example:
+
+Milestone 1:
+Frontend completed
+
+Milestone 2:
+Backend integration
+
+Milestone 3:
+Deployment
+
+---
+
+# Time Tracking Module
+
+Create simple time tracking.
+
+Features:
+
+* Add time entry
+* Connect time to project
+* Add description
+* View total hours
+
+Each entry:
+
+* Project
+* Date
+* Duration
+* Notes
+
+Dashboard should show:
+
+Hours this week
+
+Hours per project
+
+---
+
+# Invoices Module
+
+Create freelancer billing.
+
+Each invoice includes:
+
+* Client
+* Project
+* Amount
+* Status
+* Due date
+
+Statuses:
+
+* Draft
+* Sent
+* Paid
+* Overdue
+
+Display:
+
+Total earnings
+
+Pending payments
+
+Recent invoices
+
+---
+
+# Documents Module
+
+Allow storing freelancer documents.
+
+Examples:
+
+* Contracts
+* Project files
+* Requirements
+* Client documents
+
+Keep it simple for MVP.
+
+---
+
+# Calendar
+
+Calendar should show:
+
+* Deadlines
+* Tasks
+* Meetings
+* Milestones
+
+---
+
+# Empty States
+
+Create freelancer-specific empty states.
+
+Examples:
+
+"No projects yet"
+
+"Create your first client project."
+
+"No invoices yet"
+
+"Track your earnings by creating your first invoice."
+
+Avoid generic workspace messages.
+
+---
+
+# Database Requirements
+
+Reuse the existing core architecture.
+
+Add freelancer-specific entities:
+
+Client
+
+Project
+
+Milestone
+
+TimeEntry
+
+Invoice
+
+Document
+
+Connect them with the workspace.
+
+Every record must belong to the correct workspace.
+
+---
+
+# MVP Scope
+
+Do NOT build:
+
+* GitHub integration
+* Code analysis
+* Team collaboration
+* Advanced accounting
+* Complex CRM features
+
+Focus on a strong freelancer developer workspace.
+
+---
+
+# Final Validation
+
+Before finishing:
+
+Check that:
+
+* Freelancer users see developer-focused terminology.
+* Dashboard shows freelance workflow.
+* Projects connect with clients.
+* Time tracking works.
+* Invoices work.
+* Milestones work.
+* No clinic or agency-specific wording remains.
+
+The final result should feel like a lightweight but premium workspace built specifically for freelance software developers.

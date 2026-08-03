@@ -1189,6 +1189,168 @@ export const DeleteTaskResponse = zod.void()
 
 
 /**
+ * @summary List time entries
+ */
+export const ListTimeEntriesQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional()
+})
+
+export const ListTimeEntriesResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number().nullish(),
+  "projectName": zod.string().nullish(),
+  "date": zod.string(),
+  "durationMinutes": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListTimeEntriesResponse = zod.array(ListTimeEntriesResponseItem)
+
+
+/**
+ * @summary Create a time entry
+ */
+export const CreateTimeEntryBody = zod.object({
+  "projectId": zod.number().optional(),
+  "date": zod.string(),
+  "durationMinutes": zod.number(),
+  "notes": zod.string().optional()
+})
+
+export const CreateTimeEntryResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number().nullish(),
+  "projectName": zod.string().nullish(),
+  "date": zod.string(),
+  "durationMinutes": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update a time entry
+ */
+export const UpdateTimeEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateTimeEntryBody = zod.object({
+  "projectId": zod.number().nullish(),
+  "date": zod.string().optional(),
+  "durationMinutes": zod.number().optional(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdateTimeEntryResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number().nullish(),
+  "projectName": zod.string().nullish(),
+  "date": zod.string(),
+  "durationMinutes": zod.number(),
+  "notes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a time entry
+ */
+export const DeleteTimeEntryParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteTimeEntryResponse = zod.void()
+
+
+/**
+ * @summary List milestones
+ */
+export const ListMilestonesQueryParams = zod.object({
+  "projectId": zod.coerce.number().optional(),
+  "status": zod.coerce.string().optional()
+})
+
+export const ListMilestonesResponseItem = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number().nullish(),
+  "projectName": zod.string().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.enum(['pending', 'in_progress', 'completed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+export const ListMilestonesResponse = zod.array(ListMilestonesResponseItem)
+
+
+/**
+ * @summary Create a milestone
+ */
+export const CreateMilestoneBody = zod.object({
+  "projectId": zod.number().optional(),
+  "name": zod.string(),
+  "description": zod.string().optional(),
+  "dueDate": zod.string().optional(),
+  "status": zod.enum(['pending', 'in_progress', 'completed']).optional()
+})
+
+export const CreateMilestoneResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number().nullish(),
+  "projectName": zod.string().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.enum(['pending', 'in_progress', 'completed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Update a milestone
+ */
+export const UpdateMilestoneParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const UpdateMilestoneBody = zod.object({
+  "projectId": zod.number().nullish(),
+  "name": zod.string().optional(),
+  "description": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.enum(['pending', 'in_progress', 'completed']).optional()
+})
+
+export const UpdateMilestoneResponse = zod.object({
+  "id": zod.number(),
+  "projectId": zod.number().nullish(),
+  "projectName": zod.string().nullish(),
+  "name": zod.string(),
+  "description": zod.string().nullish(),
+  "dueDate": zod.string().nullish(),
+  "status": zod.enum(['pending', 'in_progress', 'completed']),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
+})
+
+
+/**
+ * @summary Delete a milestone
+ */
+export const DeleteMilestoneParams = zod.object({
+  "id": zod.coerce.number()
+})
+
+export const DeleteMilestoneResponse = zod.void()
+
+
+/**
  * @summary Get timeline events for a client
  */
 export const GetClientTimelineParams = zod.object({
