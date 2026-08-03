@@ -1,0 +1,167 @@
+You are a senior full-stack engineer focused on building fast, clean, production-ready MVPs.
+
+Your task is to implement a simple but professional **Authentication and User Setup system** for the AI Workspace application.
+
+The goal is not to build a complex SaaS authentication platform.
+
+The goal is to allow a real user to create an account, enter their workspace, choose their industry, and start using their personalized workspace securely.
+
+---
+
+# Core Requirements
+
+Implement:
+
+* User registration
+* User login
+* User logout
+* User session management
+* Protected application routes
+* Basic user profile
+* Workspace creation
+
+Keep the architecture clean so it can be expanded later.
+
+---
+
+# User Flow
+
+The user journey should be:
+
+1. User opens the application.
+
+2. User creates an account.
+
+3. User logs in.
+
+4. User creates their workspace.
+
+5. User selects their industry:
+
+* Digital Agency
+* Clinic / Healthcare
+* Freelancer Developer
+
+6. The selected industry is saved.
+
+7. The application loads the correct workspace experience based on that selection.
+
+---
+
+# User Data
+
+Each user should have:
+
+* Name
+* Email
+* Password / authentication method
+* Profile information
+* Created date
+
+---
+
+# Workspace Data
+
+Each workspace should have:
+
+* Workspace name
+* Owner user
+* Selected industry
+* Created date
+* Basic settings
+
+Example:
+
+{
+workspaceName: "My Agency",
+industry: "agency"
+}
+
+or
+
+{
+workspaceName: "Smile Clinic",
+industry: "clinic"
+}
+
+---
+
+# Industry Connection
+
+The authentication system must connect with the existing Industry Configuration system.
+
+After login:
+
+The application should know:
+
+* Who the user is
+* Which workspace they belong to
+* Which industry they selected
+
+Then load the correct:
+
+* Navigation
+* Dashboard
+* Modules
+* Terminology
+
+---
+
+# Security
+
+Implement basic security:
+
+* Protected routes
+* Users cannot access another user's workspace data
+* Secure session handling
+* Proper validation
+
+Do not create unnecessary complexity.
+
+---
+
+# User Experience
+
+The login and onboarding experience should be simple and professional.
+
+Include:
+
+* Clean login page
+* Clean registration page
+* Clear error messages
+* Loading states
+* Empty states where needed
+
+---
+
+# Keep MVP Scope
+
+Do NOT build:
+
+* Team members
+* Roles
+* Permissions
+* Invitations
+* Billing
+* Subscription system
+* Advanced security features
+
+These can be added later after validating the product.
+
+---
+
+# Final Validation
+
+Before finishing:
+
+Verify:
+
+* User can register.
+* User can login.
+* User can logout.
+* Workspace is created correctly.
+* Industry selection is saved.
+* User sees the correct personalized workspace after login.
+* Existing features continue working.
+
+Build this as a clean MVP foundation that can support future growth without slowing down current development.

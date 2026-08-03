@@ -105,20 +105,32 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     return { user: updatedUser, workspace: newWorkspace };
   });
 
-  // Generate email verification token (24-hour expiry)
-  const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  await db.insert(emailVerificationTokensTable).values({ userId: user.id, token, expiresAt });
+  const emailEnabled = Boolean(process.env.RESEND_API_KEY);
 
-  // Send verification email (fire-and-forget)
-  const appUrl = getTrustedAppUrl();
-  if (appUrl) {
-    const verifyUrl = `${appUrl}/verify-email?token=${token}`;
-    sendVerificationEmail({ to: user.email, name: user.name, verifyUrl }).catch((err) => {
-      console.error("[signup] failed to send verification email:", err);
-    });
+  if (emailEnabled) {
+    // Generate email verification token (24-hour expiry)
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await db.insert(emailVerificationTokensTable).values({ userId: user.id, token, expiresAt });
+
+    // Send verification email (fire-and-forget)
+    const appUrl = getTrustedAppUrl();
+    if (appUrl) {
+      const verifyUrl = `${appUrl}/verify-email?token=${token}`;
+      sendVerificationEmail({ to: user.email, name: user.name, verifyUrl }).catch((err) => {
+        console.error("[signup] failed to send verification email:", err);
+      });
+    } else {
+      console.warn(`[signup] No app URL configured — verification token for ${user.email}: ${token}`);
+    }
   } else {
-    console.warn(`[signup] No app URL configured — verification token for ${user.email}: ${token}`);
+    // No email service configured — auto-verify so the user can proceed to onboarding
+    await db
+      .update(usersTable)
+      .set({ isEmailVerified: true, emailVerifiedAt: new Date() })
+      .where(eq(usersTable.id, user.id));
+    user.isEmailVerified = true;
+    console.info(`[signup] Email service not configured — auto-verified ${user.email}`);
   }
 
   // Create session
@@ -127,7 +139,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
   req.session.userName = user.name;
   req.session.userEmail = user.email;
   req.session.workspaceId = workspace.id;
-  req.session.isEmailVerified = false;
+  req.session.isEmailVerified = emailEnabled ? false : true;
 
   res.status(201).json(sanitizeUser(user));
 });
