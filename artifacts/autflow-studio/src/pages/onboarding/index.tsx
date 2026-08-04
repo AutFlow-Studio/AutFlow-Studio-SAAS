@@ -47,6 +47,8 @@ interface WizardData {
   notifyWeeklyDigest: boolean;
   agencyType: string;
   teamSize: string;
+  mainServices: string[];
+  activeClientCount: string;
 }
 
 interface OnboardingWizardProps {
@@ -112,6 +114,27 @@ const TEAM_SIZES: { id: string; label: string; sub: string }[] = [
   { id: "2-5",   label: "2 – 5",        sub: "Small team" },
   { id: "6-10",  label: "6 – 10",       sub: "Growing team" },
   { id: "11+",   label: "11+",          sub: "Established agency" },
+];
+
+const MAIN_SERVICES: { id: string; label: string }[] = [
+  { id: "seo-content",     label: "SEO & Content" },
+  { id: "paid-ads",        label: "Paid Advertising" },
+  { id: "social-media",    label: "Social Media" },
+  { id: "web-development", label: "Web Development" },
+  { id: "branding",        label: "Branding & Identity" },
+  { id: "email-marketing", label: "Email Marketing" },
+  { id: "ai-automation",   label: "AI & Automation" },
+  { id: "video",           label: "Video Production" },
+  { id: "ui-ux",           label: "UI / UX Design" },
+  { id: "copywriting",     label: "Copywriting" },
+];
+
+const ACTIVE_CLIENT_COUNTS: { id: string; label: string; sub: string }[] = [
+  { id: "0",     label: "0",    sub: "Just starting" },
+  { id: "1-5",   label: "1–5",  sub: "Getting going" },
+  { id: "6-15",  label: "6–15", sub: "Growing" },
+  { id: "16-30", label: "16–30",sub: "Established" },
+  { id: "30+",   label: "30+",  sub: "Scaling" },
 ];
 
 // ─── Storage helpers ──────────────────────────────────────────────────────────
@@ -342,6 +365,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     notifyWeeklyDigest: true,
     agencyType: "",
     teamSize: "",
+    mainServices: [],
+    activeClientCount: "",
   });
 
   const patch = useCallback((updates: Partial<WizardData>) => {
@@ -370,6 +395,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
           ...data,
           onboardingCompleted: true,
           businessType: "digital-agency",
+          mainServices: data.mainServices,
+          activeClientCount: data.activeClientCount,
         }),
       });
       if (!settingsRes.ok) throw new Error("Failed to save settings");
@@ -792,6 +819,15 @@ function AgencySetupStep({
 }) {
   const canConfirm = data.agencyType.length > 0 && data.teamSize.length > 0;
 
+  function toggleService(id: string) {
+    const current = data.mainServices;
+    patch({
+      mainServices: current.includes(id)
+        ? current.filter((s) => s !== id)
+        : [...current, id],
+    });
+  }
+
   return (
     <div className="space-y-5">
       <div>
@@ -859,6 +895,62 @@ function AgencySetupStep({
               >
                 <span className="text-sm font-bold">{size.label}</span>
                 <span className="text-[10px] text-muted-foreground">{size.sub}</span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Main services */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Main services <span className="font-normal normal-case text-muted-foreground/60">(pick all that apply)</span>
+        </p>
+        <div className="flex flex-wrap gap-2">
+          {MAIN_SERVICES.map((svc) => {
+            const isSelected = data.mainServices.includes(svc.id);
+            return (
+              <button
+                key={svc.id}
+                type="button"
+                disabled={saving}
+                onClick={() => toggleService(svc.id)}
+                className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all duration-150 disabled:opacity-50
+                  ${isSelected
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-primary/40 hover:text-foreground"
+                  }`}
+              >
+                {isSelected && <Check size={10} className="inline mr-1" />}
+                {svc.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Active client count */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          How many active clients do you have now?
+        </p>
+        <div className="grid grid-cols-5 gap-2">
+          {ACTIVE_CLIENT_COUNTS.map((c) => {
+            const isSelected = data.activeClientCount === c.id;
+            return (
+              <button
+                key={c.id}
+                type="button"
+                disabled={saving}
+                onClick={() => patch({ activeClientCount: c.id })}
+                className={`flex flex-col items-center gap-0.5 py-3 px-1 rounded-xl border text-center transition-all duration-150 disabled:opacity-50
+                  ${isSelected
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                    : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+              >
+                <span className="text-sm font-bold">{c.label}</span>
+                <span className="text-[9px] text-muted-foreground leading-tight">{c.sub}</span>
               </button>
             );
           })}

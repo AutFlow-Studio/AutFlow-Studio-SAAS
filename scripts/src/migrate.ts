@@ -247,6 +247,8 @@ async function migrate() {
     await client.query(`ALTER TABLE agency_settings ADD COLUMN IF NOT EXISTS business_type TEXT`);
     await client.query(`ALTER TABLE agency_settings ADD COLUMN IF NOT EXISTS agency_type TEXT`);
     await client.query(`ALTER TABLE agency_settings ADD COLUMN IF NOT EXISTS team_size TEXT`);
+    await client.query(`ALTER TABLE agency_settings ADD COLUMN IF NOT EXISTS main_services TEXT`);
+    await client.query(`ALTER TABLE agency_settings ADD COLUMN IF NOT EXISTS active_client_count TEXT`);
 
     // ── Multi-tenant: email verification tokens ───────────────────────────
 

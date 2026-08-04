@@ -40,6 +40,8 @@ router.put("/settings/agency", requireAuth, async (req, res): Promise<void> => {
     businessType,
     agencyType,
     teamSize,
+    mainServices,
+    activeClientCount,
     defaultCurrency,
     timezone,
     invoicePrefix,
@@ -60,6 +62,8 @@ router.put("/settings/agency", requireAuth, async (req, res): Promise<void> => {
   if (businessType !== undefined) updates.businessType = businessType ? String(businessType).trim() : null;
   if (agencyType !== undefined) updates.agencyType = agencyType ? String(agencyType).trim() : null;
   if (teamSize !== undefined) updates.teamSize = teamSize ? String(teamSize).trim() : null;
+  if (mainServices !== undefined) updates.mainServices = mainServices ? JSON.stringify(mainServices) : null;
+  if (activeClientCount !== undefined) updates.activeClientCount = activeClientCount ? String(activeClientCount).trim() : null;
   if (defaultCurrency !== undefined) updates.defaultCurrency = String(defaultCurrency).trim();
   if (timezone !== undefined) updates.timezone = String(timezone).trim();
   if (invoicePrefix !== undefined) updates.invoicePrefix = String(invoicePrefix).trim();

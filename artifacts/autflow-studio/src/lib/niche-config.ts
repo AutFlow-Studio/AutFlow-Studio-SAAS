@@ -99,13 +99,13 @@ const AGENCY_CONFIG: NicheConfig = {
     "dashboard",
     "clients",
     "projects",
+    "tasks",
     "campaigns",
     "deliverables",
-    "tasks",
+    "documents",
     "meetings",
     "payments",
     "calendar",
-    "documents",
     "ai-assistant",
   ],
   dashboardTitle: "Agency Command Center",
@@ -325,14 +325,22 @@ Key questions to answer: What's the current revenue? How many active customers? 
 const DEFAULT_CONFIG: NicheConfig = AGENCY_CONFIG;
 
 const NICHE_MAP: Record<string, NicheConfig> = {
+  // All businessType values map to the agency experience.
+  // Non-agency workspaces are hidden; this ensures any legacy record still
+  // gets the polished digital-agency UI.
   "digital-agency": AGENCY_CONFIG,
   "agency": AGENCY_CONFIG,
-  "consulting": CONSULTING_CONFIG,
-  "clinic": CLINIC_CONFIG,
-  "freelancer": FREELANCER_CONFIG,
-  "generic": GENERIC_CONFIG,
-  "service_business": GENERIC_CONFIG,
-  "other": GENERIC_CONFIG,
+  "consulting": AGENCY_CONFIG,
+  "clinic": AGENCY_CONFIG,
+  "freelancer": AGENCY_CONFIG,
+  "generic": AGENCY_CONFIG,
+  "service_business": AGENCY_CONFIG,
+  "other": AGENCY_CONFIG,
+  "marketing": AGENCY_CONFIG,
+  "web-development": AGENCY_CONFIG,
+  "design": AGENCY_CONFIG,
+  "ai-automation": AGENCY_CONFIG,
+  "branding": AGENCY_CONFIG,
 };
 
 /**
