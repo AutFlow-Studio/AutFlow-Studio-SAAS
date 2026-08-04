@@ -1,0 +1,165 @@
+You are a senior SaaS product designer and frontend engineer.
+
+Your task is to polish AutFlow Studio into a premium, demo-ready Digital Agency product.
+
+IMPORTANT:
+- Do not add unnecessary new features.
+- Do not rebuild existing systems.
+- Focus on quality, consistency, and user experience.
+- Preserve all working functionality.
+
+CURRENT GOAL:
+
+Make an agency owner feel:
+
+"This is a professional system I can use to run my agency."
+
+---
+
+# 1. Full UX Audit
+
+Review:
+
+- Navigation
+- User flows
+- Pages
+- Forms
+- Empty states
+- Loading states
+- Error states
+
+Find:
+
+- Confusing experiences
+- Inconsistent UI
+- Broken flows
+- Placeholder content
+
+---
+
+# 2. Remove MVP Distractions
+
+Hide or remove:
+
+- Empty pages
+- Placeholder features
+- Unfinished sections
+- Features that are not ready for demo
+
+The product should only show polished functionality.
+
+---
+
+# 3. Improve Visual Consistency
+
+Standardize:
+
+- Buttons
+- Cards
+- Tables
+- Badges
+- Status colors
+- Spacing
+- Typography
+
+Make all modules feel like one product:
+
+- Clients
+- Projects
+- Tasks
+- Deliverables
+- Invoices
+- Dashboard
+- AI Assistant
+
+---
+
+# 4. Improve First User Experience
+
+Polish:
+
+- Signup flow
+- Workspace creation
+- Agency setup
+- Empty workspace experience
+
+A new user should understand:
+
+- What the product does
+- Where to start
+- What actions to take
+
+---
+
+# 5. Improve Empty States
+
+Replace empty screens with useful guidance.
+
+Examples:
+
+No clients:
+
+"Add your first client to start managing your agency workflow."
+
+No projects:
+
+"Create a project and connect tasks, deliverables, and invoices."
+
+No data:
+
+Explain what the user should do next.
+
+---
+
+# 6. Demo Workspace Quality
+
+Create or improve a realistic demo workspace.
+
+Example:
+
+Agency:
+Velocity Creative Agency
+
+Include:
+
+- Realistic clients
+- Active projects
+- Tasks
+- Deliverables
+- Invoices
+- Team members
+- Activity history
+
+The demo should showcase the complete workflow.
+
+---
+
+# 7. Performance & Reliability
+
+Check:
+
+- Slow pages
+- Broken navigation
+- Console errors
+- Failed API requests
+- Loading problems
+
+Fix issues affecting demos.
+
+---
+
+# 8. Final Product Review
+
+After changes provide:
+
+1. UX improvements completed.
+2. Pages modified.
+3. Bugs fixed.
+4. Demo improvements.
+5. Remaining limitations.
+
+Success criteria:
+
+A potential agency customer should be able to open the app and understand its value within 2 minutes.
+
+The product should look like a premium Digital Agency Operating System, not an unfinished MVP.

@@ -16,52 +16,35 @@ pnpm --filter @workspace/api-server run dev   # API
 pnpm --filter @workspace/autflow-studio run dev  # Frontend
 pnpm --filter @workspace/db run push           # push DB schema
 pnpm --filter @workspace/scripts run migrate   # migrate + create admin
+pnpm --filter @workspace/scripts run seed      # seed demo data (Velocity Creative Agency)
 ```
 
 ## Dev credentials
 - Email: `admin@autflow.io`
 - Password: `admin123`
+- Admin name: `Alex Rivera`
 
-## Agency OS transformation (what was built)
-The project was transformed into a digital agency operating system. Added:
+## Demo workspace
+Agency: **Velocity Creative Agency** (`velocitycreative.co`)
+- 8 clients, 14 projects, 18 deliverables, 24 invoices, 5 campaigns, 4 team members
+- Team: Maya Chen, Theo Brandt, Priya Nadar, Sam Okoye (all at `@velocitycreative.co`)
+- Re-seed anytime: `pnpm --filter @workspace/scripts run seed`
 
-### Backend
-- `lib/db/src/schema/campaigns.ts` — campaigns table
-- `artifacts/api-server/src/routes/campaigns.ts` — full CRUD API for campaigns
-- `artifacts/api-server/src/routes/team.ts` — GET /team, PATCH /team/:id/role
+## Agency nav items (AGENCY_CONFIG in niche-config.ts)
+dashboard, clients, projects, tasks, campaigns, deliverables, documents, meetings, payments, calendar, team, reports, ai-assistant
 
-### Frontend — Navigation
-- `niche-config.ts` updated: digital-agency nav includes campaigns, deliverables, team, ai-assistant
-- `layout.tsx` updated: new nav icons; clinic nav keys added (patients, appointments, treatments, followups, clinic-billing)
-- `App.tsx` updated: SmartDashboard renders ClinicDashboard when businessType=clinic
+## Known schema quirks
+- `tasks.sort_order` was missing from the DB; added via migrate.ts (v2 additions block)
+- `campaigns` table was missing from the DB; added via migrate.ts (v2 additions block)
+- Both fixes are now idempotent in migrate.ts
 
-### Frontend — Agency pages
-- `src/pages/campaigns/index.tsx`, `deliverables/`, `team/`, `ai-assistant/`
+## Pre-existing TS errors (not introduced here)
+`reports/index.tsx`, `search/index.tsx`, `tasks/index.tsx`, `time-tracking/index.tsx` — implicit `any` parameter errors. The lib hasn't been built (`api-client-react/dist`), but the app runs fine via Vite.
 
-## Clinic workspace (added later)
-
-### Clinic DB tables (5 new, in `lib/db/src/schema/clinic-*.ts`)
-clinic_patients, clinic_appointments, clinic_treatments, clinic_followups, clinic_billing
-All scoped by workspace_id. Migration is idempotent (CREATE TABLE IF NOT EXISTS).
-
-### Clinic API routes (`artifacts/api-server/src/routes/clinic/`)
-- GET/POST/PUT/DELETE `/api/clinic/patients`, `/api/clinic/appointments`, `/api/clinic/treatments`, `/api/clinic/followups`, `/api/clinic/billing`
-- GET `/api/clinic/dashboard` — today's appts, patient counts, billing summary, overdue followups
-
-### Clinic frontend pages (`artifacts/autflow-studio/src/pages/clinic/`)
-- `dashboard/index.tsx` — healthcare-focused dashboard (today, patients, financials, activity)
-- `patients/index.tsx` — patient list with search, add/delete
-- `patients/detail.tsx` — tabbed patient profile (overview, appointments, treatments, billing)
-- `appointments/index.tsx` — grouped by date, status management
-- `treatments/index.tsx` — treatment tracking with cost
-- `followups/index.tsx` — overdue alerts, complete/delete
-- `billing/index.tsx` — revenue/pending/overdue summary cards + records
-
-### Niche config (clinic)
-navItems: dashboard, patients, appointments, treatments, followups, clinic-billing, documents, tasks, calendar, ai-assistant
-SmartDashboard in App.tsx renders ClinicDashboard when businessType === 'clinic'.
-
-## Known pre-existing TS errors
-Several pre-existing files (meetings, payments, projects, reports, search, tasks) have `implicit any` TS errors. Not introduced by our changes.
+## UX polish applied
+- "Clear Data" button removed from dashboard header (destructive action inappropriate for demo)
+- Duplicate "Profile" entry removed from user dropdown (kept "Settings")
+- Meetings nav icon changed from CalendarDays to Video (was duplicating calendar icon)
+- "team" and "reports" added to agency nav (both pages exist and work)
 
 **Why:** The niche-config NavItemKey type requires adding new keys before they appear in nav. All niches were updated with emptyCampaignHeadline/emptyDeliverableHeadline fields when the interface was expanded.

@@ -633,14 +633,6 @@ export default function Dashboard() {
             <Printer size={13} />
             Print
           </Button>
-          {showResetButton && (
-            <Button size="sm" variant="outline"
-              className="hidden md:flex gap-1.5 h-8 text-xs text-destructive hover:text-destructive border-destructive/30"
-              onClick={() => setResetDialogOpen(true)}>
-              <Trash2 size={13} />
-              Clear Data
-            </Button>
-          )}
           <Link href="/clients">
             <Button size="sm" className="md:hidden"><Plus size={16} /></Button>
           </Link>

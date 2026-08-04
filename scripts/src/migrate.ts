@@ -574,6 +574,30 @@ async function migrate() {
       WHERE status IN ('pending','in_progress','review','done','revision')
     `);
 
+    // tasks: add sort_order for Kanban drag-and-drop
+    await client.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0`);
+
+    // campaigns table (agency marketing campaigns)
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS campaigns (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER,
+        client_id     INTEGER REFERENCES clients(id) ON DELETE SET NULL,
+        project_id    INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+        name          TEXT NOT NULL,
+        type          TEXT NOT NULL DEFAULT 'custom',
+        goal          TEXT,
+        budget        NUMERIC(15,2),
+        start_date    DATE,
+        end_date      DATE,
+        status        TEXT NOT NULL DEFAULT 'planning',
+        performance_notes TEXT,
+        results       TEXT,
+        created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
     // Indexes for common agency queries
     await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_workspace ON deliverables(workspace_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_status    ON deliverables(status)`);

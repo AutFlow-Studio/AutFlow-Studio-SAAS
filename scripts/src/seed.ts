@@ -14,6 +14,8 @@ import {
   tasksTable,
   activityTable,
   usersTable,
+  agencySettingsTable,
+  campaignsTable,
 } from "@workspace/db";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -443,6 +445,142 @@ async function main() {
     })),
   );
 
+  console.log("Seeding campaigns...");
+  const campaignSpecs = [
+    {
+      client: "Pinecrest Outdoor Supply",
+      project: "Fall Campaign Microsite",
+      name: "Fall Outdoor Gear Launch",
+      type: "social_media",
+      goal: "Drive 30% lift in seasonal gear sales through targeted social and email push aligned with microsite launch.",
+      budget: "14000",
+      startDate: dateStr(daysFrom(NOW, -20)),
+      endDate: dateStr(daysFrom(NOW, 25)),
+      status: "active",
+      performanceNotes: "Engagement up 42% vs. last fall. Email open rate 38%. Hero creative approved.",
+    },
+    {
+      client: "Solace Wellness",
+      project: "Studio Launch Website",
+      name: "Studio Opening Campaign",
+      type: "content_marketing",
+      goal: "Build brand awareness and drive pre-launch bookings for new studio location.",
+      budget: "8500",
+      startDate: dateStr(daysFrom(NOW, -30)),
+      endDate: dateStr(daysFrom(NOW, 10)),
+      status: "active",
+      performanceNotes: "Pre-launch landing page at 1,200 signups. Social reach exceeding targets.",
+    },
+    {
+      client: "Beacon & Co.",
+      project: "Q3 Brand Refresh",
+      name: "Q3 Investor Brand Campaign",
+      type: "brand_awareness",
+      goal: "Align brand perception with refreshed visual identity ahead of Q3 investor materials release.",
+      budget: "22000",
+      startDate: dateStr(daysFrom(NOW, -15)),
+      endDate: dateStr(daysFrom(NOW, 30)),
+      status: "active",
+      performanceNotes: "Brand sentiment tracking initiated. Deck template in final review.",
+    },
+    {
+      client: "Kepler Robotics",
+      project: "Investor Deck Design System",
+      name: "Kepler Tech Showcase",
+      type: "email_marketing",
+      goal: "Position Kepler Robotics as category leader ahead of Series B fundraising through content and PR.",
+      budget: "12000",
+      startDate: dateStr(daysFrom(NOW, 5)),
+      endDate: dateStr(daysFrom(NOW, 60)),
+      status: "planning",
+      performanceNotes: null,
+    },
+    {
+      client: "Marrow Coffee Roasters",
+      project: "Packaging & Label Redesign",
+      name: "New Label Collection Launch",
+      type: "social_media",
+      goal: "Announce redesigned packaging line across Instagram and email with limited-edition rollout story.",
+      budget: "4500",
+      startDate: dateStr(daysFrom(NOW, 8)),
+      endDate: dateStr(daysFrom(NOW, 45)),
+      status: "planning",
+      performanceNotes: null,
+    },
+  ] as const;
+
+  // We need workspaceId — grab it from the admin user's workspace
+  const [adminUser] = await db
+    .select({ workspaceId: usersTable.workspaceId })
+    .from(usersTable)
+    .where(eq(usersTable.email, "admin@autflow.io"))
+    .limit(1);
+  const wsId = adminUser?.workspaceId ?? 1;
+
+  await db.insert(campaignsTable).values(
+    campaignSpecs.map((c) => ({
+      workspaceId: wsId,
+      clientId: clientByName[c.client]!.id,
+      projectId: projectByName[c.project]!.id,
+      name: c.name,
+      type: c.type,
+      goal: c.goal,
+      budget: c.budget,
+      startDate: c.startDate,
+      endDate: c.endDate,
+      status: c.status,
+      performanceNotes: c.performanceNotes,
+      results: null,
+    })),
+  );
+
+  console.log("Seeding team members...");
+  const teamMembers = [
+    { name: "Maya Chen",     email: "maya@velocitycreative.co",   role: "member" },
+    { name: "Theo Brandt",   email: "theo@velocitycreative.co",   role: "member" },
+    { name: "Priya Nadar",   email: "priya@velocitycreative.co",  role: "member" },
+    { name: "Sam Okoye",     email: "sam@velocitycreative.co",    role: "member" },
+  ];
+
+  for (const member of teamMembers) {
+    const [existing] = await db
+      .select({ id: usersTable.id })
+      .from(usersTable)
+      .where(eq(usersTable.email, member.email))
+      .limit(1);
+    if (!existing) {
+      const passwordHash = bcrypt.hashSync("member123", 10);
+      await db.insert(usersTable).values({
+        name: member.name,
+        email: member.email,
+        passwordHash,
+        role: member.role,
+        workspaceId: wsId,
+        isEmailVerified: true,
+      });
+    }
+  }
+
+  console.log("Updating agency settings...");
+  await db
+    .update(agencySettingsTable)
+    .set({
+      agencyName: "Velocity Creative Agency",
+      agencyEmail: "hello@velocitycreative.co",
+      supportEmail: "support@velocitycreative.co",
+      website: "https://velocitycreative.co",
+      businessType: "digital-agency",
+      agencyType: "Marketing & Design",
+      teamSize: "2-10",
+      mainServices: "Brand Identity, Web Design, Digital Campaigns",
+      activeClientCount: "8",
+      defaultCurrency: "USD",
+      invoicePrefix: "INV",
+      paymentTermsDays: 30,
+      onboardingCompleted: true,
+    })
+    .where(eq(agencySettingsTable.workspaceId, wsId));
+
   console.log("Seed complete.");
 
   // Ensure the default admin user exists (idempotent — does not truncate users table)
@@ -456,14 +594,21 @@ async function main() {
   if (!existingAdmin) {
     const passwordHash = bcrypt.hashSync("admin123", 12);
     await db.insert(usersTable).values({
-      name: "Agency Owner",
+      name: "Alex Rivera",
       email: "admin@autflow.io",
       passwordHash,
       role: "owner",
+      workspaceId: wsId,
+      isEmailVerified: true,
     });
     console.log("Created admin user: admin@autflow.io / admin123");
   } else {
-    console.log("Admin user already exists — skipping.");
+    // Update name to match the demo persona
+    await db
+      .update(usersTable)
+      .set({ name: "Alex Rivera" })
+      .where(eq(usersTable.email, "admin@autflow.io"));
+    console.log("Admin user updated.");
   }
 }
 

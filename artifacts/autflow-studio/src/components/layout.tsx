@@ -26,7 +26,6 @@ import {
   Upload,
   ListTodo,
   CheckCheck,
-  Trash2,
   Megaphone,
   Package,
   UserCog,
@@ -36,6 +35,7 @@ import {
   ClipboardList,
   Clock,
   Flag,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
@@ -84,7 +84,7 @@ const BASE_NAV_ITEMS: { key: NavItemKey; href: string; icon: React.ElementType }
   { key: "campaigns",     href: "/campaigns",      icon: Megaphone },
   { key: "deliverables",  href: "/deliverables",   icon: Package },
   { key: "tasks",         href: "/tasks",          icon: CheckSquare },
-  { key: "meetings",      href: "/meetings",       icon: CalendarDays },
+  { key: "meetings",      href: "/meetings",       icon: Video },
   { key: "calendar",      href: "/calendar",       icon: CalendarDays },
   { key: "payments",      href: "/payments",       icon: CreditCard },
   { key: "documents",     href: "/documents",      icon: Files },
@@ -419,12 +419,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild className="cursor-pointer">
-                  <Link href="/settings" className="flex items-center gap-2">
-                    <User size={14} />
-                    Profile
-                  </Link>
-                </DropdownMenuItem>
                 <DropdownMenuItem asChild className="cursor-pointer">
                   <Link href="/settings" className="flex items-center gap-2">
                     <Settings size={14} />

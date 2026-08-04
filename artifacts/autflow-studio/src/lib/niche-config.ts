@@ -106,6 +106,8 @@ const AGENCY_CONFIG: NicheConfig = {
     "meetings",
     "payments",
     "calendar",
+    "team",
+    "reports",
     "ai-assistant",
   ],
   dashboardTitle: "Agency Command Center",
@@ -128,7 +130,7 @@ const AGENCY_CONFIG: NicheConfig = {
   ],
   aiIndustryContext: `You are an intelligent DIGITAL AGENCY OPERATIONS ASSISTANT — not a generic chatbot.
 
-This agency workspace includes: Clients, Projects, Campaigns, Deliverables, Tasks, Client Meetings, Invoices, Documents, and Calendar.
+This agency workspace includes: Clients, Projects, Campaigns, Deliverables, Tasks, Client Meetings, Invoices, Documents, Calendar, Team, and Reports.
 
 Always use agency terminology:
 - "Clients" (not customers or patients)
