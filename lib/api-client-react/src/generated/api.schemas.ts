@@ -342,8 +342,9 @@ export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
 
 export const PaymentStatus = {
+  draft: 'draft',
+  sent: 'sent',
   paid: 'paid',
-  pending: 'pending',
   overdue: 'overdue',
   cancelled: 'cancelled',
 } as const;
@@ -355,6 +356,8 @@ export interface Payment {
   clientName?: string | null;
   /** @nullable */
   projectId?: number | null;
+  /** @nullable */
+  projectName?: string | null;
   invoiceNumber: string;
   amount: number;
   status: PaymentStatus;
@@ -693,8 +696,9 @@ export type PaymentInputStatus = typeof PaymentInputStatus[keyof typeof PaymentI
 
 
 export const PaymentInputStatus = {
+  draft: 'draft',
+  sent: 'sent',
   paid: 'paid',
-  pending: 'pending',
   overdue: 'overdue',
   cancelled: 'cancelled',
 } as const;
@@ -716,14 +720,16 @@ export type PaymentUpdateStatus = typeof PaymentUpdateStatus[keyof typeof Paymen
 
 
 export const PaymentUpdateStatus = {
+  draft: 'draft',
+  sent: 'sent',
   paid: 'paid',
-  pending: 'pending',
   overdue: 'overdue',
   cancelled: 'cancelled',
 } as const;
 
 export interface PaymentUpdate {
   invoiceNumber?: string;
+  projectId?: number;
   amount?: number;
   status?: PaymentUpdateStatus;
   dueDate?: string;

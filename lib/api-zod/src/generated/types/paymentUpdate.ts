@@ -9,6 +9,7 @@ import type { PaymentUpdateStatus } from './paymentUpdateStatus';
 
 export interface PaymentUpdate {
   invoiceNumber?: string;
+  projectId?: number;
   amount?: number;
   status?: PaymentUpdateStatus;
   dueDate?: string;

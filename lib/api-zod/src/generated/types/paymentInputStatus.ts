@@ -10,8 +10,9 @@ export type PaymentInputStatus = typeof PaymentInputStatus[keyof typeof PaymentI
 
 
 export const PaymentInputStatus = {
+  draft: 'draft',
+  sent: 'sent',
   paid: 'paid',
-  pending: 'pending',
   overdue: 'overdue',
   cancelled: 'cancelled',
 } as const;

@@ -14,6 +14,8 @@ export interface Payment {
   clientName?: string | null;
   /** @nullable */
   projectId?: number | null;
+  /** @nullable */
+  projectName?: string | null;
   invoiceNumber: string;
   amount: number;
   status: PaymentStatus;

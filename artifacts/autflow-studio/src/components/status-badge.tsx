@@ -125,11 +125,25 @@ export function getProjectPriorityVariant(priority: string): VariantProps<typeof
 
 export function getPaymentStatusVariant(status: string): VariantProps<typeof badgeVariants>["variant"] {
   switch (status.toLowerCase()) {
-    case "paid": return "success";
-    case "pending": return "warning";
-    case "overdue": return "destructive";
+    case "draft":     return "neutral";
+    case "sent":      return "info";
+    case "paid":      return "success";
+    case "pending":   return "warning"; // legacy
+    case "overdue":   return "destructive";
     case "cancelled": return "neutral";
-    default: return "default";
+    default:          return "default";
+  }
+}
+
+export function getPaymentStatusLabel(status: string): string {
+  switch (status.toLowerCase()) {
+    case "draft":     return "Draft";
+    case "sent":      return "Sent";
+    case "paid":      return "Paid";
+    case "pending":   return "Pending";
+    case "overdue":   return "Overdue";
+    case "cancelled": return "Cancelled";
+    default:          return status.charAt(0).toUpperCase() + status.slice(1);
   }
 }
 

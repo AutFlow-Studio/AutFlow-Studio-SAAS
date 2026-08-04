@@ -24,6 +24,7 @@ import ClientDetail from '@/pages/clients/detail';
 import ProjectsList from '@/pages/projects/index';
 import ProjectDetail from '@/pages/projects/detail';
 import PaymentsList from '@/pages/payments/index';
+import PaymentDetail from '@/pages/payments/detail';
 import CalendarView from '@/pages/calendar/index';
 import DocumentsList from '@/pages/documents/index';
 import ReportsView from '@/pages/reports/index';
@@ -79,6 +80,7 @@ function AgencyRouter() {
       <Route path="/team" component={TeamView} />
       <Route path="/ai-assistant" component={AIAssistantPage} />
       <Route path="/payments" component={PaymentsList} />
+      <Route path="/payments/:id" component={PaymentDetail} />
       <Route path="/meetings" component={MeetingsList} />
       <Route path="/calendar" component={CalendarView} />
       <Route path="/documents" component={DocumentsList} />

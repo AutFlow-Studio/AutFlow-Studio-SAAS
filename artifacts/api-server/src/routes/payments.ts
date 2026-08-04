@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, sql } from "drizzle-orm";
-import { db, paymentsTable, clientsTable, activityTable } from "@workspace/db";
+import { db, paymentsTable, clientsTable, projectsTable, activityTable } from "@workspace/db";
 import { createNotification } from "../lib/createNotification";
 import {
   ListPaymentsQueryParams,
@@ -13,10 +13,15 @@ import {
 
 const router: IRouter = Router();
 
-function mapPayment(p: typeof paymentsTable.$inferSelect, clientName?: string | null) {
+function mapPayment(
+  p: typeof paymentsTable.$inferSelect,
+  clientName?: string | null,
+  projectName?: string | null,
+) {
   return {
     ...p,
     clientName: clientName ?? null,
+    projectName: projectName ?? null,
     amount: Number(p.amount),
     remainingBalance: p.remainingBalance ? Number(p.remainingBalance) : null,
     createdAt: p.createdAt.toISOString(),
@@ -37,13 +42,18 @@ router.get("/payments", async (req, res): Promise<void> => {
   if (status) conditions.push(eq(paymentsTable.status, status));
 
   const rows = await db
-    .select({ payment: paymentsTable, clientName: clientsTable.companyName })
+    .select({
+      payment: paymentsTable,
+      clientName: clientsTable.companyName,
+      projectName: projectsTable.name,
+    })
     .from(paymentsTable)
     .leftJoin(clientsTable, eq(paymentsTable.clientId, clientsTable.id))
+    .leftJoin(projectsTable, eq(paymentsTable.projectId, projectsTable.id))
     .where(and(...conditions))
     .orderBy(sql`${paymentsTable.createdAt} DESC`);
 
-  res.json(rows.map(({ payment, clientName }) => mapPayment(payment, clientName)));
+  res.json(rows.map(({ payment, clientName, projectName }) => mapPayment(payment, clientName, projectName)));
 });
 
 router.post("/payments", async (req, res): Promise<void> => {
@@ -54,10 +64,17 @@ router.post("/payments", async (req, res): Promise<void> => {
   }
   const wid = req.session.workspaceId!;
 
+  // Auto-set paidDate when creating with paid status
+  const extraFields: Record<string, unknown> = {};
+  if (parsed.data.status === "paid" && !parsed.data.paidDate) {
+    extraFields.paidDate = new Date().toISOString().slice(0, 10);
+  }
+
   const [payment] = await db
     .insert(paymentsTable)
     .values({
       ...parsed.data,
+      ...extraFields,
       workspaceId: wid,
       amount: String(parsed.data.amount),
       remainingBalance: parsed.data.remainingBalance != null ? String(parsed.data.remainingBalance) : undefined,
@@ -68,6 +85,10 @@ router.post("/payments", async (req, res): Promise<void> => {
     .select()
     .from(clientsTable)
     .where(and(eq(clientsTable.id, payment.clientId), eq(clientsTable.workspaceId, wid)));
+
+  const projectName = payment.projectId
+    ? (await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, payment.projectId)))[0]?.name ?? null
+    : null;
 
   await db.insert(activityTable).values({
     type: "payment_added",
@@ -90,7 +111,7 @@ router.post("/payments", async (req, res): Promise<void> => {
     wid,
   );
 
-  res.status(201).json(mapPayment(payment, client?.companyName ?? null));
+  res.status(201).json(mapPayment(payment, client?.companyName ?? null, projectName));
 });
 
 router.get("/payments/:id", async (req, res): Promise<void> => {
@@ -102,9 +123,14 @@ router.get("/payments/:id", async (req, res): Promise<void> => {
   const wid = req.session.workspaceId!;
 
   const [row] = await db
-    .select({ payment: paymentsTable, clientName: clientsTable.companyName })
+    .select({
+      payment: paymentsTable,
+      clientName: clientsTable.companyName,
+      projectName: projectsTable.name,
+    })
     .from(paymentsTable)
     .leftJoin(clientsTable, eq(paymentsTable.clientId, clientsTable.id))
+    .leftJoin(projectsTable, eq(paymentsTable.projectId, projectsTable.id))
     .where(and(eq(paymentsTable.id, params.data.id), eq(paymentsTable.workspaceId, wid)));
 
   if (!row) {
@@ -112,7 +138,7 @@ router.get("/payments/:id", async (req, res): Promise<void> => {
     return;
   }
 
-  res.json(mapPayment(row.payment, row.clientName));
+  res.json(mapPayment(row.payment, row.clientName, row.projectName));
 });
 
 router.patch("/payments/:id", async (req, res): Promise<void> => {
@@ -128,19 +154,26 @@ router.patch("/payments/:id", async (req, res): Promise<void> => {
   }
   const wid = req.session.workspaceId!;
 
-  const wasNotPaid = async () => {
-    const [current] = await db
-      .select({ status: paymentsTable.status })
-      .from(paymentsTable)
-      .where(and(eq(paymentsTable.id, params.data.id), eq(paymentsTable.workspaceId, wid)));
-    return current?.status !== "paid";
-  };
-  const notPaidBefore = parsed.data.status === "paid" ? await wasNotPaid() : false;
+  // Check current status before update (for notification logic + auto-dates)
+  const [current] = await db
+    .select({ status: paymentsTable.status })
+    .from(paymentsTable)
+    .where(and(eq(paymentsTable.id, params.data.id), eq(paymentsTable.workspaceId, wid)));
+
+  const notPaidBefore = current?.status !== "paid";
+  const today = new Date().toISOString().slice(0, 10);
+
+  // Auto-set dates on status transitions
+  const autoFields: Record<string, unknown> = {};
+  if (parsed.data.status === "paid" && notPaidBefore && !parsed.data.paidDate) {
+    autoFields.paidDate = today;
+  }
 
   const [payment] = await db
     .update(paymentsTable)
     .set({
       ...parsed.data,
+      ...autoFields,
       amount: parsed.data.amount != null ? String(parsed.data.amount) : undefined,
       remainingBalance: parsed.data.remainingBalance != null ? String(parsed.data.remainingBalance) : undefined,
     })
@@ -156,6 +189,10 @@ router.patch("/payments/:id", async (req, res): Promise<void> => {
     .select()
     .from(clientsTable)
     .where(and(eq(clientsTable.id, payment.clientId), eq(clientsTable.workspaceId, wid)));
+
+  const projectName = payment.projectId
+    ? (await db.select({ name: projectsTable.name }).from(projectsTable).where(eq(projectsTable.id, payment.projectId)))[0]?.name ?? null
+    : null;
 
   await db.insert(activityTable).values({
     type: "payment_updated",
@@ -180,7 +217,21 @@ router.patch("/payments/:id", async (req, res): Promise<void> => {
     );
   }
 
-  res.json(mapPayment(payment, client?.companyName ?? null));
+  if (parsed.data.status === "sent" && current?.status === "draft") {
+    void createNotification(
+      {
+        type: "invoice_sent",
+        title: "Invoice sent",
+        message: `Invoice ${payment.invoiceNumber} has been marked as sent${client ? ` — ${client.companyName}` : ""}.`,
+        entityType: "payment",
+        entityId: payment.id,
+        href: `/payments`,
+      },
+      wid,
+    );
+  }
+
+  res.json(mapPayment(payment, client?.companyName ?? null, projectName));
 });
 
 router.delete("/payments/:id", async (req, res): Promise<void> => {

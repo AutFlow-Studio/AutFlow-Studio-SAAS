@@ -52,7 +52,7 @@ export default function PatientDetailPage() {
     queryKey: ["clinic-patient", id],
     queryFn: () => apiRequest(`/api/clinic/patients/${id}`),
     enabled: !!id,
-    onSuccess: (d) => setNotesValue(d.notes ?? ""),
+    onSuccess: (d: PatientDetail) => setNotesValue(d.notes ?? ""),
   } as any);
 
   const saveNotes = useMutation({
