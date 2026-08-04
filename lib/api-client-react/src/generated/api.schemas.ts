@@ -9,11 +9,129 @@ export interface HealthStatus {
   status: string;
 }
 
+export type DashboardStatsRevenueByClientItem = {
+  clientId: number;
+  clientName: string;
+  revenue: number;
+  outstanding: number;
+};
+
 export type DashboardStatsHealthBreakdown = {
   revenue: number;
   delivery: number;
   clientActivity: number;
   payments: number;
+};
+
+export type DashboardStatsClientHealthItemHealthStatus = typeof DashboardStatsClientHealthItemHealthStatus[keyof typeof DashboardStatsClientHealthItemHealthStatus];
+
+
+export const DashboardStatsClientHealthItemHealthStatus = {
+  healthy: 'healthy',
+  attention: 'attention',
+  at_risk: 'at_risk',
+} as const;
+
+export type DashboardStatsClientHealthItem = {
+  id: number;
+  companyName: string;
+  healthScore: number;
+  lifecycleStatus: string;
+  healthStatus: DashboardStatsClientHealthItemHealthStatus;
+  reason: string;
+};
+
+export type DashboardStatsTaskSummaryOverdueTasksItem = {
+  id: number;
+  title: string;
+  priority: string;
+  status: string;
+  /** @nullable */
+  deadline?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  projectName?: string | null;
+};
+
+export type DashboardStatsTaskSummaryTodayTasksItem = {
+  id: number;
+  title: string;
+  priority: string;
+  status: string;
+  /** @nullable */
+  deadline?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  projectName?: string | null;
+};
+
+export type DashboardStatsTaskSummaryUpcomingTasksItem = {
+  id: number;
+  title: string;
+  priority: string;
+  status: string;
+  /** @nullable */
+  deadline?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  projectName?: string | null;
+};
+
+export type DashboardStatsTaskSummary = {
+  overdueCount: number;
+  todayCount: number;
+  upcomingCount: number;
+  totalActive: number;
+  overdueTasks: DashboardStatsTaskSummaryOverdueTasksItem[];
+  todayTasks: DashboardStatsTaskSummaryTodayTasksItem[];
+  upcomingTasks: DashboardStatsTaskSummaryUpcomingTasksItem[];
+};
+
+export type DashboardStatsDeliverableSummaryWaitingApprovalItem = {
+  id: number;
+  title: string;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  deadline?: string | null;
+  projectId: number;
+};
+
+export type DashboardStatsDeliverableSummaryPendingRevisionsItem = {
+  id: number;
+  title: string;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  revisionCount: number;
+  projectId: number;
+};
+
+export type DashboardStatsDeliverableSummaryRecentlyApprovedItem = {
+  id: number;
+  title: string;
+  /** @nullable */
+  projectName?: string | null;
+  /** @nullable */
+  clientName?: string | null;
+  /** @nullable */
+  approvalDate?: string | null;
+  projectId: number;
+};
+
+export type DashboardStatsDeliverableSummary = {
+  waitingApprovalCount: number;
+  pendingRevisionsCount: number;
+  recentlyApprovedCount: number;
+  waitingApproval: DashboardStatsDeliverableSummaryWaitingApprovalItem[];
+  pendingRevisions: DashboardStatsDeliverableSummaryPendingRevisionsItem[];
+  recentlyApproved: DashboardStatsDeliverableSummaryRecentlyApprovedItem[];
 };
 
 export type ProjectStatus = typeof ProjectStatus[keyof typeof ProjectStatus];
@@ -129,14 +247,19 @@ export interface DashboardStats {
   upcomingDeadlines: Project[];
   invoicesAwaitingPayment: number;
   totalRevenue: number;
+  totalInvoiced: number;
   outstandingPayments: number;
   overdueInvoiceCount: number;
   overdueAmount: number;
   mrr: number;
+  revenueByClient: DashboardStatsRevenueByClientItem[];
   healthScore: number;
   healthBreakdown: DashboardStatsHealthBreakdown;
   projectsAtRisk: Project[];
   projectsNeedingAttention: Project[];
+  clientHealth: DashboardStatsClientHealthItem[];
+  taskSummary: DashboardStatsTaskSummary;
+  deliverableSummary: DashboardStatsDeliverableSummary;
   recentActivity: ActivityItem[];
   upcomingMeetings: Meeting[];
   recentNotes: Note[];

@@ -6,7 +6,11 @@
  * OpenAPI spec version: 0.1.0
  */
 import type { ActivityItem } from './activityItem';
+import type { DashboardStatsClientHealthItem } from './dashboardStatsClientHealthItem';
+import type { DashboardStatsDeliverableSummary } from './dashboardStatsDeliverableSummary';
 import type { DashboardStatsHealthBreakdown } from './dashboardStatsHealthBreakdown';
+import type { DashboardStatsRevenueByClientItem } from './dashboardStatsRevenueByClientItem';
+import type { DashboardStatsTaskSummary } from './dashboardStatsTaskSummary';
 import type { Meeting } from './meeting';
 import type { Note } from './note';
 import type { Project } from './project';
@@ -22,14 +26,19 @@ export interface DashboardStats {
   upcomingDeadlines: Project[];
   invoicesAwaitingPayment: number;
   totalRevenue: number;
+  totalInvoiced: number;
   outstandingPayments: number;
   overdueInvoiceCount: number;
   overdueAmount: number;
   mrr: number;
+  revenueByClient: DashboardStatsRevenueByClientItem[];
   healthScore: number;
   healthBreakdown: DashboardStatsHealthBreakdown;
   projectsAtRisk: Project[];
   projectsNeedingAttention: Project[];
+  clientHealth: DashboardStatsClientHealthItem[];
+  taskSummary: DashboardStatsTaskSummary;
+  deliverableSummary: DashboardStatsDeliverableSummary;
   recentActivity: ActivityItem[];
   upcomingMeetings: Meeting[];
   recentNotes: Note[];

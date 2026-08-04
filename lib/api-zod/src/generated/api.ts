@@ -59,10 +59,17 @@ export const GetDashboardResponse = zod.object({
 })),
   "invoicesAwaitingPayment": zod.number(),
   "totalRevenue": zod.number(),
+  "totalInvoiced": zod.number(),
   "outstandingPayments": zod.number(),
   "overdueInvoiceCount": zod.number(),
   "overdueAmount": zod.number(),
   "mrr": zod.number(),
+  "revenueByClient": zod.array(zod.object({
+  "clientId": zod.number(),
+  "clientName": zod.string(),
+  "revenue": zod.number(),
+  "outstanding": zod.number()
+})),
   "healthScore": zod.number(),
   "healthBreakdown": zod.object({
   "revenue": zod.number(),
@@ -108,6 +115,76 @@ export const GetDashboardResponse = zod.object({
   "createdAt": zod.string(),
   "updatedAt": zod.string().optional()
 })),
+  "clientHealth": zod.array(zod.object({
+  "id": zod.number(),
+  "companyName": zod.string(),
+  "healthScore": zod.number(),
+  "lifecycleStatus": zod.string(),
+  "healthStatus": zod.enum(['healthy', 'attention', 'at_risk']),
+  "reason": zod.string()
+})),
+  "taskSummary": zod.object({
+  "overdueCount": zod.number(),
+  "todayCount": zod.number(),
+  "upcomingCount": zod.number(),
+  "totalActive": zod.number(),
+  "overdueTasks": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "deadline": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "projectName": zod.string().nullish()
+})),
+  "todayTasks": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "deadline": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "projectName": zod.string().nullish()
+})),
+  "upcomingTasks": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "priority": zod.string(),
+  "status": zod.string(),
+  "deadline": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "projectName": zod.string().nullish()
+}))
+}),
+  "deliverableSummary": zod.object({
+  "waitingApprovalCount": zod.number(),
+  "pendingRevisionsCount": zod.number(),
+  "recentlyApprovedCount": zod.number(),
+  "waitingApproval": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "projectName": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "deadline": zod.string().nullish(),
+  "projectId": zod.number()
+})),
+  "pendingRevisions": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "projectName": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "revisionCount": zod.number(),
+  "projectId": zod.number()
+})),
+  "recentlyApproved": zod.array(zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "projectName": zod.string().nullish(),
+  "clientName": zod.string().nullish(),
+  "approvalDate": zod.string().nullish(),
+  "projectId": zod.number()
+}))
+}),
   "recentActivity": zod.array(zod.object({
   "id": zod.number(),
   "type": zod.string(),

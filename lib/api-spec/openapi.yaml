@@ -1235,14 +1235,19 @@ components:
         - upcomingDeadlines
         - invoicesAwaitingPayment
         - totalRevenue
+        - totalInvoiced
         - outstandingPayments
         - overdueInvoiceCount
         - overdueAmount
         - mrr
+        - revenueByClient
         - healthScore
         - healthBreakdown
         - projectsAtRisk
         - projectsNeedingAttention
+        - clientHealth
+        - taskSummary
+        - deliverableSummary
         - recentActivity
         - upcomingMeetings
         - recentNotes
@@ -1269,6 +1274,8 @@ components:
           type: integer
         totalRevenue:
           type: number
+        totalInvoiced:
+          type: number
         outstandingPayments:
           type: number
         overdueInvoiceCount:
@@ -1277,6 +1284,20 @@ components:
           type: number
         mrr:
           type: number
+        revenueByClient:
+          type: array
+          items:
+            type: object
+            required: [clientId, clientName, revenue, outstanding]
+            properties:
+              clientId:
+                type: integer
+              clientName:
+                type: string
+              revenue:
+                type: number
+              outstanding:
+                type: number
         healthScore:
           type: number
         healthBreakdown:
@@ -1299,6 +1320,161 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Project"
+        clientHealth:
+          type: array
+          items:
+            type: object
+            required: [id, companyName, healthScore, lifecycleStatus, healthStatus, reason]
+            properties:
+              id:
+                type: integer
+              companyName:
+                type: string
+              healthScore:
+                type: integer
+              lifecycleStatus:
+                type: string
+              healthStatus:
+                type: string
+                enum: [healthy, attention, at_risk]
+              reason:
+                type: string
+        taskSummary:
+          type: object
+          required: [overdueCount, todayCount, upcomingCount, totalActive, overdueTasks, todayTasks, upcomingTasks]
+          properties:
+            overdueCount:
+              type: integer
+            todayCount:
+              type: integer
+            upcomingCount:
+              type: integer
+            totalActive:
+              type: integer
+            overdueTasks:
+              type: array
+              items:
+                type: object
+                required: [id, title, priority, status]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  priority:
+                    type: string
+                  status:
+                    type: string
+                  deadline:
+                    type: ["string", "null"]
+                  clientName:
+                    type: ["string", "null"]
+                  projectName:
+                    type: ["string", "null"]
+            todayTasks:
+              type: array
+              items:
+                type: object
+                required: [id, title, priority, status]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  priority:
+                    type: string
+                  status:
+                    type: string
+                  deadline:
+                    type: ["string", "null"]
+                  clientName:
+                    type: ["string", "null"]
+                  projectName:
+                    type: ["string", "null"]
+            upcomingTasks:
+              type: array
+              items:
+                type: object
+                required: [id, title, priority, status]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  priority:
+                    type: string
+                  status:
+                    type: string
+                  deadline:
+                    type: ["string", "null"]
+                  clientName:
+                    type: ["string", "null"]
+                  projectName:
+                    type: ["string", "null"]
+        deliverableSummary:
+          type: object
+          required: [waitingApprovalCount, pendingRevisionsCount, recentlyApprovedCount, waitingApproval, pendingRevisions, recentlyApproved]
+          properties:
+            waitingApprovalCount:
+              type: integer
+            pendingRevisionsCount:
+              type: integer
+            recentlyApprovedCount:
+              type: integer
+            waitingApproval:
+              type: array
+              items:
+                type: object
+                required: [id, title, projectId]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  projectName:
+                    type: ["string", "null"]
+                  clientName:
+                    type: ["string", "null"]
+                  deadline:
+                    type: ["string", "null"]
+                  projectId:
+                    type: integer
+            pendingRevisions:
+              type: array
+              items:
+                type: object
+                required: [id, title, projectId, revisionCount]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  projectName:
+                    type: ["string", "null"]
+                  clientName:
+                    type: ["string", "null"]
+                  revisionCount:
+                    type: integer
+                  projectId:
+                    type: integer
+            recentlyApproved:
+              type: array
+              items:
+                type: object
+                required: [id, title, projectId]
+                properties:
+                  id:
+                    type: integer
+                  title:
+                    type: string
+                  projectName:
+                    type: ["string", "null"]
+                  clientName:
+                    type: ["string", "null"]
+                  approvalDate:
+                    type: ["string", "null"]
+                  projectId:
+                    type: integer
         recentActivity:
           type: array
           items:
