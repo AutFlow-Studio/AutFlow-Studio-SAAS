@@ -11,6 +11,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { clientsTable } from "./clients";
 import { projectsTable } from "./projects";
+import { invoicesTable } from "./invoices";
 
 export const paymentsTable = pgTable("payments", {
   id: serial("id").primaryKey(),
@@ -19,6 +20,10 @@ export const paymentsTable = pgTable("payments", {
     .notNull()
     .references(() => clientsTable.id, { onDelete: "cascade" }),
   projectId: integer("project_id").references(() => projectsTable.id, {
+    onDelete: "set null",
+  }),
+  // Link to a formal invoice record (nullable for legacy payments created before invoices table)
+  invoiceId: integer("invoice_id").references(() => invoicesTable.id, {
     onDelete: "set null",
   }),
   invoiceNumber: text("invoice_number").notNull(),

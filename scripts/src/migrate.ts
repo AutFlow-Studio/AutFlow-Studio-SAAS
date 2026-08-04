@@ -487,6 +487,84 @@ async function migrate() {
 
     console.log("✓ Clinic tables ensured.");
 
+    // ── Agency Operating System — v2 schema additions ─────────────────────
+    // All statements are idempotent (ADD COLUMN IF NOT EXISTS / CREATE TABLE IF NOT EXISTS).
+
+    // deliverables: add workspace isolation + typed assignee + updated lifecycle status
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS workspace_id INTEGER`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL`);
+    // Backfill workspace_id from the parent project for existing rows
+    await client.query(`
+      UPDATE deliverables d
+      SET workspace_id = p.workspace_id
+      FROM projects p
+      WHERE d.project_id = p.id
+        AND d.workspace_id IS NULL
+        AND p.workspace_id IS NOT NULL
+    `);
+
+    // tasks: add assignee + updatedAt
+    await client.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS assignee_id INTEGER REFERENCES users(id) ON DELETE SET NULL`);
+    await client.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+
+    // clients: add full lifecycle status + health score
+    await client.query(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS lifecycle_status TEXT NOT NULL DEFAULT 'active'`);
+    await client.query(`ALTER TABLE clients ADD COLUMN IF NOT EXISTS health_score INTEGER`);
+    // Seed lifecycle_status from existing status where possible
+    await client.query(`
+      UPDATE clients
+      SET lifecycle_status = CASE
+        WHEN status = 'active'   THEN 'active'
+        WHEN status = 'inactive' THEN 'archived'
+        ELSE status
+      END
+      WHERE lifecycle_status = 'active' AND status IS NOT NULL
+    `);
+
+    // projects: add health tracking fields
+    await client.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS blockers TEXT`);
+    await client.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS client_waiting_since DATE`);
+    await client.query(`ALTER TABLE projects ADD COLUMN IF NOT EXISTS health_score INTEGER`);
+
+    // invoices: new first-class invoice entity
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS invoices (
+        id             SERIAL PRIMARY KEY,
+        workspace_id   INTEGER,
+        client_id      INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+        project_id     INTEGER REFERENCES projects(id) ON DELETE SET NULL,
+        invoice_number TEXT NOT NULL,
+        status         TEXT NOT NULL DEFAULT 'draft',
+        subtotal       NUMERIC(15,2) NOT NULL,
+        tax            NUMERIC(15,2),
+        total          NUMERIC(15,2) NOT NULL,
+        amount_paid    NUMERIC(15,2) NOT NULL DEFAULT 0,
+        line_items     TEXT,
+        due_date       DATE,
+        paid_date      DATE,
+        sent_at        TIMESTAMPTZ,
+        notes          TEXT,
+        created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      )
+    `);
+
+    // payments: link to invoices table (nullable for legacy rows)
+    await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL`);
+
+    // Indexes for common agency queries
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_workspace ON deliverables(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_status    ON deliverables(status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_tasks_assignee         ON tasks(assignee_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_tasks_deadline         ON tasks(deadline)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_clients_lifecycle      ON clients(workspace_id, lifecycle_status)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_projects_health        ON projects(workspace_id, health_score)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_invoices_workspace     ON invoices(workspace_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_invoices_client        ON invoices(client_id)`);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_invoices_status        ON invoices(workspace_id, status)`);
+
+    console.log("✓ Agency OS v2 schema additions applied.");
+
     // Mark all existing users as email-verified (they were already using the app)
     await client.query(`
       UPDATE users

@@ -1,0 +1,217 @@
+You are a senior SaaS architect specializing in agency management platforms.
+
+Your task is to upgrade AutFlow Studio's internal data model and workflows so it properly supports digital agency operations.
+
+IMPORTANT:
+- Analyze the current database and architecture first.
+- Preserve existing working functionality.
+- Do not rebuild the application from scratch.
+- Make incremental changes.
+- Maintain backward compatibility with existing data.
+
+CURRENT GOAL:
+Transform AutFlow Studio into a Digital Agency Operating System where the entire client lifecycle is connected.
+
+The ideal agency workflow:
+
+Lead → Client → Proposal → Project → Tasks → Deliverables → Client Review → Approval → Invoice → Payment → Retainer Relationship
+
+Implement the foundation needed for this workflow.
+
+---
+
+## 1. Analyze Current Data Model
+
+Review existing entities:
+
+- Users
+- Workspaces
+- Clients
+- Projects
+- Tasks
+- Campaigns
+- Deliverables
+- Documents
+- Meetings
+- Invoices
+- Payments
+- Activities
+- AI-related data
+
+Identify:
+- Missing relationships.
+- Weak structures.
+- Data that is not workspace-scoped.
+- Duplicate or unnecessary fields.
+
+Before changing anything, explain the current state.
+
+---
+
+## 2. Improve Agency Entity Relationships
+
+Ensure these relationships exist:
+
+Client:
+- Has multiple projects.
+- Has invoices.
+- Has documents.
+- Has meetings.
+- Has activity history.
+- Has financial summary.
+
+Project:
+- Belongs to one client.
+- Contains tasks.
+- Contains milestones.
+- Contains deliverables.
+- Contains documents.
+- Tracks progress and health.
+
+Task:
+- Belongs to project.
+- Has priority.
+- Has status.
+- Has deadline.
+- Has assignee.
+
+Deliverable:
+- Belongs to project.
+- Has status:
+  - Draft
+  - Internal Review
+  - Sent to Client
+  - Approved
+  - Revision Requested
+
+Invoice:
+- Belongs to client/project.
+- Tracks payment status.
+
+---
+
+## 3. Add Agency Workflow Concepts
+
+Create the foundation for:
+
+### Client Lifecycle
+
+Possible statuses:
+
+- Lead
+- Prospect
+- Active Client
+- At Risk
+- Completed
+- Archived
+
+### Project Lifecycle
+
+Statuses:
+
+- Planning
+- In Progress
+- Client Review
+- Revision
+- Completed
+- Archived
+
+### Deliverable Lifecycle
+
+Statuses:
+
+- Draft
+- Review
+- Sent
+- Approved
+- Changes Requested
+
+---
+
+## 4. Improve Agency Visibility
+
+Prepare data needed for:
+
+Client Health Score:
+Based on:
+- Project delays.
+- Pending approvals.
+- Payment status.
+- Recent activity.
+
+Project Health:
+Based on:
+- Deadline.
+- Task completion.
+- Blockers.
+- Client waiting time.
+
+Revenue Tracking:
+Based on:
+- Active projects.
+- Paid invoices.
+- Pending invoices.
+
+---
+
+## 5. Workspace Isolation
+
+Verify that every agency data entity is properly scoped by:
+
+workspace_id
+
+Check especially:
+
+- Deliverables.
+- Documents.
+- Invoices.
+- Activities.
+
+No client should ever access another workspace's data.
+
+---
+
+## 6. Prepare for AI
+
+The AI assistant should later understand:
+
+- Which clients exist.
+- Which projects are active.
+- Which tasks are delayed.
+- Which invoices are unpaid.
+- Which deliverables need approval.
+
+Create clean structured data for AI context.
+
+---
+
+## 7. Do NOT build yet:
+
+Do not add:
+- Advanced automations.
+- External integrations.
+- Complex CRM.
+- Marketing features.
+- Mobile app.
+
+Focus only on a strong agency operating foundation.
+
+---
+
+## Final Response Requirements:
+
+After completing:
+
+Provide:
+
+1. Database changes made.
+2. New relationships created.
+3. Files modified.
+4. Migration details.
+5. Current agency workflow after changes.
+6. Remaining limitations.
+7. Recommended next development step.
+
+Success criteria:
+
+AutFlow Studio should have a strong internal foundation where a digital agency can manage the complete journey from client acquisition to project completion and payment.

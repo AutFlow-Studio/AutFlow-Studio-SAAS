@@ -5,6 +5,7 @@ export * from "./clients";
 export * from "./projects";
 export * from "./deliverables";
 export * from "./payments";
+export * from "./invoices";
 export * from "./documents";
 export * from "./notes";
 export * from "./meetings";

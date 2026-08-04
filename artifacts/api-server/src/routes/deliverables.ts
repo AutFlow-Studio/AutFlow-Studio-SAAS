@@ -75,7 +75,12 @@ router.post("/projects/:projectId/deliverables", async (req, res): Promise<void>
 
   const [deliverable] = await db
     .insert(deliverablesTable)
-    .values({ ...parsed.data, projectId: params.data.projectId, status: parsed.data.status ?? "pending" })
+    .values({
+      ...parsed.data,
+      projectId: params.data.projectId,
+      workspaceId: wid,
+      status: parsed.data.status ?? "draft",
+    })
     .returning();
 
   await db.insert(activityTable).values({
