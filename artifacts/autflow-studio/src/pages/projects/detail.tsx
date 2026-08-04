@@ -59,7 +59,7 @@ import {
   AlertCircle,
   Plus
 } from "lucide-react";
-import { StatusBadge, getProjectStatusVariant, getProjectPriorityVariant, getTaskStatusVariant } from "@/components/status-badge";
+import { StatusBadge, getProjectStatusVariant, getProjectPriorityVariant, getDeliverableStatusVariant } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -383,8 +383,15 @@ function EditDeliverableDialog({ open, onOpenChange, projectId, item }: EditDeli
             <Select value={status} onValueChange={setStatus}>
               <SelectTrigger id="ed-status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                {["pending","in_progress","review","done"].map(s => (
-                  <SelectItem key={s} value={s}>{s.replace("_"," ")}</SelectItem>
+                {[
+                  { value: "draft",              label: "Draft" },
+                  { value: "internal_review",    label: "Internal Review" },
+                  { value: "sent",               label: "Sent to Client" },
+                  { value: "approved",           label: "Approved" },
+                  { value: "changes_requested",  label: "Changes Requested" },
+                  { value: "completed",          label: "Completed" },
+                ].map(s => (
+                  <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -482,7 +489,7 @@ export default function ProjectDetail() {
   }
 
   function handleToggleDeliverable(item: NonNullable<typeof deliverables>[number]) {
-    const newStatus = item.status === "done" ? "pending" : "done";
+    const newStatus = item.status === "completed" || item.status === "approved" ? "draft" : "completed";
     updateDeliverable(
       { id: item.id, data: { status: newStatus as any } },
       {
@@ -692,22 +699,29 @@ export default function ProjectDetail() {
                           <button
                             type="button"
                             onClick={() => handleToggleDeliverable(item)}
-                            className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${item.status === 'done' ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/50 hover:border-primary'}`}
+                            className={`w-5 h-5 rounded-full border flex items-center justify-center flex-shrink-0 transition-colors ${["completed","approved"].includes(item.status) ? 'bg-primary border-primary text-primary-foreground' : 'border-muted-foreground/50 hover:border-primary'}`}
                           >
-                            {item.status === 'done' && <CheckCircle2 size={12} />}
+                            {["completed","approved"].includes(item.status) && <CheckCircle2 size={12} />}
                           </button>
-                          <div className={item.status === 'done' ? 'line-through text-muted-foreground' : 'font-medium'}>
+                          <div className={["completed","approved"].includes(item.status) ? 'line-through text-muted-foreground' : 'font-medium'}>
                             {item.title}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
                           {item.assignedTo && (
                             <span className="text-xs text-muted-foreground hidden md:inline-block">
-                              Assigned to: {item.assignedTo}
+                              {item.assignedTo}
                             </span>
                           )}
-                          <StatusBadge variant={getTaskStatusVariant(item.status)}>
-                            {item.status.replace("_", " ")}
+                          <StatusBadge variant={getDeliverableStatusVariant(item.status)}>
+                            {{
+                              draft: "Draft",
+                              internal_review: "In Review",
+                              sent: "Sent",
+                              approved: "Approved",
+                              changes_requested: "Changes",
+                              completed: "Done",
+                            }[item.status] ?? item.status.replace(/_/g, " ")}
                           </StatusBadge>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>

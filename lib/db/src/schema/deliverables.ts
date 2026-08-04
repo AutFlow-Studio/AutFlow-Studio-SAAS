@@ -13,7 +13,7 @@ import { usersTable } from "./users";
 
 /**
  * Deliverable lifecycle statuses:
- *   draft → internal_review → sent → approved | changes_requested
+ *   draft → internal_review → sent → approved | changes_requested → completed
  */
 export const deliverablesTable = pgTable("deliverables", {
   id: serial("id").primaryKey(),
@@ -22,7 +22,10 @@ export const deliverablesTable = pgTable("deliverables", {
     .notNull()
     .references(() => projectsTable.id, { onDelete: "cascade" }),
   title: text("title").notNull(),
-  // Status lifecycle: draft | internal_review | sent | approved | changes_requested
+  description: text("description"),
+  // Deliverable type: Website, Brand Identity, Logo, Ad Creatives, etc.
+  type: text("type"),
+  // Status lifecycle: draft | internal_review | sent | approved | changes_requested | completed
   // Legacy value "pending" is treated as "draft" by the UI
   status: text("status").notNull().default("draft"),
   deadline: date("deadline", { mode: "string" }),
@@ -32,7 +35,17 @@ export const deliverablesTable = pgTable("deliverables", {
   }),
   completionDate: date("completion_date", { mode: "string" }),
   notes: text("notes"),
+  // Approval tracking
+  approvalDate: date("approval_date", { mode: "string" }),
+  approvedBy: text("approved_by"),
+  // Revision tracking — incremented each time client requests changes
+  revisionCount: integer("revision_count").notNull().default(0),
+  // Client feedback / revision notes per round
+  feedbackNotes: text("feedback_notes"),
   createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
 });

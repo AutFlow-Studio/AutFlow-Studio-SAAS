@@ -10,8 +10,10 @@ export type DeliverableStatus = typeof DeliverableStatus[keyof typeof Deliverabl
 
 
 export const DeliverableStatus = {
-  pending: 'pending',
-  in_progress: 'in_progress',
-  review: 'review',
-  done: 'done',
+  draft: 'draft',
+  internal_review: 'internal_review',
+  sent: 'sent',
+  approved: 'approved',
+  changes_requested: 'changes_requested',
+  completed: 'completed',
 } as const;

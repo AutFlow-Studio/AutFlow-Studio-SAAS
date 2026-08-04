@@ -1634,7 +1634,7 @@ components:
     # ─── Deliverable ─────────────────────────────────────────────────────────
     Deliverable:
       type: object
-      required: [id, projectId, title, status, createdAt]
+      required: [id, projectId, title, status, revisionCount, createdAt, updatedAt]
       properties:
         id:
           type: integer
@@ -1642,9 +1642,13 @@ components:
           type: integer
         title:
           type: string
+        description:
+          type: ["string", "null"]
+        type:
+          type: ["string", "null"]
         status:
           type: string
-          enum: [pending, in_progress, review, done]
+          enum: [draft, internal_review, sent, approved, changes_requested, completed]
         deadline:
           type: ["string", "null"]
         assignedTo:
@@ -1653,7 +1657,17 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        approvalDate:
+          type: ["string", "null"]
+        approvedBy:
+          type: ["string", "null"]
+        revisionCount:
+          type: integer
+        feedbackNotes:
+          type: ["string", "null"]
         createdAt:
+          type: string
+        updatedAt:
           type: string
 
     DeliverableInput:
@@ -1662,9 +1676,13 @@ components:
       properties:
         title:
           type: string
+        description:
+          type: string
+        type:
+          type: string
         status:
           type: string
-          enum: [pending, in_progress, review, done]
+          enum: [draft, internal_review, sent, approved, changes_requested, completed]
         deadline:
           type: string
         assignedTo:
@@ -1672,6 +1690,8 @@ components:
         completionDate:
           type: string
         notes:
+          type: string
+        feedbackNotes:
           type: string
 
     DeliverableUpdate:
@@ -1679,9 +1699,13 @@ components:
       properties:
         title:
           type: string
+        description:
+          type: string
+        type:
+          type: string
         status:
           type: string
-          enum: [pending, in_progress, review, done]
+          enum: [draft, internal_review, sent, approved, changes_requested, completed]
         deadline:
           type: string
         assignedTo:
@@ -1689,6 +1713,10 @@ components:
         completionDate:
           type: string
         notes:
+          type: string
+        approvedBy:
+          type: string
+        feedbackNotes:
           type: string
 
     # ─── Payment ─────────────────────────────────────────────────────────────

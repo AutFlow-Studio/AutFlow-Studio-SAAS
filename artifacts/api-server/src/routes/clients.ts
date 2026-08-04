@@ -336,6 +336,14 @@ router.get("/clients/:id", async (req, res): Promise<void> => {
       .where(eq(clientsTable.id, client.id));
   }
 
+  // Group deliverables by projectId so the frontend can access project.deliverables[]
+  const deliverablesByProject = new Map<number, typeof deliverables>();
+  for (const d of deliverables) {
+    const list = deliverablesByProject.get(d.projectId) ?? [];
+    list.push(d);
+    deliverablesByProject.set(d.projectId, list);
+  }
+
   res.json({
     ...mapClient(client),
     healthScore,
@@ -348,6 +356,12 @@ router.get("/clients/:id", async (req, res): Promise<void> => {
       profit: p.revenue && p.actualCost ? Number(p.revenue) - Number(p.actualCost) : null,
       updatedAt: p.updatedAt.toISOString(),
       createdAt: p.createdAt.toISOString(),
+      // Nest deliverables so the client detail page can render project.deliverables[]
+      deliverables: (deliverablesByProject.get(p.id) ?? []).map((d) => ({
+        ...d,
+        createdAt: d.createdAt.toISOString(),
+        updatedAt: d.updatedAt.toISOString(),
+      })),
     })),
     openPayments: openPayments.map((p) => ({
       ...p,

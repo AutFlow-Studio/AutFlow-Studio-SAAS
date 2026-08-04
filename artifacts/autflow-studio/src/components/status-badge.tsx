@@ -72,8 +72,29 @@ export function getDeliverableStatusVariant(status: string): VariantProps<typeof
     case "sent":              return "warning";
     case "approved":          return "success";
     case "changes_requested": return "destructive";
+    case "completed":         return "success";
     case "pending":           return "neutral"; // legacy
+    case "in_progress":       return "info";    // legacy
+    case "review":            return "warning"; // legacy
+    case "done":              return "success"; // legacy
+    case "revision":          return "destructive"; // legacy
     default:                  return "default";
+  }
+}
+
+export function getDeliverableStatusLabel(status: string): string {
+  switch (status.toLowerCase()) {
+    case "draft":             return "Draft";
+    case "internal_review":   return "Internal Review";
+    case "sent":              return "Sent to Client";
+    case "approved":          return "Approved";
+    case "changes_requested": return "Changes Requested";
+    case "completed":         return "Completed";
+    case "pending":           return "Draft";       // legacy
+    case "in_progress":       return "In Progress"; // legacy
+    case "review":            return "In Review";   // legacy
+    case "done":              return "Completed";   // legacy
+    default:                  return status.replace(/_/g, " ");
   }
 }
 

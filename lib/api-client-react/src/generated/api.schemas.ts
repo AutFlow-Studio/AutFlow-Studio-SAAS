@@ -358,16 +358,22 @@ export type DeliverableStatus = typeof DeliverableStatus[keyof typeof Deliverabl
 
 
 export const DeliverableStatus = {
-  pending: 'pending',
-  in_progress: 'in_progress',
-  review: 'review',
-  done: 'done',
+  draft: 'draft',
+  internal_review: 'internal_review',
+  sent: 'sent',
+  approved: 'approved',
+  changes_requested: 'changes_requested',
+  completed: 'completed',
 } as const;
 
 export interface Deliverable {
   id: number;
   projectId: number;
   title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  type?: string | null;
   status: DeliverableStatus;
   /** @nullable */
   deadline?: string | null;
@@ -377,7 +383,15 @@ export interface Deliverable {
   completionDate?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  approvalDate?: string | null;
+  /** @nullable */
+  approvedBy?: string | null;
+  revisionCount: number;
+  /** @nullable */
+  feedbackNotes?: string | null;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type DocumentType = typeof DocumentType[keyof typeof DocumentType];
@@ -507,38 +521,49 @@ export type DeliverableInputStatus = typeof DeliverableInputStatus[keyof typeof 
 
 
 export const DeliverableInputStatus = {
-  pending: 'pending',
-  in_progress: 'in_progress',
-  review: 'review',
-  done: 'done',
+  draft: 'draft',
+  internal_review: 'internal_review',
+  sent: 'sent',
+  approved: 'approved',
+  changes_requested: 'changes_requested',
+  completed: 'completed',
 } as const;
 
 export interface DeliverableInput {
   title: string;
+  description?: string;
+  type?: string;
   status?: DeliverableInputStatus;
   deadline?: string;
   assignedTo?: string;
   completionDate?: string;
   notes?: string;
+  feedbackNotes?: string;
 }
 
 export type DeliverableUpdateStatus = typeof DeliverableUpdateStatus[keyof typeof DeliverableUpdateStatus];
 
 
 export const DeliverableUpdateStatus = {
-  pending: 'pending',
-  in_progress: 'in_progress',
-  review: 'review',
-  done: 'done',
+  draft: 'draft',
+  internal_review: 'internal_review',
+  sent: 'sent',
+  approved: 'approved',
+  changes_requested: 'changes_requested',
+  completed: 'completed',
 } as const;
 
 export interface DeliverableUpdate {
   title?: string;
+  description?: string;
+  type?: string;
   status?: DeliverableUpdateStatus;
   deadline?: string;
   assignedTo?: string;
   completionDate?: string;
   notes?: string;
+  approvedBy?: string;
+  feedbackNotes?: string;
 }
 
 export type PaymentInputStatus = typeof PaymentInputStatus[keyof typeof PaymentInputStatus];

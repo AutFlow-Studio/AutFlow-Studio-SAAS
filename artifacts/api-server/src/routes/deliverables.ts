@@ -13,7 +13,11 @@ import {
 const router: IRouter = Router();
 
 function mapDeliverable(d: typeof deliverablesTable.$inferSelect) {
-  return { ...d, createdAt: d.createdAt.toISOString() };
+  return {
+    ...d,
+    createdAt: d.createdAt.toISOString(),
+    updatedAt: d.updatedAt.toISOString(),
+  };
 }
 
 /**
@@ -36,7 +40,6 @@ router.get("/projects/:projectId/deliverables", async (req, res): Promise<void> 
   }
   const wid = req.session.workspaceId!;
 
-  // Verify project belongs to this workspace before returning its deliverables
   const project = await getProjectForWorkspace(params.data.projectId, wid);
   if (!project) {
     res.status(404).json({ error: "Project not found" });
@@ -66,7 +69,6 @@ router.post("/projects/:projectId/deliverables", async (req, res): Promise<void>
   }
   const wid = req.session.workspaceId!;
 
-  // Verify project belongs to this workspace before inserting
   const project = await getProjectForWorkspace(params.data.projectId, wid);
   if (!project) {
     res.status(404).json({ error: "Project not found" });
@@ -80,6 +82,7 @@ router.post("/projects/:projectId/deliverables", async (req, res): Promise<void>
       projectId: params.data.projectId,
       workspaceId: wid,
       status: parsed.data.status ?? "draft",
+      revisionCount: 0,
     })
     .returning();
 
@@ -111,7 +114,7 @@ router.patch("/deliverables/:id", async (req, res): Promise<void> => {
 
   // Verify the deliverable's parent project belongs to this workspace
   const [existing] = await db
-    .select({ deliverable: deliverablesTable })
+    .select({ deliverable: deliverablesTable, projectName: projectsTable.name, clientId: projectsTable.clientId })
     .from(deliverablesTable)
     .innerJoin(projectsTable, eq(deliverablesTable.projectId, projectsTable.id))
     .where(
@@ -126,15 +129,66 @@ router.patch("/deliverables/:id", async (req, res): Promise<void> => {
     return;
   }
 
+  const prev = existing.deliverable;
+  const newStatus = parsed.data.status;
+  const now = new Date();
+
+  // Build the update payload with automatic workflow side-effects
+  const updatePayload: Partial<typeof deliverablesTable.$inferInsert> & { updatedAt: Date } = {
+    ...parsed.data,
+    updatedAt: now,
+  };
+
+  // Status transition logic
+  if (newStatus && newStatus !== prev.status) {
+    if (newStatus === "changes_requested") {
+      // Increment revision counter each time client requests changes
+      updatePayload.revisionCount = (prev.revisionCount ?? 0) + 1;
+    }
+    if (newStatus === "approved") {
+      // Record who approved and when
+      updatePayload.approvalDate = now.toISOString().split("T")[0]!;
+      if (!updatePayload.approvedBy && req.session.userId) {
+        updatePayload.approvedBy = `User #${req.session.userId}`;
+      }
+    }
+    if (newStatus === "completed") {
+      // Auto-set completion date if not already provided
+      if (!updatePayload.completionDate) {
+        updatePayload.completionDate = now.toISOString().split("T")[0]!;
+      }
+    }
+  }
+
   const [deliverable] = await db
     .update(deliverablesTable)
-    .set(parsed.data)
+    .set(updatePayload)
     .where(eq(deliverablesTable.id, params.data.id))
     .returning();
 
   if (!deliverable) {
     res.status(404).json({ error: "Deliverable not found" });
     return;
+  }
+
+  // Log status transitions as activity
+  if (newStatus && newStatus !== prev.status) {
+    const statusLabels: Record<string, string> = {
+      draft: "Draft",
+      internal_review: "Internal Review",
+      sent: "Sent to Client",
+      approved: "Approved",
+      changes_requested: "Changes Requested",
+      completed: "Completed",
+    };
+    await db.insert(activityTable).values({
+      type: "deliverable_updated",
+      entityType: "deliverable",
+      entityId: deliverable.id,
+      description: `Deliverable "${deliverable.title}" moved to ${statusLabels[newStatus] ?? newStatus}`,
+      clientId: existing.clientId ?? null,
+      workspaceId: wid,
+    });
   }
 
   res.json(mapDeliverable(deliverable));

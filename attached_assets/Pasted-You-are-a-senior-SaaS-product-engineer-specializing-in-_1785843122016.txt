@@ -1,0 +1,261 @@
+You are a senior SaaS product engineer specializing in digital agency workflow platforms.
+
+Your task is to transform the Deliverables system in AutFlow Studio into a professional agency delivery and client approval workflow.
+
+IMPORTANT:
+- Previous upgrades are already completed:
+  - Digital Agency positioning
+  - Agency data model
+  - Client Management System
+  - Project Management System
+
+- Preserve existing work.
+- Do not rebuild from scratch.
+- Connect existing database capabilities to the frontend.
+- Complete any remaining Deliverables integration gaps.
+
+CURRENT GOAL:
+
+Create a system where digital agencies can manage everything they deliver to clients:
+
+Project
+→ Deliverable
+→ Internal Review
+→ Client Review
+→ Approval / Revision
+→ Completion
+
+The system should help agencies reduce confusion, missed feedback, and endless revisions.
+
+---
+
+# 1. Audit Current Deliverables System
+
+Analyze:
+
+- Deliverables database model.
+- API routes.
+- Project relationship.
+- Client relationship.
+- Current UI components.
+- Current status workflow.
+
+Identify:
+
+- Working functionality.
+- Missing functionality.
+- Broken connections.
+
+---
+
+# 2. Complete Deliverable Data Structure
+
+Ensure every deliverable supports:
+
+Basic information:
+
+- Name
+- Description
+- Type
+- Project relationship
+- Client relationship through project
+
+Ownership:
+
+- Created by
+- Assigned team member
+
+Status:
+
+- Draft
+- Internal Review
+- Sent To Client
+- Approved
+- Changes Requested
+- Completed
+
+Tracking:
+
+- Created date
+- Updated date
+- Approval date
+- Revision count
+
+Workspace isolation:
+
+Every deliverable must belong to the correct workspace.
+
+---
+
+# 3. Upgrade Project Deliverables Section
+
+Inside every project:
+
+Create a dedicated Deliverables area.
+
+Show:
+
+- All deliverables.
+- Current status.
+- Assigned person.
+- Client approval state.
+- Last update.
+
+Add filters:
+
+- All
+- Pending Review
+- Waiting Client
+- Approved
+- Changes Requested
+
+---
+
+# 4. Upgrade Client View
+
+Inside Client Detail:
+
+Show all client deliverables across projects.
+
+Display:
+
+- Deliverable name
+- Related project
+- Status
+- Approval state
+- Last activity
+
+The agency owner should quickly answer:
+
+"What is this client waiting for?"
+
+---
+
+# 5. Create Approval Workflow
+
+Implement:
+
+Agency creates deliverable.
+
+↓
+
+Internal Review.
+
+↓
+
+Send to Client.
+
+↓
+
+Client approves OR requests changes.
+
+↓
+
+Revision tracked.
+
+↓
+
+Final completion.
+
+Track:
+
+- Who approved.
+- When approved.
+- Revision count.
+- Feedback notes.
+
+---
+
+# 6. Client Feedback System
+
+Add a foundation for feedback:
+
+Each deliverable can contain:
+
+- Feedback notes.
+- Revision requests.
+- Internal comments.
+
+Do not build a complex chat system.
+
+Keep it simple and useful for MVP.
+
+---
+
+# 7. Connect Deliverables With Project Health
+
+Use deliverable data for project health:
+
+Examples:
+
+Health decreases when:
+
+- Deliverable waiting for approval too long.
+- Multiple revision requests.
+- Client blocked.
+
+Health improves when:
+
+- Deliverables approved.
+- Project milestones completed.
+
+---
+
+# 8. Connect Deliverables With AI Preparation
+
+Prepare structured information so AI can later answer:
+
+- Which deliverables are waiting for clients?
+- Which projects have approval blockers?
+- Which clients have pending feedback?
+- What revisions are requested?
+
+Do not build AI features yet.
+
+Only make the data accessible.
+
+---
+
+# 9. UX Requirements
+
+Improve:
+
+- Deliverable creation flow.
+- Empty states.
+- Status indicators.
+- Loading states.
+- Error handling.
+
+The UI should feel like a premium agency management tool.
+
+---
+
+# 10. Fix Previous Limitations
+
+Resolve:
+
+- Client detail Deliverables tab not receiving nested deliverables.
+- Missing project-deliverable relationships.
+- Any API response mismatch.
+- Any missing workspace filtering.
+
+---
+
+# Final Response Requirements:
+
+After implementation provide:
+
+1. Deliverable workflow after changes.
+2. Frontend pages/components modified.
+3. Backend/API changes.
+4. Database fields used.
+5. Remaining limitations.
+6. Recommended next development step.
+
+Success criteria:
+
+A digital agency owner should be able to manage the complete delivery cycle:
+
+"We know what we are delivering, who owns it, what the client is reviewing, what needs changes, and what has been approved."
+
+The Deliverables system should become a major reason for agencies to choose AutFlow Studio over generic project management tools.

@@ -9,9 +9,13 @@ import type { DeliverableUpdateStatus } from './deliverableUpdateStatus';
 
 export interface DeliverableUpdate {
   title?: string;
+  description?: string;
+  type?: string;
   status?: DeliverableUpdateStatus;
   deadline?: string;
   assignedTo?: string;
   completionDate?: string;
   notes?: string;
+  approvedBy?: string;
+  feedbackNotes?: string;
 }

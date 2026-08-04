@@ -11,6 +11,10 @@ export interface Deliverable {
   id: number;
   projectId: number;
   title: string;
+  /** @nullable */
+  description?: string | null;
+  /** @nullable */
+  type?: string | null;
   status: DeliverableStatus;
   /** @nullable */
   deadline?: string | null;
@@ -20,5 +24,13 @@ export interface Deliverable {
   completionDate?: string | null;
   /** @nullable */
   notes?: string | null;
+  /** @nullable */
+  approvalDate?: string | null;
+  /** @nullable */
+  approvedBy?: string | null;
+  revisionCount: number;
+  /** @nullable */
+  feedbackNotes?: string | null;
   createdAt: string;
+  updatedAt: string;
 }

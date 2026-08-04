@@ -9,9 +9,12 @@ import type { DeliverableInputStatus } from './deliverableInputStatus';
 
 export interface DeliverableInput {
   title: string;
+  description?: string;
+  type?: string;
   status?: DeliverableInputStatus;
   deadline?: string;
   assignedTo?: string;
   completionDate?: string;
   notes?: string;
+  feedbackNotes?: string;
 }

@@ -532,12 +532,19 @@ export const GetProjectResponse = zod.object({
   "id": zod.number(),
   "projectId": zod.number(),
   "title": zod.string(),
-  "status": zod.enum(['pending', 'in_progress', 'review', 'done']),
+  "description": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['draft', 'internal_review', 'sent', 'approved', 'changes_requested', 'completed']),
   "deadline": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "completionDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "approvalDate": zod.string().nullish(),
+  "approvedBy": zod.string().nullish(),
+  "revisionCount": zod.number(),
+  "feedbackNotes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })).optional(),
   "documents": zod.array(zod.object({
   "id": zod.number(),
@@ -634,12 +641,19 @@ export const ListDeliverablesResponseItem = zod.object({
   "id": zod.number(),
   "projectId": zod.number(),
   "title": zod.string(),
-  "status": zod.enum(['pending', 'in_progress', 'review', 'done']),
+  "description": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['draft', 'internal_review', 'sent', 'approved', 'changes_requested', 'completed']),
   "deadline": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "completionDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "approvalDate": zod.string().nullish(),
+  "approvedBy": zod.string().nullish(),
+  "revisionCount": zod.number(),
+  "feedbackNotes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })
 export const ListDeliverablesResponse = zod.array(ListDeliverablesResponseItem)
 
@@ -653,23 +667,33 @@ export const CreateDeliverableParams = zod.object({
 
 export const CreateDeliverableBody = zod.object({
   "title": zod.string(),
-  "status": zod.enum(['pending', 'in_progress', 'review', 'done']).optional(),
+  "description": zod.string().optional(),
+  "type": zod.string().optional(),
+  "status": zod.enum(['draft', 'internal_review', 'sent', 'approved', 'changes_requested', 'completed']).optional(),
   "deadline": zod.string().optional(),
   "assignedTo": zod.string().optional(),
   "completionDate": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "feedbackNotes": zod.string().optional()
 })
 
 export const CreateDeliverableResponse = zod.object({
   "id": zod.number(),
   "projectId": zod.number(),
   "title": zod.string(),
-  "status": zod.enum(['pending', 'in_progress', 'review', 'done']),
+  "description": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['draft', 'internal_review', 'sent', 'approved', 'changes_requested', 'completed']),
   "deadline": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "completionDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "approvalDate": zod.string().nullish(),
+  "approvedBy": zod.string().nullish(),
+  "revisionCount": zod.number(),
+  "feedbackNotes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })
 
 
@@ -682,23 +706,34 @@ export const UpdateDeliverableParams = zod.object({
 
 export const UpdateDeliverableBody = zod.object({
   "title": zod.string().optional(),
-  "status": zod.enum(['pending', 'in_progress', 'review', 'done']).optional(),
+  "description": zod.string().optional(),
+  "type": zod.string().optional(),
+  "status": zod.enum(['draft', 'internal_review', 'sent', 'approved', 'changes_requested', 'completed']).optional(),
   "deadline": zod.string().optional(),
   "assignedTo": zod.string().optional(),
   "completionDate": zod.string().optional(),
-  "notes": zod.string().optional()
+  "notes": zod.string().optional(),
+  "approvedBy": zod.string().optional(),
+  "feedbackNotes": zod.string().optional()
 })
 
 export const UpdateDeliverableResponse = zod.object({
   "id": zod.number(),
   "projectId": zod.number(),
   "title": zod.string(),
-  "status": zod.enum(['pending', 'in_progress', 'review', 'done']),
+  "description": zod.string().nullish(),
+  "type": zod.string().nullish(),
+  "status": zod.enum(['draft', 'internal_review', 'sent', 'approved', 'changes_requested', 'completed']),
   "deadline": zod.string().nullish(),
   "assignedTo": zod.string().nullish(),
   "completionDate": zod.string().nullish(),
   "notes": zod.string().nullish(),
-  "createdAt": zod.string()
+  "approvalDate": zod.string().nullish(),
+  "approvedBy": zod.string().nullish(),
+  "revisionCount": zod.number(),
+  "feedbackNotes": zod.string().nullish(),
+  "createdAt": zod.string(),
+  "updatedAt": zod.string()
 })
 
 

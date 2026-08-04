@@ -55,6 +55,7 @@ import {
   getProjectStatusVariant,
   getPaymentStatusVariant,
   getDeliverableStatusVariant,
+ getDeliverableStatusLabel,
 } from "@/components/status-badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -1118,7 +1119,7 @@ export default function ClientDetail() {
               <CardHeader>
                 <CardTitle>Deliverables</CardTitle>
                 <CardDescription>
-                  Items from all projects awaiting approval or in progress
+                  Everything this client is waiting on, reviewing, or has approved — across all projects.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1130,27 +1131,66 @@ export default function ClientDetail() {
                   <div className="space-y-6">
                     {projects.map((project: any) => {
                       if (!project.deliverables || project.deliverables.length === 0) return null;
+                      const actionable = project.deliverables.filter((d: any) =>
+                        ["sent", "changes_requested"].includes(d.status)
+                      );
                       return (
                         <div key={project.id}>
-                          <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
-                            {project.name}
+                          <div className="flex items-center gap-2 mb-3">
+                            <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                              {project.name}
+                            </div>
+                            {actionable.length > 0 && (
+                              <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400">
+                                {actionable.length} needs attention
+                              </span>
+                            )}
                           </div>
-                          <div className="divide-y divide-border/50">
-                            {project.deliverables.map((d: any) => (
-                              <div key={d.id} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-4">
-                                <div>
-                                  <div className="text-sm font-medium">{d.title}</div>
-                                  {d.deadline && (
-                                    <div className="text-xs text-muted-foreground mt-0.5">
-                                      Due {format(new Date(d.deadline), "MMM d, yyyy")}
+                          <div className="divide-y divide-border/50 border rounded-lg overflow-hidden">
+                            {project.deliverables.map((d: any) => {
+                              const isActionable = ["sent", "changes_requested"].includes(d.status);
+                              return (
+                                <div
+                                  key={d.id}
+                                  className={`py-3 px-4 flex items-start justify-between gap-4 ${isActionable ? "bg-amber-500/5" : ""}`}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="text-sm font-medium">{d.title}</div>
+                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1">
+                                      {d.type && (
+                                        <span className="text-xs text-muted-foreground">{d.type}</span>
+                                      )}
+                                      {d.assignedTo && (
+                                        <span className="text-xs text-muted-foreground">Owner: {d.assignedTo}</span>
+                                      )}
+                                      {d.deadline && (
+                                        <span className="text-xs text-muted-foreground">
+                                          Due {format(new Date(d.deadline + "T00:00:00"), "MMM d, yyyy")}
+                                        </span>
+                                      )}
+                                      {d.approvalDate && (
+                                        <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                                          Approved {format(new Date(d.approvalDate + "T00:00:00"), "MMM d")}
+                                        </span>
+                                      )}
+                                      {(d.revisionCount ?? 0) > 0 && (
+                                        <span className="text-xs text-orange-600 dark:text-orange-400">
+                                          {d.revisionCount} revision{d.revisionCount !== 1 ? "s" : ""}
+                                        </span>
+                                      )}
                                     </div>
-                                  )}
+                                    {d.feedbackNotes && d.status === "changes_requested" && (
+                                      <div className="mt-1.5 text-xs text-orange-700 dark:text-orange-400 bg-orange-50 dark:bg-orange-950/30 rounded px-2 py-1 line-clamp-2">
+                                        {d.feedbackNotes}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <StatusBadge variant={getDeliverableStatusVariant(d.status)} className="shrink-0 mt-0.5">
+                                    {getDeliverableStatusLabel(d.status)}
+                                  </StatusBadge>
                                 </div>
-                                <StatusBadge variant={getDeliverableStatusVariant(d.status)}>
-                                  {d.status.replace(/_/g, " ")}
-                                </StatusBadge>
-                              </div>
-                            ))}
+                              );
+                            })}
                           </div>
                         </div>
                       );

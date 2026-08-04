@@ -552,6 +552,28 @@ async function migrate() {
     // payments: link to invoices table (nullable for legacy rows)
     await client.query(`ALTER TABLE payments ADD COLUMN IF NOT EXISTS invoice_id INTEGER REFERENCES invoices(id) ON DELETE SET NULL`);
 
+    // ── Deliverables v3: approval workflow fields ──────────────────────────
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS description TEXT`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS type TEXT`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS approval_date DATE`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS approved_by TEXT`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS revision_count INTEGER NOT NULL DEFAULT 0`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS feedback_notes TEXT`);
+    await client.query(`ALTER TABLE deliverables ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`);
+    // Migrate legacy status values to new lifecycle values
+    await client.query(`
+      UPDATE deliverables
+      SET status = CASE
+        WHEN status = 'pending'     THEN 'draft'
+        WHEN status = 'in_progress' THEN 'internal_review'
+        WHEN status = 'review'      THEN 'sent'
+        WHEN status = 'done'        THEN 'completed'
+        WHEN status = 'revision'    THEN 'changes_requested'
+        ELSE status
+      END
+      WHERE status IN ('pending','in_progress','review','done','revision')
+    `);
+
     // Indexes for common agency queries
     await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_workspace ON deliverables(workspace_id)`);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_deliverables_status    ON deliverables(status)`);
