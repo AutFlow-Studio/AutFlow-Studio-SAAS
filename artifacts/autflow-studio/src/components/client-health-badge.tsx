@@ -1,26 +1,34 @@
-import { useState } from "react";
-import { Heart, Loader2, AlertTriangle, CheckCircle2, Info } from "lucide-react";
+import { Heart, AlertTriangle, CheckCircle2, Info, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Button } from "@/components/ui/button";
 
-interface HealthData {
+export type HealthStatus = "Healthy" | "Stable" | "Needs Attention" | "Risk";
+
+export interface HealthData {
   score: number;
-  status: "Healthy" | "Needs Attention" | "At Risk";
-  summary: string;
-  reasons: string[];
+  status: HealthStatus;
+  reasons?: string[];
 }
 
 interface ClientHealthBadgeProps {
-  clientId: number;
-  clientName?: string;
+  score?: number | null;
+  reasons?: string[];
+  /** Show compact mode (just icon + number, no label) */
+  compact?: boolean;
 }
 
-function statusConfig(status: HealthData["status"]) {
+export function getHealthStatus(score: number): HealthStatus {
+  if (score >= 90) return "Healthy";
+  if (score >= 70) return "Stable";
+  if (score >= 40) return "Needs Attention";
+  return "Risk";
+}
+
+function statusConfig(status: HealthStatus) {
   switch (status) {
     case "Healthy":
       return {
@@ -28,143 +36,114 @@ function statusConfig(status: HealthData["status"]) {
         color: "text-emerald-400",
         bg: "bg-emerald-500/10 border-emerald-500/20",
         bar: "bg-emerald-500",
+        text: "text-emerald-400",
+      };
+    case "Stable":
+      return {
+        icon: Info,
+        color: "text-blue-400",
+        bg: "bg-blue-500/10 border-blue-500/20",
+        bar: "bg-blue-500",
+        text: "text-blue-400",
       };
     case "Needs Attention":
       return {
         icon: Info,
-        color: "text-yellow-400",
-        bg: "bg-yellow-500/10 border-yellow-500/20",
-        bar: "bg-yellow-500",
+        color: "text-amber-400",
+        bg: "bg-amber-500/10 border-amber-500/20",
+        bar: "bg-amber-500",
+        text: "text-amber-400",
       };
-    case "At Risk":
+    case "Risk":
       return {
         icon: AlertTriangle,
         color: "text-red-400",
         bg: "bg-red-500/10 border-red-500/20",
         bar: "bg-red-500",
+        text: "text-red-400",
       };
   }
 }
 
-export function ClientHealthBadge({ clientId, clientName }: ClientHealthBadgeProps) {
-  const [health, setHealth] = useState<HealthData | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [open, setOpen] = useState(false);
-
-  async function fetchHealth() {
-    if (health || loading) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const res = await fetch(`/api/ai/client-health/${clientId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error((body as any).error ?? "Failed to fetch health score");
-      }
-      const data = await res.json();
-      setHealth(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error");
-    } finally {
-      setLoading(false);
-    }
+/**
+ * Displays a client health badge with optional popover showing score breakdown.
+ * Accepts pre-computed score from the API (no AI call needed).
+ */
+export function ClientHealthBadge({
+  score,
+  reasons = [],
+  compact = false,
+}: ClientHealthBadgeProps) {
+  if (score == null) {
+    return (
+      <button
+        className="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border bg-secondary/50 border-border/40 text-muted-foreground"
+        title="Health score not yet computed"
+      >
+        <Heart size={11} />
+        {!compact && <span>Health</span>}
+      </button>
+    );
   }
 
-  function handleOpenChange(v: boolean) {
-    setOpen(v);
-    if (v) fetchHealth();
-  }
+  const status = getHealthStatus(score);
+  const cfg = statusConfig(status);
 
-  const cfg = health ? statusConfig(health.status) : null;
+  const badge = (
+    <button
+      className={cn(
+        "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border transition-all",
+        cfg.bg,
+        cfg.color,
+      )}
+      title={`Health: ${status} (${score}/100)`}
+    >
+      <cfg.icon size={11} />
+      <span>{score}</span>
+      {!compact && <span className="hidden sm:inline">{status}</span>}
+    </button>
+  );
+
+  if (reasons.length === 0) return badge;
 
   return (
-    <Popover open={open} onOpenChange={handleOpenChange}>
-      <PopoverTrigger asChild>
-        <button
-          className={cn(
-            "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium border transition-all",
-            cfg
-              ? cn(cfg.bg, cfg.color)
-              : "bg-secondary/50 border-border/40 text-muted-foreground hover:text-foreground",
-          )}
-          title="Client Health Score"
-        >
-          {loading ? (
-            <Loader2 size={11} className="animate-spin" />
-          ) : cfg ? (
-            <cfg.icon size={11} />
-          ) : (
-            <Heart size={11} />
-          )}
-          {health ? (
-            <span>{health.score}</span>
-          ) : loading ? null : (
-            <span>Health</span>
-          )}
-        </button>
-      </PopoverTrigger>
-
+    <Popover>
+      <PopoverTrigger asChild>{badge}</PopoverTrigger>
       <PopoverContent className="w-72 p-4 space-y-3" side="top" align="start">
-        {loading && (
-          <div className="flex items-center gap-2 text-muted-foreground text-sm">
-            <Loader2 size={14} className="animate-spin" />
-            Analysing client health…
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <cfg.icon size={15} className={cfg.color} />
+            <span className={cn("text-sm font-semibold", cfg.color)}>{status}</span>
           </div>
-        )}
+          <span className="text-xl font-bold tabular-nums">
+            {score}
+            <span className="text-xs text-muted-foreground font-normal">/100</span>
+          </span>
+        </div>
 
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
+        {/* Score bar */}
+        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+          <div
+            className={cn("h-full rounded-full transition-all", cfg.bar)}
+            style={{ width: `${score}%` }}
+          />
+        </div>
 
-        {health && cfg && (
-          <>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <cfg.icon size={15} className={cfg.color} />
-                <span className={cn("text-sm font-semibold", cfg.color)}>{health.status}</span>
-              </div>
-              <span className="text-xl font-bold tabular-nums">{health.score}<span className="text-xs text-muted-foreground font-normal">/100</span></span>
-            </div>
-
-            {/* Score bar */}
-            <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-              <div
-                className={cn("h-full rounded-full transition-all", cfg.bar)}
-                style={{ width: `${health.score}%` }}
-              />
-            </div>
-
-            <p className="text-sm text-muted-foreground">{health.summary}</p>
-
-            {health.reasons.length > 0 && (
-              <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">
-                  Reasons
-                </p>
-                <ul className="space-y-1">
-                  {health.reasons.map((r, i) => (
-                    <li key={i} className="text-xs flex gap-1.5">
-                      <span className="text-muted-foreground mt-0.5">•</span>
-                      <span>{r}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full h-7 text-xs"
-              onClick={() => { setHealth(null); fetchHealth(); }}
-            >
-              <Loader2 size={11} className="mr-1" />
-              Refresh
-            </Button>
-          </>
+        {reasons.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5 flex items-center gap-1.5">
+              <TrendingDown size={11} />
+              Factors affecting health
+            </p>
+            <ul className="space-y-1">
+              {reasons.map((r, i) => (
+                <li key={i} className="text-xs flex gap-1.5">
+                  <span className="text-muted-foreground mt-0.5">•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
         )}
       </PopoverContent>
     </Popover>

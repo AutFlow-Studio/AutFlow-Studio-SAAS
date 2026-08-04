@@ -7,13 +7,21 @@
  */
 import type { ActivityItem } from './activityItem';
 import type { Client } from './client';
+import type { ClientDetailDeliverablesSummary } from './clientDetailDeliverablesSummary';
 import type { Payment } from './payment';
 import type { Project } from './project';
 
-export type ClientDetail = Client & {
+export type ClientDetail = Client & ({
   projects?: Project[];
   recentActivity?: ActivityItem[];
   openPayments?: Payment[];
   totalRevenue?: number;
   outstandingBalance?: number;
-};
+  totalInvoiced?: number;
+  overdueAmount?: number;
+  activeProjectsCount?: number;
+  deliverablesSummary?: ClientDetailDeliverablesSummary;
+  healthReasons?: string[];
+  /** @nullable */
+  lastActivityAt?: string | null;
+});

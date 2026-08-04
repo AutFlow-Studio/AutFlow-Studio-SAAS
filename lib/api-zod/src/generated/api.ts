@@ -146,8 +146,15 @@ export const GetDashboardResponse = zod.object({
  */
 export const ListClientsQueryParams = zod.object({
   "status": zod.coerce.string().optional(),
-  "search": zod.coerce.string().optional()
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']).optional(),
+  "search": zod.coerce.string().optional(),
+  "sort": zod.enum(['name', 'healthScore', 'revenue', 'recentActivity']).optional()
 })
+
+export const listClientsResponseHealthScoreMin = 0;
+export const listClientsResponseHealthScoreMax = 100;
+
+
 
 export const ListClientsResponseItem = zod.object({
   "id": zod.number(),
@@ -162,6 +169,8 @@ export const ListClientsResponseItem = zod.object({
   "address": zod.string().nullish(),
   "timezone": zod.string().nullish(),
   "status": zod.enum(['active', 'inactive', 'prospect', 'churned']),
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']),
+  "healthScore": zod.number().min(listClientsResponseHealthScoreMin).max(listClientsResponseHealthScoreMax).nullish(),
   "startDate": zod.string().nullish(),
   "contractValue": zod.number().nullish(),
   "monthlyRetainer": zod.number().nullish(),
@@ -189,6 +198,7 @@ export const CreateClientBody = zod.object({
   "address": zod.string().optional(),
   "timezone": zod.string().optional(),
   "status": zod.enum(['active', 'inactive', 'prospect', 'churned']).optional(),
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']).optional(),
   "startDate": zod.string().optional(),
   "contractValue": zod.number().optional(),
   "monthlyRetainer": zod.number().optional(),
@@ -196,6 +206,11 @@ export const CreateClientBody = zod.object({
   "notes": zod.string().optional(),
   "tags": zod.array(zod.string()).optional()
 })
+
+export const createClientResponseHealthScoreMin = 0;
+export const createClientResponseHealthScoreMax = 100;
+
+
 
 export const CreateClientResponse = zod.object({
   "id": zod.number(),
@@ -210,6 +225,8 @@ export const CreateClientResponse = zod.object({
   "address": zod.string().nullish(),
   "timezone": zod.string().nullish(),
   "status": zod.enum(['active', 'inactive', 'prospect', 'churned']),
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']),
+  "healthScore": zod.number().min(createClientResponseHealthScoreMin).max(createClientResponseHealthScoreMax).nullish(),
   "startDate": zod.string().nullish(),
   "contractValue": zod.number().nullish(),
   "monthlyRetainer": zod.number().nullish(),
@@ -227,6 +244,9 @@ export const CreateClientResponse = zod.object({
 export const GetClientParams = zod.object({
   "id": zod.coerce.number()
 })
+
+export const getClientResponseOneHealthScoreMin = 0;
+export const getClientResponseOneHealthScoreMax = 100;
 
 export const getClientResponseTwoProjectsItemProgressMin = 0;
 export const getClientResponseTwoProjectsItemProgressMax = 100;
@@ -246,6 +266,8 @@ export const GetClientResponse = zod.object({
   "address": zod.string().nullish(),
   "timezone": zod.string().nullish(),
   "status": zod.enum(['active', 'inactive', 'prospect', 'churned']),
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']),
+  "healthScore": zod.number().min(getClientResponseOneHealthScoreMin).max(getClientResponseOneHealthScoreMax).nullish(),
   "startDate": zod.string().nullish(),
   "contractValue": zod.number().nullish(),
   "monthlyRetainer": zod.number().nullish(),
@@ -300,7 +322,18 @@ export const GetClientResponse = zod.object({
   "createdAt": zod.string()
 })).optional(),
   "totalRevenue": zod.number().optional(),
-  "outstandingBalance": zod.number().optional()
+  "outstandingBalance": zod.number().optional(),
+  "totalInvoiced": zod.number().optional(),
+  "overdueAmount": zod.number().optional(),
+  "activeProjectsCount": zod.number().optional(),
+  "deliverablesSummary": zod.object({
+  "pendingApproval": zod.number().optional(),
+  "approved": zod.number().optional(),
+  "changesRequested": zod.number().optional(),
+  "total": zod.number().optional()
+}).optional(),
+  "healthReasons": zod.array(zod.string()).optional(),
+  "lastActivityAt": zod.string().nullish()
 }))
 
 
@@ -310,6 +343,11 @@ export const GetClientResponse = zod.object({
 export const UpdateClientParams = zod.object({
   "id": zod.coerce.number()
 })
+
+export const updateClientBodyHealthScoreMin = 0;
+export const updateClientBodyHealthScoreMax = 100;
+
+
 
 export const UpdateClientBody = zod.object({
   "companyName": zod.string().optional(),
@@ -323,6 +361,8 @@ export const UpdateClientBody = zod.object({
   "address": zod.string().optional(),
   "timezone": zod.string().optional(),
   "status": zod.enum(['active', 'inactive', 'prospect', 'churned']).optional(),
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']).optional(),
+  "healthScore": zod.number().min(updateClientBodyHealthScoreMin).max(updateClientBodyHealthScoreMax).optional(),
   "startDate": zod.string().optional(),
   "contractValue": zod.number().optional(),
   "monthlyRetainer": zod.number().optional(),
@@ -330,6 +370,11 @@ export const UpdateClientBody = zod.object({
   "notes": zod.string().optional(),
   "tags": zod.array(zod.string()).optional()
 })
+
+export const updateClientResponseHealthScoreMin = 0;
+export const updateClientResponseHealthScoreMax = 100;
+
+
 
 export const UpdateClientResponse = zod.object({
   "id": zod.number(),
@@ -344,6 +389,8 @@ export const UpdateClientResponse = zod.object({
   "address": zod.string().nullish(),
   "timezone": zod.string().nullish(),
   "status": zod.enum(['active', 'inactive', 'prospect', 'churned']),
+  "lifecycleStatus": zod.enum(['lead', 'prospect', 'active', 'at_risk', 'completed', 'archived']),
+  "healthScore": zod.number().min(updateClientResponseHealthScoreMin).max(updateClientResponseHealthScoreMax).nullish(),
   "startDate": zod.string().nullish(),
   "contractValue": zod.number().nullish(),
   "monthlyRetainer": zod.number().nullish(),

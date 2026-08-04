@@ -5,6 +5,7 @@
  * Agency Owner Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { ClientInputLifecycleStatus } from './clientInputLifecycleStatus';
 import type { ClientInputStatus } from './clientInputStatus';
 
 export interface ClientInput {
@@ -19,6 +20,7 @@ export interface ClientInput {
   address?: string;
   timezone?: string;
   status?: ClientInputStatus;
+  lifecycleStatus?: ClientInputLifecycleStatus;
   startDate?: string;
   contractValue?: number;
   monthlyRetainer?: number;

@@ -152,6 +152,18 @@ export const ClientStatus = {
   churned: 'churned',
 } as const;
 
+export type ClientLifecycleStatus = typeof ClientLifecycleStatus[keyof typeof ClientLifecycleStatus];
+
+
+export const ClientLifecycleStatus = {
+  lead: 'lead',
+  prospect: 'prospect',
+  active: 'active',
+  at_risk: 'at_risk',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
 export interface Client {
   id: number;
   companyName: string;
@@ -174,6 +186,13 @@ export interface Client {
   /** @nullable */
   timezone?: string | null;
   status: ClientStatus;
+  lifecycleStatus: ClientLifecycleStatus;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  healthScore?: number | null;
   /** @nullable */
   startDate?: string | null;
   /** @nullable */
@@ -188,6 +207,13 @@ export interface Client {
   createdAt: string;
   updatedAt?: string;
 }
+
+export type ClientDetailDeliverablesSummary = {
+  pendingApproval?: number;
+  approved?: number;
+  changesRequested?: number;
+  total?: number;
+};
 
 export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
@@ -222,13 +248,20 @@ export interface Payment {
   createdAt: string;
 }
 
-export type ClientDetail = Client & {
+export type ClientDetail = Client & ({
   projects?: Project[];
   recentActivity?: ActivityItem[];
   openPayments?: Payment[];
   totalRevenue?: number;
   outstandingBalance?: number;
-};
+  totalInvoiced?: number;
+  overdueAmount?: number;
+  activeProjectsCount?: number;
+  deliverablesSummary?: ClientDetailDeliverablesSummary;
+  healthReasons?: string[];
+  /** @nullable */
+  lastActivityAt?: string | null;
+});
 
 export type ClientInputStatus = typeof ClientInputStatus[keyof typeof ClientInputStatus];
 
@@ -238,6 +271,18 @@ export const ClientInputStatus = {
   inactive: 'inactive',
   prospect: 'prospect',
   churned: 'churned',
+} as const;
+
+export type ClientInputLifecycleStatus = typeof ClientInputLifecycleStatus[keyof typeof ClientInputLifecycleStatus];
+
+
+export const ClientInputLifecycleStatus = {
+  lead: 'lead',
+  prospect: 'prospect',
+  active: 'active',
+  at_risk: 'at_risk',
+  completed: 'completed',
+  archived: 'archived',
 } as const;
 
 export interface ClientInput {
@@ -252,6 +297,7 @@ export interface ClientInput {
   address?: string;
   timezone?: string;
   status?: ClientInputStatus;
+  lifecycleStatus?: ClientInputLifecycleStatus;
   startDate?: string;
   contractValue?: number;
   monthlyRetainer?: number;
@@ -270,6 +316,18 @@ export const ClientUpdateStatus = {
   churned: 'churned',
 } as const;
 
+export type ClientUpdateLifecycleStatus = typeof ClientUpdateLifecycleStatus[keyof typeof ClientUpdateLifecycleStatus];
+
+
+export const ClientUpdateLifecycleStatus = {
+  lead: 'lead',
+  prospect: 'prospect',
+  active: 'active',
+  at_risk: 'at_risk',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
 export interface ClientUpdate {
   companyName?: string;
   logoUrl?: string;
@@ -282,6 +340,12 @@ export interface ClientUpdate {
   address?: string;
   timezone?: string;
   status?: ClientUpdateStatus;
+  lifecycleStatus?: ClientUpdateLifecycleStatus;
+  /**
+     * @minimum 0
+     * @maximum 100
+     */
+  healthScore?: number;
   startDate?: string;
   contractValue?: number;
   monthlyRetainer?: number;
@@ -917,8 +981,32 @@ export interface NotificationMarkAllReadResult {
 
 export type ListClientsParams = {
 status?: string;
+lifecycleStatus?: ListClientsLifecycleStatus;
 search?: string;
+sort?: ListClientsSort;
 };
+
+export type ListClientsLifecycleStatus = typeof ListClientsLifecycleStatus[keyof typeof ListClientsLifecycleStatus];
+
+
+export const ListClientsLifecycleStatus = {
+  lead: 'lead',
+  prospect: 'prospect',
+  active: 'active',
+  at_risk: 'at_risk',
+  completed: 'completed',
+  archived: 'archived',
+} as const;
+
+export type ListClientsSort = typeof ListClientsSort[keyof typeof ListClientsSort];
+
+
+export const ListClientsSort = {
+  name: 'name',
+  healthScore: 'healthScore',
+  revenue: 'revenue',
+  recentActivity: 'recentActivity',
+} as const;
 
 export type ListProjectsParams = {
 clientId?: number;

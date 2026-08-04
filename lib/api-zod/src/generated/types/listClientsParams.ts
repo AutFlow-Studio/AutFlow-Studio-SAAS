@@ -5,8 +5,12 @@
  * Agency Owner Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { ListClientsLifecycleStatus } from './listClientsLifecycleStatus';
+import type { ListClientsSort } from './listClientsSort';
 
 export type ListClientsParams = {
 status?: string;
+lifecycleStatus?: ListClientsLifecycleStatus;
 search?: string;
+sort?: ListClientsSort;
 };

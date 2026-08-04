@@ -41,6 +41,42 @@ export function getClientStatusVariant(status: string): VariantProps<typeof badg
   }
 }
 
+export function getLifecycleStatusVariant(status: string): VariantProps<typeof badgeVariants>["variant"] {
+  switch (status.toLowerCase()) {
+    case "lead":       return "neutral";
+    case "prospect":   return "info";
+    case "active":     return "success";
+    case "at_risk":    return "warning";
+    case "completed":  return "default";
+    case "archived":   return "neutral";
+    default:           return "default";
+  }
+}
+
+export function getLifecycleStatusLabel(status: string): string {
+  switch (status.toLowerCase()) {
+    case "lead":       return "Lead";
+    case "prospect":   return "Prospect";
+    case "active":     return "Active";
+    case "at_risk":    return "At Risk";
+    case "completed":  return "Completed";
+    case "archived":   return "Archived";
+    default:           return status;
+  }
+}
+
+export function getDeliverableStatusVariant(status: string): VariantProps<typeof badgeVariants>["variant"] {
+  switch (status.toLowerCase()) {
+    case "draft":             return "neutral";
+    case "internal_review":   return "info";
+    case "sent":              return "warning";
+    case "approved":          return "success";
+    case "changes_requested": return "destructive";
+    case "pending":           return "neutral"; // legacy
+    default:                  return "default";
+  }
+}
+
 export function getProjectStatusVariant(status: string): VariantProps<typeof badgeVariants>["variant"] {
   switch (status.toLowerCase()) {
     case "planning": return "neutral";

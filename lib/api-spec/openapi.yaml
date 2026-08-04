@@ -86,10 +86,20 @@ paths:
           in: query
           schema:
             type: string
+        - name: lifecycleStatus
+          in: query
+          schema:
+            type: string
+            enum: [lead, prospect, active, at_risk, completed, archived]
         - name: search
           in: query
           schema:
             type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum: [name, healthScore, revenue, recentActivity]
       responses:
         "200":
           description: List of clients
@@ -1305,7 +1315,7 @@ components:
     # ─── Client ─────────────────────────────────────────────────────────────
     Client:
       type: object
-      required: [id, companyName, status, createdAt]
+      required: [id, companyName, status, lifecycleStatus, createdAt]
       properties:
         id:
           type: integer
@@ -1332,6 +1342,13 @@ components:
         status:
           type: string
           enum: [active, inactive, prospect, churned]
+        lifecycleStatus:
+          type: string
+          enum: [lead, prospect, active, at_risk, completed, archived]
+        healthScore:
+          type: ["integer", "null"]
+          minimum: 0
+          maximum: 100
         startDate:
           type: ["string", "null"]
         contractValue:
@@ -1372,6 +1389,29 @@ components:
               type: number
             outstandingBalance:
               type: number
+            totalInvoiced:
+              type: number
+            overdueAmount:
+              type: number
+            activeProjectsCount:
+              type: integer
+            deliverablesSummary:
+              type: object
+              properties:
+                pendingApproval:
+                  type: integer
+                approved:
+                  type: integer
+                changesRequested:
+                  type: integer
+                total:
+                  type: integer
+            healthReasons:
+              type: array
+              items:
+                type: string
+            lastActivityAt:
+              type: ["string", "null"]
 
     ClientInput:
       type: object
@@ -1400,6 +1440,9 @@ components:
         status:
           type: string
           enum: [active, inactive, prospect, churned]
+        lifecycleStatus:
+          type: string
+          enum: [lead, prospect, active, at_risk, completed, archived]
         startDate:
           type: string
         contractValue:
@@ -1441,6 +1484,13 @@ components:
         status:
           type: string
           enum: [active, inactive, prospect, churned]
+        lifecycleStatus:
+          type: string
+          enum: [lead, prospect, active, at_risk, completed, archived]
+        healthScore:
+          type: integer
+          minimum: 0
+          maximum: 100
         startDate:
           type: string
         contractValue:

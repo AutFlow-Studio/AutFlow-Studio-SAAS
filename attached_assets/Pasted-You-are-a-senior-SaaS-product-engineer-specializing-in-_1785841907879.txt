@@ -1,0 +1,281 @@
+You are a senior SaaS product engineer specializing in digital agency management platforms.
+
+Your task is to transform the current Clients module in AutFlow Studio into a professional Client Management System for digital agencies.
+
+IMPORTANT:
+- The database foundation has already been upgraded.
+- Preserve existing work.
+- Do not rebuild from scratch.
+- Use the new database fields and relationships that already exist.
+- Connect the frontend and backend to the improved data model.
+
+CURRENT STATE:
+The backend now supports agency concepts:
+- Client lifecycle status
+- Client health score
+- Workspace isolation
+- Projects relationship
+- Invoices relationship
+- Activity tracking foundation
+
+However, these capabilities are not fully visible or usable in the product.
+
+Your goal is to make the Client experience production-quality.
+
+---
+
+# 1. Upgrade Client List Page
+
+Transform the client list from a simple table into an agency CRM view.
+
+Add:
+
+Client name
+
+Lifecycle status:
+- Lead
+- Prospect
+- Active Client
+- At Risk
+- Completed
+- Archived
+
+Health score:
+- Display 0-100 score visually.
+
+Revenue summary:
+- Total revenue
+- Paid invoices
+- Pending invoices
+
+Active projects count
+
+Last activity
+
+Next action / attention indicator
+
+
+Add filtering:
+
+- Active clients
+- At risk clients
+- Leads
+- Prospects
+- Archived clients
+
+Add sorting:
+
+- Health score
+- Revenue
+- Recent activity
+- Project status
+
+---
+
+# 2. Upgrade Client Detail Page
+
+Create a complete agency client profile.
+
+The client page should contain:
+
+## Overview section:
+
+- Client information
+- Industry
+- Contact information
+- Status
+- Health score
+
+## Projects:
+
+Show all related projects:
+
+- Project name
+- Status
+- Progress
+- Deadline
+- Health score
+
+## Financials:
+
+Show:
+
+- Total invoices
+- Paid amount
+- Outstanding amount
+- Payment history
+
+## Deliverables:
+
+Show:
+
+- Pending approvals
+- Approved deliverables
+- Revision requests
+
+## Documents:
+
+Show client-related documents.
+
+## Meetings:
+
+Show client meetings.
+
+## Activity Timeline:
+
+Display important events:
+
+Examples:
+- Project created
+- Task completed
+- Invoice sent
+- Payment received
+- Deliverable approved
+
+---
+
+# 3. Implement Client Health Score Display
+
+The health score already exists in the database.
+
+Create a proper UI representation.
+
+Example:
+
+90-100:
+Healthy
+
+70-89:
+Stable
+
+40-69:
+Needs attention
+
+0-39:
+Risk
+
+Show reasons when possible:
+
+Example:
+
+"Health score decreased because:
+- Project delayed 5 days
+- Invoice unpaid
+- Client approval pending"
+
+Do not create a complex AI system yet.
+Use existing data.
+
+---
+
+# 4. Connect Existing Data Model
+
+Ensure the frontend actually uses:
+
+clients.lifecycleStatus
+
+clients.healthScore
+
+projects.healthScore
+
+projects.blockers
+
+invoices.status
+
+payments
+
+activities
+
+Do not leave database fields unused.
+
+---
+
+# 5. Improve Client Creation Flow
+
+When creating a client, support agency needs.
+
+Fields:
+
+Required:
+- Client name
+- Contact person
+- Email
+
+Optional:
+- Company name
+- Industry
+- Notes
+- Expected revenue
+- Client status
+
+Default new clients to:
+
+Prospect
+
+---
+
+# 6. Improve Client Actions
+
+Add useful actions:
+
+- Create project for this client
+- Create invoice
+- Add meeting
+- Upload document
+- Add note
+
+Make the client page the central place for everything related to that client.
+
+---
+
+# 7. AI Preparation
+
+Prepare client data so the AI assistant can later answer:
+
+"Which clients need attention?"
+
+"Who has unpaid invoices?"
+
+"Which clients are at risk?"
+
+"Summarize this client relationship."
+
+Do not build the AI features now.
+Only ensure the data is structured correctly.
+
+---
+
+# 8. Fix Existing Issues
+
+Check for:
+
+- Broken client routes
+- Missing API connections
+- Incorrect workspace filtering
+- Empty states
+- Poor error handling
+
+---
+
+# Final Requirements:
+
+After implementation provide:
+
+1. Updated client workflow.
+2. Frontend pages/components changed.
+3. Backend/API changes.
+4. Database fields used.
+5. Remaining limitations.
+6. Recommended next step.
+
+Success criteria:
+
+A digital agency owner should be able to open a client profile and immediately understand:
+
+- Who this client is.
+- What projects are running.
+- What money is involved.
+- What needs attention.
+- The current relationship health.
+
+The client page should feel like an agency CRM, not a basic contact list.

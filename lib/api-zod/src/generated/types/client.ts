@@ -5,6 +5,7 @@
  * Agency Owner Operating System API
  * OpenAPI spec version: 0.1.0
  */
+import type { ClientLifecycleStatus } from './clientLifecycleStatus';
 import type { ClientStatus } from './clientStatus';
 
 export interface Client {
@@ -29,6 +30,13 @@ export interface Client {
   /** @nullable */
   timezone?: string | null;
   status: ClientStatus;
+  lifecycleStatus: ClientLifecycleStatus;
+  /**
+     * @minimum 0
+     * @maximum 100
+     * @nullable
+     */
+  healthScore?: number | null;
   /** @nullable */
   startDate?: string | null;
   /** @nullable */
