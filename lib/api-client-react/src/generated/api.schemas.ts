@@ -343,6 +343,7 @@ export type PaymentStatus = typeof PaymentStatus[keyof typeof PaymentStatus];
 
 export const PaymentStatus = {
   draft: 'draft',
+  pending: 'pending',
   sent: 'sent',
   paid: 'paid',
   overdue: 'overdue',
@@ -697,6 +698,7 @@ export type PaymentInputStatus = typeof PaymentInputStatus[keyof typeof PaymentI
 
 export const PaymentInputStatus = {
   draft: 'draft',
+  pending: 'pending',
   sent: 'sent',
   paid: 'paid',
   overdue: 'overdue',
@@ -721,6 +723,7 @@ export type PaymentUpdateStatus = typeof PaymentUpdateStatus[keyof typeof Paymen
 
 export const PaymentUpdateStatus = {
   draft: 'draft',
+  pending: 'pending',
   sent: 'sent',
   paid: 'paid',
   overdue: 'overdue',

@@ -1916,7 +1916,7 @@ components:
           type: number
         status:
           type: string
-          enum: [draft, sent, paid, overdue, cancelled]
+          enum: [draft, pending, sent, paid, overdue, cancelled]
         dueDate:
           type: ["string", "null"]
         paidDate:
@@ -1944,7 +1944,7 @@ components:
           type: number
         status:
           type: string
-          enum: [draft, sent, paid, overdue, cancelled]
+          enum: [draft, pending, sent, paid, overdue, cancelled]
         dueDate:
           type: string
         paidDate:
@@ -1967,7 +1967,7 @@ components:
           type: number
         status:
           type: string
-          enum: [draft, sent, paid, overdue, cancelled]
+          enum: [draft, pending, sent, paid, overdue, cancelled]
         dueDate:
           type: string
         paidDate:

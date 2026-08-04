@@ -5,10 +5,15 @@ import {
   useCreateDeliverable,
   useUpdateDeliverable,
   useDeleteDeliverable,
+  useListPayments,
+  useUpdatePayment,
+  useCreatePayment,
   getGetProjectQueryKey,
   getListDeliverablesQueryKey,
   getListProjectsQueryKey,
   getGetDashboardQueryKey,
+  getListPaymentsQueryKey,
+  type Payment,
 } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/page-header";
 import { useParams, Link } from "wouter";
@@ -57,9 +62,15 @@ import {
   PlayCircle,
   PauseCircle,
   AlertCircle,
-  Plus
+  Plus,
+  Receipt,
+  TrendingUp,
+  AlertTriangle,
+  Clock3,
+  Send,
+  XCircle,
 } from "lucide-react";
-import { StatusBadge, getProjectStatusVariant, getProjectPriorityVariant, getDeliverableStatusVariant } from "@/components/status-badge";
+import { StatusBadge, getProjectStatusVariant, getProjectPriorityVariant, getDeliverableStatusVariant, getPaymentStatusVariant, getPaymentStatusLabel } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -67,7 +78,7 @@ import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 // ─── Edit Project Dialog ──────────────────────────────────────────────────────
 
@@ -416,6 +427,125 @@ function EditDeliverableDialog({ open, onOpenChange, projectId, item }: EditDeli
   );
 }
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function generateInvoiceNumber(): string {
+  const now = new Date();
+  return `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(Math.floor(Math.random() * 900) + 100)}`;
+}
+
+function fmtMoney(n: number) {
+  return n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
+}
+
+// ─── Project Invoice Dialog ────────────────────────────────────────────────────
+
+interface ProjectInvoiceDialogProps {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  projectId: number;
+  clientId: number;
+  projectName: string;
+}
+
+function ProjectInvoiceDialog({ open, onOpenChange, projectId, clientId, projectName }: ProjectInvoiceDialogProps) {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const { mutate: createPayment, isPending } = useCreatePayment();
+
+  const [invoiceNumber, setInvoiceNumber] = useState(() => generateInvoiceNumber());
+  const [amount, setAmount] = useState("");
+  const [status, setStatus] = useState("pending");
+  const [dueDate, setDueDate] = useState("");
+  const [notes, setNotes] = useState("");
+
+  function handleClose(v: boolean) {
+    if (!v) {
+      setInvoiceNumber(generateInvoiceNumber());
+      setAmount("");
+      setStatus("pending");
+      setDueDate("");
+      setNotes("");
+    }
+    onOpenChange(v);
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!amount || isNaN(Number(amount))) return;
+    createPayment(
+      {
+        data: {
+          clientId,
+          projectId,
+          invoiceNumber,
+          amount: Number(amount),
+          status: status as any,
+          dueDate: dueDate || undefined,
+          notes: notes || undefined,
+        },
+      },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPaymentsQueryKey({ clientId }) });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+          toast({ title: "Invoice created", description: `${invoiceNumber} created for ${projectName}.` });
+          handleClose(false);
+        },
+        onError: () => toast({ title: "Error", description: "Failed to create invoice.", variant: "destructive" }),
+      },
+    );
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>New Invoice</DialogTitle>
+          <p className="text-sm text-muted-foreground">For project: {projectName}</p>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Invoice #</Label>
+              <Input value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} required />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Amount (USD)</Label>
+              <Input type="number" min="0" step="0.01" value={amount} onChange={(e) => setAmount(e.target.value)} placeholder="0.00" required />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={setStatus}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="sent">Sent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Due Date</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="space-y-1.5">
+            <Label>Notes</Label>
+            <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Payment terms, details…" />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => handleClose(false)}>Cancel</Button>
+            <Button type="submit" disabled={isPending}>{isPending ? "Creating…" : "Create Invoice"}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ProjectDetail() {
@@ -435,11 +565,21 @@ export default function ProjectDetail() {
   const { mutate: updateProject, isPending: isMarkingDelivered } = useUpdateProject();
   const { mutate: updateDeliverable } = useUpdateDeliverable();
   const { mutate: deleteDeliverable } = useDeleteDeliverable();
+  const { mutate: updatePayment } = useUpdatePayment();
+  const { mutate: createPaymentMutation } = useCreatePayment();
+
+  // Load all payments for this project's client so we can filter by projectId
+  const clientIdForQuery = project?.clientId ?? 0;
+  const { data: allClientPayments } = useListPayments(
+    { clientId: clientIdForQuery },
+    { query: { enabled: !!project?.clientId, queryKey: getListPaymentsQueryKey({ clientId: clientIdForQuery }) } },
+  );
 
   const [editProjectOpen, setEditProjectOpen] = useState(false);
   const [addDeliverableOpen, setAddDeliverableOpen] = useState(false);
   const [editDeliverable, setEditDeliverable] = useState<import("@workspace/api-client-react").Deliverable | null>(null);
   const [deleteDeliverableTarget, setDeleteDeliverableTarget] = useState<number | null>(null);
+  const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
 
   if (isLoading || !project) {
     return (
@@ -465,6 +605,65 @@ export default function ProjectDetail() {
   const profit = project.profit || (revenue - actualCost);
   const profitMargin = revenue > 0 ? Math.round((profit / revenue) * 100) : 0;
   const isOverBudget = actualCost > estimatedBudget && estimatedBudget > 0;
+
+  // Project invoices (filter client payments by this project)
+  const nowStr = new Date().toISOString().split("T")[0]!;
+  const projectInvoices: Payment[] = useMemo(
+    () => (allClientPayments ?? []).filter((p) => p.projectId === projectId),
+    [allClientPayments, projectId],
+  );
+  const projTotalInvoiced = useMemo(
+    () => projectInvoices.filter((p) => p.status !== "cancelled" && p.status !== "draft").reduce((s, p) => s + p.amount, 0),
+    [projectInvoices],
+  );
+  const projTotalReceived = useMemo(
+    () => projectInvoices.filter((p) => p.status === "paid").reduce((s, p) => s + p.amount, 0),
+    [projectInvoices],
+  );
+  const projOutstanding = useMemo(
+    () => projectInvoices.filter((p) => ["pending", "sent", "overdue"].includes(p.status)).reduce((s, p) => s + p.amount, 0),
+    [projectInvoices],
+  );
+  const projOverdue = useMemo(
+    () =>
+      projectInvoices
+        .filter(
+          (p) =>
+            p.status === "overdue" ||
+            ((p.status === "pending" || p.status === "sent") && p.dueDate != null && p.dueDate < nowStr),
+        )
+        .reduce((s, p) => s + p.amount, 0),
+    [projectInvoices, nowStr],
+  );
+
+  function handleMarkInvoicePaid(inv: Payment) {
+    const cid = project?.clientId ?? 0;
+    updatePayment(
+      { id: inv.id, data: { status: "paid" } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPaymentsQueryKey({ clientId: cid }) });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+          toast({ title: "Invoice marked as paid", description: `${inv.invoiceNumber} collected.` });
+        },
+        onError: () => toast({ title: "Error", description: "Failed to update invoice.", variant: "destructive" }),
+      },
+    );
+  }
+
+  function handleMarkInvoiceSent(inv: Payment) {
+    const cid = project?.clientId ?? 0;
+    updatePayment(
+      { id: inv.id, data: { status: "sent" } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPaymentsQueryKey({ clientId: cid }) });
+          toast({ title: "Invoice marked as sent" });
+        },
+        onError: () => toast({ title: "Error", description: "Failed to update invoice.", variant: "destructive" }),
+      },
+    );
+  }
 
   function handleMarkDelivered() {
     const proj = project;
@@ -558,6 +757,15 @@ export default function ProjectDetail() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Billing invoice creation dialog */}
+      <ProjectInvoiceDialog
+        open={invoiceDialogOpen}
+        onOpenChange={setInvoiceDialogOpen}
+        projectId={projectId}
+        clientId={project.clientId}
+        projectName={project.name}
+      />
 
       {/* Project Header */}
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-2">
@@ -672,6 +880,12 @@ export default function ProjectDetail() {
       <Tabs defaultValue="deliverables" className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-card/40 backdrop-blur-sm border overflow-x-auto overflow-y-hidden">
           <TabsTrigger value="deliverables" className="py-2 px-4">Deliverables</TabsTrigger>
+          <TabsTrigger value="billing" className="py-2 px-4">
+            Billing
+            {projOverdue > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-2 h-2 rounded-full bg-destructive" />
+            )}
+          </TabsTrigger>
           <TabsTrigger value="details" className="py-2 px-4">Project Details</TabsTrigger>
           <TabsTrigger value="notes" className="py-2 px-4">Notes</TabsTrigger>
         </TabsList>
@@ -744,6 +958,117 @@ export default function ProjectDetail() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ── BILLING TAB ── */}
+          <TabsContent value="billing" className="m-0 space-y-4">
+            {/* Financial summary cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {[
+                { label: "Total Invoiced", value: fmtMoney(projTotalInvoiced), color: "text-foreground" },
+                { label: "Collected", value: fmtMoney(projTotalReceived), color: "text-emerald-500" },
+                { label: "Outstanding", value: fmtMoney(projOutstanding), color: projOutstanding > 0 ? "text-amber-500" : "text-foreground" },
+                { label: "Overdue", value: fmtMoney(projOverdue), color: projOverdue > 0 ? "text-destructive" : "text-foreground" },
+              ].map((s) => (
+                <Card key={s.label} className="bg-card/40 backdrop-blur-sm">
+                  <CardContent className="p-4">
+                    <div className="text-xs text-muted-foreground mb-1">{s.label}</div>
+                    <div className={`text-xl font-bold tabular-nums ${s.color}`}>{s.value}</div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            {/* Invoice list */}
+            <Card className="bg-card/40 backdrop-blur-sm border-border/50">
+              <CardHeader className="flex flex-row items-center justify-between pb-4 border-b border-border/50">
+                <div>
+                  <CardTitle className="text-base">Invoice History</CardTitle>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    All invoices linked to this project
+                  </p>
+                </div>
+                <Button size="sm" variant="outline" className="gap-2" onClick={() => setInvoiceDialogOpen(true)}>
+                  <Plus size={14} />
+                  New Invoice
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                {projectInvoices.length === 0 ? (
+                  <div className="p-10 text-center text-muted-foreground text-sm">
+                    <Receipt size={28} className="mx-auto mb-3 opacity-30" />
+                    No invoices linked to this project yet.
+                    <br />
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="mt-2 text-muted-foreground"
+                      onClick={() => setInvoiceDialogOpen(true)}
+                    >
+                      Create the first one
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border/50">
+                    {projectInvoices.map((inv) => {
+                      const isOverdueRow =
+                        inv.status === "overdue" ||
+                        ((inv.status === "pending" || inv.status === "sent") &&
+                          inv.dueDate != null &&
+                          inv.dueDate < nowStr);
+                      return (
+                        <div
+                          key={inv.id}
+                          className="px-4 py-3 flex items-center justify-between hover:bg-secondary/20 transition-colors"
+                        >
+                          <div className="min-w-0">
+                            <div className="font-mono text-sm font-semibold">{inv.invoiceNumber}</div>
+                            <div className="text-xs text-muted-foreground mt-0.5">
+                              {inv.dueDate
+                                ? `Due ${new Date(inv.dueDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                                : "No due date"}
+                              {inv.paidDate &&
+                                ` · Paid ${new Date(inv.paidDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric" })}`}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 shrink-0">
+                            <span className="font-mono font-bold text-sm tabular-nums">
+                              {fmtMoney(inv.amount)}
+                            </span>
+                            <StatusBadge variant={getPaymentStatusVariant(inv.status)}>
+                              {getPaymentStatusLabel(inv.status)}
+                            </StatusBadge>
+                            {/* Quick actions */}
+                            {inv.status === "draft" && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-xs gap-1"
+                                onClick={() => handleMarkInvoiceSent(inv)}
+                              >
+                                <Send size={11} />
+                                Send
+                              </Button>
+                            )}
+                            {(inv.status === "pending" || inv.status === "sent" || inv.status === "overdue") && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className={`h-7 px-2 text-xs gap-1 ${isOverdueRow ? "border-destructive/50 text-destructive hover:bg-destructive/10" : "border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10"}`}
+                                onClick={() => handleMarkInvoicePaid(inv)}
+                              >
+                                <CheckCircle2 size={11} />
+                                Paid
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>

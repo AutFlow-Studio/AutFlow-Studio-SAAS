@@ -340,17 +340,72 @@ export default function PaymentsPage() {
   }, [payments, activeTab, search]);
 
   // ── Stats ───────────────────────────────────────────────────────────────────
+  const nowStr = new Date().toISOString().split("T")[0]!;
+
   const stats = useMemo(() => {
     if (!payments) return null;
-    const totalInvoiced = payments.reduce((s, p) => s + p.amount, 0);
+    // Exclude draft and cancelled from "total invoiced"
+    const totalInvoiced = payments
+      .filter((p) => p.status !== "cancelled" && p.status !== "draft")
+      .reduce((s, p) => s + p.amount, 0);
+    // Outstanding = pending + sent + overdue (anything the client owes)
     const outstanding = payments
-      .filter((p) => p.status === "sent" || p.status === "overdue")
+      .filter((p) => p.status === "pending" || p.status === "sent" || p.status === "overdue")
       .reduce((s, p) => s + p.amount, 0);
     const paid = payments
       .filter((p) => p.status === "paid")
       .reduce((s, p) => s + p.amount, 0);
-    const overdueCount = payments.filter((p) => p.status === "overdue").length;
-    return { totalInvoiced, outstanding, paid, overdueCount };
+    // Overdue = explicitly overdue OR pending/sent past due date
+    const overdueCount = payments.filter(
+      (p) =>
+        p.status === "overdue" ||
+        ((p.status === "pending" || p.status === "sent") &&
+          p.dueDate != null &&
+          p.dueDate < nowStr),
+    ).length;
+    const overdueAmount = payments
+      .filter(
+        (p) =>
+          p.status === "overdue" ||
+          ((p.status === "pending" || p.status === "sent") &&
+            p.dueDate != null &&
+            p.dueDate < nowStr),
+      )
+      .reduce((s, p) => s + p.amount, 0);
+    return { totalInvoiced, outstanding, paid, overdueCount, overdueAmount };
+  }, [payments, nowStr]);
+
+  // ── Revenue breakdowns ───────────────────────────────────────────────────────
+  const revenueByClient = useMemo(() => {
+    if (!payments) return [];
+    const map = new Map<number, { clientId: number; clientName: string; paid: number; outstanding: number }>();
+    for (const p of payments) {
+      if (!p.clientId || !p.clientName) continue;
+      const entry = map.get(p.clientId) ?? { clientId: p.clientId, clientName: p.clientName, paid: 0, outstanding: 0 };
+      if (p.status === "paid") entry.paid += p.amount;
+      else if (p.status === "pending" || p.status === "sent" || p.status === "overdue") entry.outstanding += p.amount;
+      map.set(p.clientId, entry);
+    }
+    return Array.from(map.values())
+      .filter((d) => d.paid > 0 || d.outstanding > 0)
+      .sort((a, b) => b.paid - a.paid)
+      .slice(0, 8);
+  }, [payments]);
+
+  const revenueByProject = useMemo(() => {
+    if (!payments) return [];
+    const map = new Map<number, { projectId: number; projectName: string; paid: number; outstanding: number }>();
+    for (const p of payments) {
+      if (!p.projectId || !p.projectName) continue;
+      const entry = map.get(p.projectId) ?? { projectId: p.projectId, projectName: p.projectName, paid: 0, outstanding: 0 };
+      if (p.status === "paid") entry.paid += p.amount;
+      else if (p.status === "pending" || p.status === "sent" || p.status === "overdue") entry.outstanding += p.amount;
+      map.set(p.projectId, entry);
+    }
+    return Array.from(map.values())
+      .filter((d) => d.paid > 0 || d.outstanding > 0)
+      .sort((a, b) => b.paid - a.paid)
+      .slice(0, 8);
   }, [payments]);
 
   // ── Actions ─────────────────────────────────────────────────────────────────
@@ -449,6 +504,81 @@ export default function PaymentsPage() {
           </>
         )}
       </div>
+
+      {/* Revenue Breakdown */}
+      {!isLoading && (revenueByClient.length > 0 || revenueByProject.length > 0) && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* By Client */}
+          {revenueByClient.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-semibold">Revenue by Client</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="space-y-2">
+                  {revenueByClient.map((d) => {
+                    const total = d.paid + d.outstanding;
+                    const pct = total > 0 ? Math.round((d.paid / total) * 100) : 0;
+                    return (
+                      <div key={d.clientId}>
+                        <div className="flex items-center justify-between text-sm mb-0.5">
+                          <Link href={`/clients/${d.clientId}`} className="font-medium hover:text-primary transition-colors truncate max-w-[160px]">
+                            {d.clientName}
+                          </Link>
+                          <div className="flex items-center gap-3 text-xs tabular-nums shrink-0 ml-2">
+                            <span className="text-emerald-500 font-semibold">{fmt(d.paid)}</span>
+                            {d.outstanding > 0 && (
+                              <span className="text-amber-500">{fmt(d.outstanding)} due</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="h-1 rounded-full bg-secondary overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* By Project */}
+          {revenueByProject.length > 0 && (
+            <Card>
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-semibold">Revenue by Project</CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <div className="space-y-2">
+                  {revenueByProject.map((d) => {
+                    const total = d.paid + d.outstanding;
+                    const pct = total > 0 ? Math.round((d.paid / total) * 100) : 0;
+                    return (
+                      <div key={d.projectId}>
+                        <div className="flex items-center justify-between text-sm mb-0.5">
+                          <Link href={`/projects/${d.projectId}`} className="font-medium hover:text-primary transition-colors truncate max-w-[160px]">
+                            {d.projectName}
+                          </Link>
+                          <div className="flex items-center gap-3 text-xs tabular-nums shrink-0 ml-2">
+                            <span className="text-emerald-500 font-semibold">{fmt(d.paid)}</span>
+                            {d.outstanding > 0 && (
+                              <span className="text-amber-500">{fmt(d.outstanding)} due</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="h-1 rounded-full bg-secondary overflow-hidden">
+                          <div className="h-full bg-emerald-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {/* Filters */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

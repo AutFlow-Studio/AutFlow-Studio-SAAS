@@ -288,19 +288,31 @@ router.get("/clients/:id", async (req, res): Promise<void> => {
 
   const deliverables = allDeliverables.map((r) => r.deliverable);
 
-  // Financial summary
+  // Financial summary — workspace-scoped and consistent with the dashboard
+  const nowStr = new Date().toISOString().split("T")[0]!;
   const totalRevenue = allPayments
     .filter((p) => p.status === "paid")
     .reduce((sum, p) => sum + Number(p.amount), 0);
-  const totalInvoiced = allPayments.reduce((sum, p) => sum + Number(p.amount), 0);
-  const outstandingBalance = allPayments
-    .filter((p) => p.status === "pending" || p.status === "overdue")
+  // Exclude draft and cancelled from "total invoiced" — those haven't been sent
+  const totalInvoiced = allPayments
+    .filter((p) => p.status !== "cancelled" && p.status !== "draft")
     .reduce((sum, p) => sum + Number(p.amount), 0);
+  // Outstanding = anything sent/pending/overdue (money actually owed)
+  const outstandingBalance = allPayments
+    .filter((p) => p.status === "pending" || p.status === "sent" || p.status === "overdue")
+    .reduce((sum, p) => sum + Number(p.amount), 0);
+  // Overdue = explicitly overdue OR pending/sent past the due date
   const overdueAmount = allPayments
-    .filter((p) => p.status === "overdue")
+    .filter(
+      (p) =>
+        p.status === "overdue" ||
+        ((p.status === "pending" || p.status === "sent") &&
+          p.dueDate != null &&
+          p.dueDate < nowStr),
+    )
     .reduce((sum, p) => sum + Number(p.amount), 0);
   const openPayments = allPayments.filter(
-    (p) => p.status === "pending" || p.status === "overdue",
+    (p) => p.status === "pending" || p.status === "sent" || p.status === "overdue",
   );
 
   // Deliverables summary

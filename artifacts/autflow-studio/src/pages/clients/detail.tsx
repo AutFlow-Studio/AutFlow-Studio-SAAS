@@ -7,6 +7,7 @@ import {
   useUpdateClient,
   useCreateProject,
   useCreatePayment,
+  useUpdatePayment,
   useListPayments,
   getGetClientQueryKey,
   getListProjectsQueryKey,
@@ -247,6 +248,23 @@ export default function ClientDetail() {
       onError: () => toast({ title: "Failed to create invoice", variant: "destructive" }),
     },
   });
+
+  const { mutate: markPaymentPaid } = useUpdatePayment();
+
+  function handleMarkPaid(paymentId: number, invoiceNumber: string) {
+    markPaymentPaid(
+      { id: paymentId, data: { status: "paid" } },
+      {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: getListPaymentsQueryKey({ clientId }) });
+          queryClient.invalidateQueries({ queryKey: getGetClientQueryKey(clientId) });
+          queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
+          toast({ title: "Invoice paid", description: `${invoiceNumber} marked as collected.` });
+        },
+        onError: () => toast({ title: "Error", description: "Failed to update invoice.", variant: "destructive" }),
+      },
+    );
+  }
 
   const createDocument = useCreateDocument({
     mutation: {
@@ -1097,13 +1115,24 @@ export default function ClientDetail() {
                               ` · Paid ${format(new Date(payment.paidDate), "MMM d, yyyy")}`}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-3">
                           <span className="font-bold font-mono text-sm">
                             {fmt(payment.amount)}
                           </span>
                           <StatusBadge variant={getPaymentStatusVariant(payment.status)}>
                             {payment.status}
                           </StatusBadge>
+                          {payment.status !== "paid" && payment.status !== "cancelled" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-xs gap-1 border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                              onClick={() => handleMarkPaid(payment.id, payment.invoiceNumber)}
+                            >
+                              <CheckCircle2 size={11} />
+                              Mark Paid
+                            </Button>
+                          )}
                         </div>
                       </div>
                     ))}

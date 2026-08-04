@@ -111,34 +111,60 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
       .limit(30),
   ]);
 
-  // ── Financial analysis ──────────────────────────────────────────────────────
-  const overdueInvoices = invoices.filter(
-    ({ inv }) =>
-      (inv.status === "sent" || inv.status === "overdue") &&
-      inv.dueDate &&
-      inv.dueDate < nowStr,
+  // ── Financial analysis (primary source: paymentsTable) ─────────────────────
+  // The invoicesTable is a formal entity but all day-to-day invoices are stored
+  // in paymentsTable, which is what the frontend reads. Use paymentsTable as the
+  // primary source and fall back to invoicesTable totals if paymentsTable is empty.
+  const paidPayments = payments.filter(({ pay }) => pay.status === "paid");
+  const unpaidPayments = payments.filter(
+    ({ pay }) => pay.status === "pending" || pay.status === "sent" || pay.status === "overdue",
   );
-  const unpaidInvoices = invoices.filter(
-    ({ inv }) => inv.status === "sent" || inv.status === "overdue",
-  );
-  const paidInvoicesRevenue = invoices
-    .filter(({ inv }) => inv.status === "paid")
-    .reduce((s, { inv }) => s + Number(inv.total), 0);
-  const outstandingInvoices = unpaidInvoices.reduce(
-    (s, { inv }) => s + (Number(inv.total) - Number(inv.amountPaid ?? 0)),
-    0,
-  );
-
-  // Payments table (legacy/supplementary)
   const overduePayments = payments.filter(
     ({ pay }) =>
-      (pay.status === "pending" || pay.status === "overdue") &&
-      pay.dueDate &&
-      pay.dueDate < nowStr,
+      pay.status === "overdue" ||
+      (pay.status === "pending" && pay.dueDate != null && pay.dueDate < nowStr) ||
+      (pay.status === "sent" && pay.dueDate != null && pay.dueDate < nowStr),
   );
-  const paidRevenue = payments
-    .filter(({ pay }) => pay.status === "paid")
-    .reduce((s, { pay }) => s + Number(pay.amount), 0);
+  const paidRevenue = paidPayments.reduce((s, { pay }) => s + Number(pay.amount), 0);
+  const outstandingRevenue = unpaidPayments.reduce((s, { pay }) => s + Number(pay.amount), 0);
+  const overdueRevenue = overduePayments.reduce((s, { pay }) => s + Number(pay.amount), 0);
+
+  // Supplement with formal invoicesTable if it has any paid records
+  const formalPaidRevenue = invoices
+    .filter(({ inv }) => inv.status === "paid")
+    .reduce((s, { inv }) => s + Number(inv.total), 0);
+  const totalPaidRevenue = paidRevenue + formalPaidRevenue;
+
+  // Per-client revenue breakdown (from paymentsTable)
+  const clientRevenueMap = new Map<number, { clientName: string; paid: number; outstanding: number; overdue: number }>();
+  for (const { pay, clientName } of payments) {
+    if (!pay.clientId) continue;
+    const entry = clientRevenueMap.get(pay.clientId) ?? { clientName: clientName ?? "Unknown", paid: 0, outstanding: 0, overdue: 0 };
+    const isOverdue = pay.status === "overdue" || ((pay.status === "pending" || pay.status === "sent") && pay.dueDate != null && pay.dueDate < nowStr);
+    if (pay.status === "paid") entry.paid += Number(pay.amount);
+    else if (isOverdue) entry.overdue += Number(pay.amount);
+    else if (pay.status === "pending" || pay.status === "sent") entry.outstanding += Number(pay.amount);
+    clientRevenueMap.set(pay.clientId, entry);
+  }
+  const clientRevenueBreakdown = Array.from(clientRevenueMap.values())
+    .filter(d => d.paid > 0 || d.outstanding > 0 || d.overdue > 0)
+    .sort((a, b) => b.paid - a.paid)
+    .slice(0, 10);
+
+  // Per-project revenue breakdown
+  const projectRevenueMap = new Map<number, { projectName: string; paid: number; outstanding: number }>();
+  for (const { pay } of payments) {
+    if (!pay.projectId) continue;
+    const proj = projects.find(({ p }) => p.id === pay.projectId);
+    if (!proj) continue;
+    const entry = projectRevenueMap.get(pay.projectId) ?? { projectName: proj.p.name, paid: 0, outstanding: 0 };
+    if (pay.status === "paid") entry.paid += Number(pay.amount);
+    else if (pay.status === "pending" || pay.status === "sent" || pay.status === "overdue") entry.outstanding += Number(pay.amount);
+    projectRevenueMap.set(pay.projectId, entry);
+  }
+  const projectRevenueBreakdown = Array.from(projectRevenueMap.values())
+    .sort((a, b) => b.paid - a.paid)
+    .slice(0, 10);
 
   // ── Project analysis ────────────────────────────────────────────────────────
   const activeProjects = projects.filter(
@@ -279,32 +305,39 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
         )
       : []),
     ``,
-    `=== INVOICES ===`,
-    `Revenue collected: $${paidInvoicesRevenue.toLocaleString()} | Outstanding: $${outstandingInvoices.toLocaleString()} across ${unpaidInvoices.length} unpaid invoice(s)`,
-    `Overdue invoices: ${overdueInvoices.length}`,
-    ...(overdueInvoices.length > 0
-      ? overdueInvoices.map(
-          ({ inv, clientName }) =>
-            `  - ${inv.invoiceNumber} | ${clientName ?? "?"} | $${Number(inv.total).toLocaleString()} | due: ${inv.dueDate}`,
-        )
-      : []),
-    ...(unpaidInvoices.length > 0
-      ? [`All unpaid invoices:`].concat(
-          unpaidInvoices.map(
-            ({ inv, clientName }) =>
-              `  - ${inv.invoiceNumber} | ${clientName ?? "?"} | $${Number(inv.total).toLocaleString()} | status: ${inv.status} | due: ${inv.dueDate ?? "none"}`,
-          ),
-        )
-      : []),
-    // Legacy payments
+    `=== INVOICES & REVENUE ===`,
+    `Revenue collected: $${totalPaidRevenue.toLocaleString()} | Outstanding: $${outstandingRevenue.toLocaleString()} across ${unpaidPayments.length} unpaid invoice(s)`,
+    `Overdue: ${overduePayments.length} invoice(s) totaling $${overdueRevenue.toLocaleString()}`,
     ...(overduePayments.length > 0
-      ? [`Legacy overdue payment records: ${overduePayments.length}`].concat(
-          overduePayments.map(
+      ? overduePayments.slice(0, 10).map(
+          ({ pay, clientName }) =>
+            `  - ${pay.invoiceNumber} | ${clientName ?? "?"} | $${Number(pay.amount).toLocaleString()} | due: ${pay.dueDate ?? "none"} | status: ${pay.status}`,
+        )
+      : [`  - None overdue`]),
+    ...(unpaidPayments.length > 0
+      ? [`All unpaid (${unpaidPayments.length}):`].concat(
+          unpaidPayments.slice(0, 15).map(
             ({ pay, clientName }) =>
-              `  - ${pay.invoiceNumber} | ${clientName ?? "?"} | $${Number(pay.amount).toLocaleString()} | due: ${pay.dueDate}`,
+              `  - ${pay.invoiceNumber} | ${clientName ?? "?"} | $${Number(pay.amount).toLocaleString()} | status: ${pay.status} | due: ${pay.dueDate ?? "none"}`,
           ),
         )
-      : []),
+      : [`  - All invoices collected`]),
+    ``,
+    `=== REVENUE BY CLIENT ===`,
+    clientRevenueBreakdown.length === 0
+      ? "- No payment data yet"
+      : clientRevenueBreakdown.map(
+          (d) =>
+            `- ${d.clientName}: collected $${d.paid.toLocaleString()}${d.outstanding > 0 ? `, outstanding $${d.outstanding.toLocaleString()}` : ""}${d.overdue > 0 ? ` | OVERDUE: $${d.overdue.toLocaleString()}` : ""}`,
+        ).join("\n"),
+    ``,
+    `=== REVENUE BY PROJECT ===`,
+    projectRevenueBreakdown.length === 0
+      ? "- No project billing data"
+      : projectRevenueBreakdown.map(
+          (d) =>
+            `- "${d.projectName}": collected $${d.paid.toLocaleString()}${d.outstanding > 0 ? `, outstanding $${d.outstanding.toLocaleString()}` : ""}`,
+        ).join("\n"),
     ``,
     `=== CAMPAIGNS (${campaigns.length} total, ${activeCampaigns.length} active) ===`,
     campaigns.length === 0
