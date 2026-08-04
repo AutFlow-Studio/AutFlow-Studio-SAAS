@@ -11,10 +11,10 @@ interface Message {
 
 const SUGGESTED_QUESTIONS = [
   "What needs my attention today?",
-  "Which clients are at risk?",
-  "Who owes money?",
-  "Which projects are delayed?",
-  "Summarize my business performance.",
+  "Which projects are behind schedule?",
+  "Which invoices are overdue?",
+  "Which clients are at risk of churning?",
+  "Give me an agency health summary.",
 ];
 
 function MessageBubble({ message }: { message: Message }) {

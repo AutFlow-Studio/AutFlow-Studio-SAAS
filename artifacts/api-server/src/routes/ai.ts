@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, sql, desc, lte, gte, ilike } from "drizzle-orm";
+import { eq, and, sql, desc, lte, gte, ilike, ne } from "drizzle-orm";
 import {
   db,
   clientsTable,
@@ -10,6 +10,9 @@ import {
   activityTable,
   notesTable,
   agencySettingsTable,
+  deliverablesTable,
+  invoicesTable,
+  campaignsTable,
   clinicPatientsTable,
   clinicAppointmentsTable,
   clinicFollowupsTable,
@@ -43,71 +46,124 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
   const now = new Date();
   const nowStr = now.toISOString().split("T")[0]!;
   const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+  const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0]!;
 
-  const [clients, projects, payments, tasks, meetings, recentActivity] =
-    await Promise.all([
-      db.select().from(clientsTable).where(eq(clientsTable.workspaceId, wid)),
-      db
-        .select({ p: projectsTable, clientName: clientsTable.companyName })
-        .from(projectsTable)
-        .leftJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
-        .where(eq(projectsTable.workspaceId, wid)),
-      db
-        .select({ pay: paymentsTable, clientName: clientsTable.companyName })
-        .from(paymentsTable)
-        .leftJoin(clientsTable, eq(paymentsTable.clientId, clientsTable.id))
-        .where(eq(paymentsTable.workspaceId, wid)),
-      db.select().from(tasksTable).where(eq(tasksTable.workspaceId, wid)),
-      db
-        .select({ m: meetingsTable, clientName: clientsTable.companyName })
-        .from(meetingsTable)
-        .leftJoin(clientsTable, eq(meetingsTable.clientId, clientsTable.id))
-        .where(eq(meetingsTable.workspaceId, wid))
-        .orderBy(desc(meetingsTable.date))
-        .limit(20),
-      db
-        .select()
-        .from(activityTable)
-        .where(eq(activityTable.workspaceId, wid))
-        .orderBy(desc(activityTable.createdAt))
-        .limit(30),
-    ]);
+  const [
+    clients,
+    projects,
+    payments,
+    invoices,
+    tasks,
+    deliverables,
+    campaigns,
+    meetings,
+    recentActivity,
+  ] = await Promise.all([
+    db.select().from(clientsTable).where(eq(clientsTable.workspaceId, wid)),
+    db
+      .select({ p: projectsTable, clientName: clientsTable.companyName })
+      .from(projectsTable)
+      .leftJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
+      .where(eq(projectsTable.workspaceId, wid)),
+    db
+      .select({ pay: paymentsTable, clientName: clientsTable.companyName })
+      .from(paymentsTable)
+      .leftJoin(clientsTable, eq(paymentsTable.clientId, clientsTable.id))
+      .where(eq(paymentsTable.workspaceId, wid)),
+    db
+      .select({
+        inv: invoicesTable,
+        clientName: clientsTable.companyName,
+      })
+      .from(invoicesTable)
+      .leftJoin(clientsTable, eq(invoicesTable.clientId, clientsTable.id))
+      .where(eq(invoicesTable.workspaceId, wid)),
+    db.select().from(tasksTable).where(eq(tasksTable.workspaceId, wid)),
+    db
+      .select({
+        d: deliverablesTable,
+        projectName: projectsTable.name,
+        clientName: clientsTable.companyName,
+      })
+      .from(deliverablesTable)
+      .leftJoin(projectsTable, eq(deliverablesTable.projectId, projectsTable.id))
+      .leftJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
+      .where(eq(deliverablesTable.workspaceId, wid)),
+    db
+      .select({ c: campaignsTable, clientName: clientsTable.companyName })
+      .from(campaignsTable)
+      .leftJoin(clientsTable, eq(campaignsTable.clientId, clientsTable.id))
+      .where(eq(campaignsTable.workspaceId, wid)),
+    db
+      .select({ m: meetingsTable, clientName: clientsTable.companyName })
+      .from(meetingsTable)
+      .leftJoin(clientsTable, eq(meetingsTable.clientId, clientsTable.id))
+      .where(eq(meetingsTable.workspaceId, wid))
+      .orderBy(desc(meetingsTable.date))
+      .limit(20),
+    db
+      .select()
+      .from(activityTable)
+      .where(eq(activityTable.workspaceId, wid))
+      .orderBy(desc(activityTable.createdAt))
+      .limit(30),
+  ]);
 
+  // ── Financial analysis ──────────────────────────────────────────────────────
+  const overdueInvoices = invoices.filter(
+    ({ inv }) =>
+      (inv.status === "sent" || inv.status === "overdue") &&
+      inv.dueDate &&
+      inv.dueDate < nowStr,
+  );
+  const unpaidInvoices = invoices.filter(
+    ({ inv }) => inv.status === "sent" || inv.status === "overdue",
+  );
+  const paidInvoicesRevenue = invoices
+    .filter(({ inv }) => inv.status === "paid")
+    .reduce((s, { inv }) => s + Number(inv.total), 0);
+  const outstandingInvoices = unpaidInvoices.reduce(
+    (s, { inv }) => s + (Number(inv.total) - Number(inv.amountPaid ?? 0)),
+    0,
+  );
+
+  // Payments table (legacy/supplementary)
   const overduePayments = payments.filter(
     ({ pay }) =>
       (pay.status === "pending" || pay.status === "overdue") &&
       pay.dueDate &&
       pay.dueDate < nowStr,
   );
-  const pendingPayments = payments.filter(
-    ({ pay }) => pay.status === "pending" || pay.status === "overdue",
-  );
   const paidRevenue = payments
     .filter(({ pay }) => pay.status === "paid")
     .reduce((s, { pay }) => s + Number(pay.amount), 0);
-  const outstanding = pendingPayments.reduce(
-    (s, { pay }) => s + Number(pay.amount),
-    0,
-  );
 
-  const delayedProjects = projects.filter(
-    ({ p }) =>
-      p.deadline &&
-      p.deadline < nowStr &&
-      p.status !== "delivered" &&
-      p.status !== "cancelled",
+  // ── Project analysis ────────────────────────────────────────────────────────
+  const activeProjects = projects.filter(
+    ({ p }) => p.status !== "completed" && p.status !== "archived" && p.status !== "cancelled",
   );
-  const atRiskProjects = projects.filter(
+  const delayedProjects = activeProjects.filter(
+    ({ p }) => p.deadline && p.deadline < nowStr,
+  );
+  const atRiskProjects = activeProjects.filter(
     ({ p }) =>
       (p.progress ?? 0) < 30 &&
       p.deadline &&
-      p.deadline <= new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0]! &&
-      p.status !== "delivered" &&
-      p.status !== "cancelled",
+      p.deadline <= sevenDaysFromNow,
+  );
+  const projectsAwaitingClientReview = projects.filter(
+    ({ p }) => p.status === "client_review",
+  );
+  const blockedProjects = activeProjects.filter(
+    ({ p }) => p.blockers && p.blockers.trim().length > 0,
+  );
+  const upcomingDeadlines = activeProjects.filter(
+    ({ p }) => p.deadline && p.deadline >= nowStr && p.deadline <= sevenDaysFromNow,
   );
 
+  // ── Task analysis ───────────────────────────────────────────────────────────
   const openTasks = tasks.filter((t) => t.status !== "done");
   const overdueTasks = tasks.filter(
     (t) => t.deadline && t.deadline < nowStr && t.status !== "done",
@@ -115,7 +171,30 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
   const highPriorityTasks = openTasks.filter(
     (t) => t.priority === "high" || t.priority === "urgent",
   );
+  const tasksDueSoon = openTasks.filter(
+    (t) => t.deadline && t.deadline >= nowStr && t.deadline <= sevenDaysFromNow,
+  );
 
+  // ── Deliverable analysis ────────────────────────────────────────────────────
+  const pendingApprovalDeliverables = deliverables.filter(
+    ({ d }) => d.status === "sent",
+  );
+  const changesRequestedDeliverables = deliverables.filter(
+    ({ d }) => d.status === "changes_requested",
+  );
+  const overdueDeliverables = deliverables.filter(
+    ({ d }) =>
+      d.deadline &&
+      d.deadline < nowStr &&
+      d.status !== "completed" &&
+      d.status !== "approved",
+  );
+
+  // ── Campaign analysis ───────────────────────────────────────────────────────
+  const activeCampaigns = campaigns.filter(({ c }) => c.status === "active");
+  const pausedCampaigns = campaigns.filter(({ c }) => c.status === "paused");
+
+  // ── Client analysis ─────────────────────────────────────────────────────────
   const clientsWithRecentMeeting = new Set(
     meetings
       .filter(({ m }) => new Date(m.date) >= thirtyDaysAgo)
@@ -129,56 +208,131 @@ async function buildWorkspaceContext(wid: number): Promise<string> {
   const lines: string[] = [
     `Today: ${nowStr}`,
     ``,
-    `=== CLIENTS (${clients.length} total) ===`,
+    `=== CLIENTS (${clients.length} total, ${activeClients.length} active) ===`,
     ...clients.map(
       (c) =>
-        `- ${c.companyName} | status: ${c.status} | industry: ${c.industry ?? "N/A"} | email: ${c.email ?? "N/A"}`,
+        `- [id:${c.id}] ${c.companyName} | status: ${c.status} | industry: ${c.industry ?? "N/A"} | email: ${c.email ?? "N/A"}`,
     ),
     ``,
-    `=== PROJECTS (${projects.length} total) ===`,
+    `=== PROJECTS (${projects.length} total, ${activeProjects.length} active) ===`,
     ...projects.map(
       ({ p, clientName }) =>
-        `- "${p.name}" | client: ${clientName ?? "?"} | status: ${p.status} | progress: ${p.progress}% | deadline: ${p.deadline ?? "none"} | priority: ${p.priority}`,
+        `- [id:${p.id}] "${p.name}" | client: ${clientName ?? "?"} | status: ${p.status} | progress: ${p.progress}% | deadline: ${p.deadline ?? "none"} | priority: ${p.priority}${p.blockers ? ` | BLOCKER: ${p.blockers}` : ""}${p.healthScore != null ? ` | health: ${p.healthScore}` : ""}`,
     ),
     ``,
     `=== DELAYED PROJECTS (${delayedProjects.length}) ===`,
-    ...delayedProjects.map(
-      ({ p, clientName }) =>
-        `- "${p.name}" (${clientName}) — deadline was ${p.deadline}, progress: ${p.progress}%`,
-    ),
+    delayedProjects.length === 0
+      ? "- None"
+      : delayedProjects.map(
+          ({ p, clientName }) =>
+            `- "${p.name}" (${clientName ?? "?"}) — deadline was ${p.deadline}, progress: ${p.progress}%`,
+        ).join("\n"),
     ``,
     `=== AT-RISK PROJECTS (${atRiskProjects.length}) ===`,
-    ...atRiskProjects.map(
-      ({ p, clientName }) =>
-        `- "${p.name}" (${clientName}) — deadline: ${p.deadline}, only ${p.progress}% done`,
-    ),
+    atRiskProjects.length === 0
+      ? "- None"
+      : atRiskProjects.map(
+          ({ p, clientName }) =>
+            `- "${p.name}" (${clientName ?? "?"}) — deadline: ${p.deadline}, only ${p.progress}% done`,
+        ).join("\n"),
     ``,
-    `=== PAYMENTS ===`,
-    `Total revenue (paid): $${paidRevenue.toLocaleString()}`,
-    `Outstanding: $${outstanding.toLocaleString()} across ${pendingPayments.length} invoices`,
-    `Overdue invoices: ${overduePayments.length}`,
-    ...overduePayments.map(
-      ({ pay, clientName }) =>
-        `- Invoice ${pay.invoiceNumber} | ${clientName} | $${Number(pay.amount).toLocaleString()} | due: ${pay.dueDate}`,
-    ),
+    `=== PROJECTS AWAITING CLIENT REVIEW (${projectsAwaitingClientReview.length}) ===`,
+    projectsAwaitingClientReview.length === 0
+      ? "- None"
+      : projectsAwaitingClientReview.map(
+          ({ p, clientName }) =>
+            `- "${p.name}" (${clientName ?? "?"}) — waiting since ${p.clientWaitingSince ?? "unknown"}`,
+        ).join("\n"),
+    ``,
+    `=== BLOCKED PROJECTS (${blockedProjects.length}) ===`,
+    blockedProjects.length === 0
+      ? "- None"
+      : blockedProjects.map(
+          ({ p, clientName }) =>
+            `- "${p.name}" (${clientName ?? "?"}) — ${p.blockers}`,
+        ).join("\n"),
+    ``,
+    `=== DEADLINES THIS WEEK (${upcomingDeadlines.length}) ===`,
+    upcomingDeadlines.length === 0
+      ? "- None"
+      : upcomingDeadlines.map(
+          ({ p, clientName }) =>
+            `- "${p.name}" (${clientName ?? "?"}) — due ${p.deadline}, ${p.progress}% done`,
+        ).join("\n"),
+    ``,
+    `=== DELIVERABLES ===`,
+    `Pending client approval: ${pendingApprovalDeliverables.length} | Changes requested: ${changesRequestedDeliverables.length} | Overdue: ${overdueDeliverables.length}`,
+    ...(pendingApprovalDeliverables.length > 0
+      ? [`Awaiting approval:`].concat(
+          pendingApprovalDeliverables.slice(0, 8).map(
+            ({ d, projectName, clientName }) =>
+              `  - "${d.title}" | project: ${projectName ?? "?"} | client: ${clientName ?? "?"} | due: ${d.deadline ?? "none"}`,
+          ),
+        )
+      : []),
+    ...(changesRequestedDeliverables.length > 0
+      ? [`Changes requested:`].concat(
+          changesRequestedDeliverables.slice(0, 8).map(
+            ({ d, projectName, clientName }) =>
+              `  - "${d.title}" | project: ${projectName ?? "?"} | client: ${clientName ?? "?"} | revisions: ${d.revisionCount}`,
+          ),
+        )
+      : []),
+    ``,
+    `=== INVOICES ===`,
+    `Revenue collected: $${paidInvoicesRevenue.toLocaleString()} | Outstanding: $${outstandingInvoices.toLocaleString()} across ${unpaidInvoices.length} unpaid invoice(s)`,
+    `Overdue invoices: ${overdueInvoices.length}`,
+    ...(overdueInvoices.length > 0
+      ? overdueInvoices.map(
+          ({ inv, clientName }) =>
+            `  - ${inv.invoiceNumber} | ${clientName ?? "?"} | $${Number(inv.total).toLocaleString()} | due: ${inv.dueDate}`,
+        )
+      : []),
+    ...(unpaidInvoices.length > 0
+      ? [`All unpaid invoices:`].concat(
+          unpaidInvoices.map(
+            ({ inv, clientName }) =>
+              `  - ${inv.invoiceNumber} | ${clientName ?? "?"} | $${Number(inv.total).toLocaleString()} | status: ${inv.status} | due: ${inv.dueDate ?? "none"}`,
+          ),
+        )
+      : []),
+    // Legacy payments
+    ...(overduePayments.length > 0
+      ? [`Legacy overdue payment records: ${overduePayments.length}`].concat(
+          overduePayments.map(
+            ({ pay, clientName }) =>
+              `  - ${pay.invoiceNumber} | ${clientName ?? "?"} | $${Number(pay.amount).toLocaleString()} | due: ${pay.dueDate}`,
+          ),
+        )
+      : []),
+    ``,
+    `=== CAMPAIGNS (${campaigns.length} total, ${activeCampaigns.length} active) ===`,
+    campaigns.length === 0
+      ? "- No campaigns"
+      : campaigns.map(
+          ({ c, clientName }) =>
+            `- "${c.name}" | client: ${clientName ?? "?"} | type: ${c.type} | status: ${c.status} | budget: ${c.budget ? "$" + Number(c.budget).toLocaleString() : "N/A"} | ends: ${c.endDate ?? "none"}`,
+        ).join("\n"),
     ``,
     `=== TASKS ===`,
-    `Open: ${openTasks.length} | Overdue: ${overdueTasks.length} | High-priority: ${highPriorityTasks.length}`,
-    ...overdueTasks
-      .slice(0, 10)
-      .map(
-        (t) =>
-          `- [OVERDUE] "${t.title}" | priority: ${t.priority} | due: ${t.deadline}`,
-      ),
-    ...highPriorityTasks
-      .slice(0, 10)
-      .map(
-        (t) =>
-          `- [HIGH] "${t.title}" | status: ${t.status} | due: ${t.deadline ?? "none"}`,
-      ),
+    `Open: ${openTasks.length} | Overdue: ${overdueTasks.length} | High-priority: ${highPriorityTasks.length} | Due this week: ${tasksDueSoon.length}`,
+    ...(overdueTasks.length > 0
+      ? overdueTasks.slice(0, 10).map(
+          (t) =>
+            `- [OVERDUE] "${t.title}" | priority: ${t.priority} | due: ${t.deadline}`,
+        )
+      : []),
+    ...(highPriorityTasks.length > 0
+      ? highPriorityTasks.slice(0, 10).map(
+          (t) =>
+            `- [${t.priority.toUpperCase()}] "${t.title}" | status: ${t.status} | due: ${t.deadline ?? "none"}`,
+        )
+      : []),
     ``,
     `=== CLIENTS NEEDING FOLLOW-UP (no meeting in 30 days) ===`,
-    ...clientsNeedingFollowUp.map((c) => `- ${c.companyName} (${c.status})`),
+    clientsNeedingFollowUp.length === 0
+      ? "- All active clients have had recent contact"
+      : clientsNeedingFollowUp.map((c) => `- ${c.companyName} (${c.status})`).join("\n"),
     ``,
     `=== RECENT ACTIVITY (last 30 events) ===`,
     ...recentActivity.map(
@@ -375,44 +529,44 @@ async function buildClinicContext(wid: number): Promise<string> {
 // ── Industry-aware system prompt ─────────────────────────────────────────────
 
 const INDUSTRY_CONTEXT: Record<string, string> = {
-  "digital-agency": `You are an intelligent DIGITAL AGENCY OPERATIONS ASSISTANT — not a generic chatbot.
+  "digital-agency": `You are an intelligent DIGITAL AGENCY OPERATIONS MANAGER — not a generic chatbot. You know this agency inside out.
 
-This agency workspace includes: Clients, Projects, Campaigns, Deliverables, Tasks, Client Meetings, Invoices, Documents, and Calendar.
+This workspace includes: Clients, Projects, Campaigns, Deliverables, Tasks, Invoices, Client Meetings, Documents, and Calendar.
 
 Always use agency terminology:
 - "Clients" (not customers or patients)
 - "Projects" (branding, web design, automation, marketing work)
-- "Campaigns" (SEO, paid ads, social media, email marketing, lead generation)
+- "Campaigns" (SEO, paid ads, social media, email, lead gen)
 - "Deliverables" (websites, landing pages, logos, ad creatives, reports, videos)
-- "Client Meetings" (client calls, check-ins, reviews)
-- "Invoices" (not payments or billing)
+- "Invoices" (not "payments" or "billing")
+- "Client Meetings" (calls, check-ins, reviews)
 
-You can answer questions about:
-- Which clients need attention, have overdue invoices, or stalled projects
-- Project status, deadlines, progress, and at-risk work
-- Campaign performance and active campaigns by client
-- Deliverables pending approval or overdue
-- Revenue collected, outstanding invoices, and monthly earnings
-- Upcoming deadlines and this week's priorities
-- Recent activity across the workspace
-- AI-powered business summaries and workload assessments
+## What you can do
 
-When answering:
-- Always reference actual client names, project names, amounts, and dates from the data
+**Answer questions** about:
+- Agency health overview ("how is my agency doing?", "what should I focus on today?")
+- Project status, delays, blockers, at-risk work, and progress
+- Client relationship health, churn risk, clients needing follow-up
+- Invoices outstanding, overdue, and revenue collected
+- Deliverables waiting for approval, revision requests
+- Campaigns active, paused, or ending soon
+- Task priorities, overdue work, team workload
+- Upcoming deadlines this week
+
+**Take actions** when asked:
+- Create a task: "Create a task to follow up with [Client] by [date]"
+- Update project status: "Mark [Project] as completed" / "Set [Project] to in_progress"
+- Create a reminder: "Remind me to send the proposal to [Client] tomorrow"
+
+For actions: always confirm what was done. Before updating important data (like project status), confirm with the user first by describing exactly what will change.
+
+## Response quality rules
+- Format with **bold**, bullet lists, and tables when useful — never plain wall-of-text
+- Always reference actual names, amounts, and dates from the workspace data
 - Prioritize by urgency: overdue items first, then approaching deadlines
-- Be concise and action-oriented — tell the user what to do next
-- Group information clearly when listing multiple items
-
-Key questions to answer well:
-- What should I focus on today?
-- Which clients need attention this week?
-- Which projects are behind schedule?
-- Which invoices are overdue?
-- What deadlines are coming up this week?
-- Give me a business summary.
-- What happened since yesterday?
-- Which campaigns are currently active?
-- What's my revenue this month?`,
+- Be direct and action-oriented — tell the user the next concrete step
+- Never invent data. If something isn't in the workspace, say so clearly
+- Group related items logically when listing multiple things`,
 
   agency: `You are an intelligent DIGITAL AGENCY OPERATIONS ASSISTANT.
 This agency workspace includes: Clients, Projects, Campaigns, Deliverables, Tasks, Client Meetings, Invoices, Documents, Calendar.
@@ -478,6 +632,76 @@ Your job: give concise, actionable intelligence. Not generic advice. Reference a
 
 Format responses with clear sections when helpful. Use bullet points for lists. Keep answers focused and practical.`;
 }
+
+// ── Agency tools (OpenAI function calling) ────────────────────────────────────
+
+const AGENCY_TOOLS: OpenAI.Chat.ChatCompletionTool[] = [
+  {
+    type: "function",
+    function: {
+      name: "create_task",
+      description:
+        "Create a task or reminder in the workspace. Use when the user asks to create a task, add a to-do, set a reminder, or follow up with someone.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: { type: "string", description: "Task title — be specific" },
+          priority: {
+            type: "string",
+            enum: ["low", "medium", "high", "urgent"],
+            description: "Task priority (default: medium)",
+          },
+          deadline: {
+            type: "string",
+            description: "Optional deadline in YYYY-MM-DD format",
+          },
+          clientNameQuery: {
+            type: "string",
+            description:
+              "Optional: partial client name to associate the task with",
+          },
+          projectNameQuery: {
+            type: "string",
+            description:
+              "Optional: partial project name to associate the task with",
+          },
+          notes: { type: "string", description: "Optional notes or context" },
+        },
+        required: ["title"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "update_project_status",
+      description:
+        "Update the status of a project. Use when the user says 'mark project X as completed', 'set project Y to in progress', etc. Always confirm with the user before calling this — describe what will change.",
+      parameters: {
+        type: "object",
+        properties: {
+          projectNameQuery: {
+            type: "string",
+            description: "Partial project name to search for",
+          },
+          status: {
+            type: "string",
+            enum: [
+              "planning",
+              "in_progress",
+              "client_review",
+              "revision",
+              "completed",
+              "archived",
+            ],
+            description: "New project status",
+          },
+        },
+        required: ["projectNameQuery", "status"],
+      },
+    },
+  },
+];
 
 // ── Clinic tools (OpenAI function calling) ────────────────────────────────────
 
@@ -713,6 +937,140 @@ async function executeClinicTool(
   }
 }
 
+// ── Agency tool execution ──────────────────────────────────────────────────────
+
+async function executeAgencyTool(
+  name: string,
+  args: Record<string, unknown>,
+  wid: number,
+): Promise<ActionResult> {
+  try {
+    if (name === "create_task") {
+      const { title, priority, deadline, clientNameQuery, projectNameQuery, notes } =
+        args as {
+          title: string;
+          priority?: string;
+          deadline?: string;
+          clientNameQuery?: string;
+          projectNameQuery?: string;
+          notes?: string;
+        };
+
+      let clientId: number | null = null;
+      let projectId: number | null = null;
+      let clientLabel = "";
+      let projectLabel = "";
+
+      if (clientNameQuery) {
+        const found = await db
+          .select()
+          .from(clientsTable)
+          .where(
+            and(
+              eq(clientsTable.workspaceId, wid),
+              ilike(clientsTable.companyName, `%${clientNameQuery}%`),
+            ),
+          )
+          .limit(1);
+        if (found[0]) {
+          clientId = found[0].id;
+          clientLabel = ` for ${found[0].companyName}`;
+        }
+      }
+
+      if (projectNameQuery) {
+        const found = await db
+          .select()
+          .from(projectsTable)
+          .where(
+            and(
+              eq(projectsTable.workspaceId, wid),
+              ilike(projectsTable.name, `%${projectNameQuery}%`),
+            ),
+          )
+          .limit(1);
+        if (found[0]) {
+          projectId = found[0].id;
+          projectLabel = ` on "${found[0].name}"`;
+        }
+      }
+
+      await db.insert(tasksTable).values({
+        workspaceId: wid,
+        title,
+        status: "todo",
+        priority: (priority as "low" | "medium" | "high" | "urgent") ?? "medium",
+        deadline: deadline ?? null,
+        clientId,
+        projectId,
+        notes: notes ?? null,
+      });
+
+      return {
+        type: "create_task",
+        success: true,
+        entity: "Task",
+        detail: `Task "${title}" created${clientLabel}${projectLabel}${deadline ? ` — due ${deadline}` : ""}`,
+      };
+    }
+
+    if (name === "update_project_status") {
+      const { projectNameQuery, status } = args as {
+        projectNameQuery: string;
+        status: string;
+      };
+
+      const found = await db
+        .select({ p: projectsTable, clientName: clientsTable.companyName })
+        .from(projectsTable)
+        .leftJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
+        .where(
+          and(
+            eq(projectsTable.workspaceId, wid),
+            ilike(projectsTable.name, `%${projectNameQuery}%`),
+          ),
+        )
+        .limit(1);
+
+      if (!found[0]) {
+        return {
+          type: "update_project_status",
+          success: false,
+          entity: "Project",
+          detail: `No project matching "${projectNameQuery}" found in the workspace.`,
+        };
+      }
+
+      await db
+        .update(projectsTable)
+        .set({ status, updatedAt: new Date() })
+        .where(
+          and(
+            eq(projectsTable.id, found[0].p.id),
+            eq(projectsTable.workspaceId, wid),
+          ),
+        );
+
+      return {
+        type: "update_project_status",
+        success: true,
+        entity: "Project",
+        detail: `"${found[0].p.name}" status updated to ${status}`,
+      };
+    }
+
+    return {
+      type: name,
+      success: false,
+      entity: "Unknown",
+      detail: "Unknown tool name.",
+    };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { type: name, success: false, entity: name, detail: `Error: ${msg}` };
+  }
+}
+
 // ── 1. AI Chat Assistant (streaming SSE with clinic tool calling) ─────────────
 
 router.post("/ai/chat", async (req, res): Promise<void> => {
@@ -767,13 +1125,14 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
       { role: "user", content: message },
     ];
 
-    // ── Phase 1: Stream (with tools if clinic) ────────────────────────────────
+    // ── Phase 1: Stream (with tools for agency and clinic) ───────────────────
+    const tools = isClinic ? CLINIC_TOOLS : AGENCY_TOOLS;
     const stream1 = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       max_tokens: 2048,
       messages,
-      tools: isClinic ? CLINIC_TOOLS : undefined,
-      tool_choice: isClinic ? "auto" : undefined,
+      tools,
+      tool_choice: "auto",
       stream: true,
     });
 
@@ -824,7 +1183,9 @@ router.post("/ai/chat", async (req, res): Promise<void> => {
           /* malformed args — pass empty */
         }
 
-        const result = await executeClinicTool(tc.name, parsedArgs, wid);
+        const result = isClinic
+          ? await executeClinicTool(tc.name, parsedArgs, wid)
+          : await executeAgencyTool(tc.name, parsedArgs, wid);
 
         // Emit action event to client
         res.write(`data: ${JSON.stringify({ action: result })}\n\n`);
@@ -1251,7 +1612,175 @@ ${notes}`;
   }
 });
 
-// ── 6. AI Smart Search ───────────────────────────────────────────────────────
+// ── 6. Agency Attention Feed (dashboard widget) ───────────────────────────────
+
+router.get("/ai/agency-attention", async (req, res): Promise<void> => {
+  const wid = req.session.workspaceId!;
+  const nowStr = new Date().toISOString().split("T")[0]!;
+  const sevenDaysFromNow = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+    .toISOString()
+    .split("T")[0]!;
+
+  try {
+    const [overdueInvoices, delayedProjects, pendingDeliverables, overdueTasks] =
+      await Promise.all([
+        db
+          .select({ inv: invoicesTable, clientName: clientsTable.companyName })
+          .from(invoicesTable)
+          .leftJoin(clientsTable, eq(invoicesTable.clientId, clientsTable.id))
+          .where(
+            and(
+              eq(invoicesTable.workspaceId, wid),
+              ilike(invoicesTable.status, "overdue"),
+            ),
+          )
+          .limit(3),
+        db
+          .select({ p: projectsTable, clientName: clientsTable.companyName })
+          .from(projectsTable)
+          .leftJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
+          .where(eq(projectsTable.workspaceId, wid))
+          .limit(50),
+        db
+          .select({
+            d: deliverablesTable,
+            projectName: projectsTable.name,
+            clientName: clientsTable.companyName,
+          })
+          .from(deliverablesTable)
+          .leftJoin(projectsTable, eq(deliverablesTable.projectId, projectsTable.id))
+          .leftJoin(clientsTable, eq(projectsTable.clientId, clientsTable.id))
+          .where(eq(deliverablesTable.workspaceId, wid))
+          .limit(50),
+        db
+          .select()
+          .from(tasksTable)
+          .where(eq(tasksTable.workspaceId, wid))
+          .limit(50),
+      ]);
+
+    const items: Array<{
+      type: string;
+      severity: "critical" | "warning" | "info";
+      title: string;
+      detail: string;
+      url: string;
+    }> = [];
+
+    // Overdue invoices
+    for (const { inv, clientName } of overdueInvoices) {
+      if (inv.dueDate && inv.dueDate < nowStr) {
+        items.push({
+          type: "invoice",
+          severity: "critical",
+          title: `Overdue invoice — ${clientName ?? "Unknown"}`,
+          detail: `${inv.invoiceNumber} · $${Number(inv.total).toLocaleString()} · due ${inv.dueDate}`,
+          url: "/invoices",
+        });
+      }
+    }
+
+    // Delayed projects
+    const delayed = delayedProjects.filter(
+      ({ p }) =>
+        p.deadline &&
+        p.deadline < nowStr &&
+        p.status !== "completed" &&
+        p.status !== "archived" &&
+        p.status !== "cancelled",
+    );
+    for (const { p, clientName } of delayed.slice(0, 3)) {
+      items.push({
+        type: "project",
+        severity: "critical",
+        title: `Project overdue — "${p.name}"`,
+        detail: `${clientName ?? "?"} · was due ${p.deadline} · ${p.progress}% done`,
+        url: "/projects",
+      });
+    }
+
+    // Deliverables awaiting approval
+    const awaitingApproval = pendingDeliverables.filter(
+      ({ d }) => d.status === "sent",
+    );
+    for (const { d, projectName, clientName } of awaitingApproval.slice(0, 2)) {
+      items.push({
+        type: "deliverable",
+        severity: "warning",
+        title: `Awaiting client approval — "${d.title}"`,
+        detail: `${clientName ?? "?"} · ${projectName ?? "?"}${d.deadline ? ` · due ${d.deadline}` : ""}`,
+        url: "/deliverables",
+      });
+    }
+
+    // Deliverables with changes requested
+    const changesReq = pendingDeliverables.filter(
+      ({ d }) => d.status === "changes_requested",
+    );
+    for (const { d, projectName, clientName } of changesReq.slice(0, 2)) {
+      items.push({
+        type: "deliverable",
+        severity: "warning",
+        title: `Changes requested — "${d.title}"`,
+        detail: `${clientName ?? "?"} · ${projectName ?? "?"} · ${d.revisionCount} revision(s)`,
+        url: "/deliverables",
+      });
+    }
+
+    // Overdue tasks
+    const overdueTaskList = overdueTasks.filter(
+      (t) => t.deadline && t.deadline < nowStr && t.status !== "done",
+    );
+    if (overdueTaskList.length > 0) {
+      items.push({
+        type: "tasks",
+        severity: "warning",
+        title: `${overdueTaskList.length} overdue task${overdueTaskList.length > 1 ? "s" : ""}`,
+        detail: overdueTaskList
+          .slice(0, 2)
+          .map((t) => `"${t.title}"`)
+          .join(", "),
+        url: "/tasks",
+      });
+    }
+
+    // Upcoming project deadlines
+    const upcoming = delayedProjects.filter(
+      ({ p }) =>
+        p.deadline &&
+        p.deadline >= nowStr &&
+        p.deadline <= sevenDaysFromNow &&
+        p.status !== "completed" &&
+        p.status !== "archived",
+    );
+    for (const { p, clientName } of upcoming.slice(0, 2)) {
+      items.push({
+        type: "project",
+        severity: "info",
+        title: `Deadline this week — "${p.name}"`,
+        detail: `${clientName ?? "?"} · due ${p.deadline} · ${p.progress}% done`,
+        url: "/projects",
+      });
+    }
+
+    // Sort: critical first, then warning, then info. Cap at 6.
+    const sorted = items.sort((a, b) => {
+      const order = { critical: 0, warning: 1, info: 2 };
+      return order[a.severity] - order[b.severity];
+    });
+
+    res.json({
+      items: sorted.slice(0, 6),
+      totalCount: sorted.length,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to build attention feed";
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── 7. AI Smart Search ───────────────────────────────────────────────────────
 
 router.post("/ai/smart-search", async (req, res): Promise<void> => {
   const { query } = req.body as { query: string };

@@ -50,14 +50,14 @@ interface Message {
 // ── Prompt Suites ─────────────────────────────────────────────────────────────
 
 const AGENCY_PROMPTS = [
-  { icon: Users, label: "Client attention", prompt: "Which clients need attention this week?" },
-  { icon: DollarSign, label: "Overdue invoices", prompt: "Which invoices are overdue?" },
-  { icon: Briefcase, label: "Projects at risk", prompt: "Which projects are behind schedule?" },
-  { icon: TrendingUp, label: "Weekly summary", prompt: "Give me a weekly agency summary." },
-  { icon: Megaphone, label: "Campaign status", prompt: "Which campaigns are active and how are they performing?" },
-  { icon: Package, label: "Pending approvals", prompt: "Which deliverables are waiting for client approval?" },
-  { icon: AlertCircle, label: "Churn risk", prompt: "Identify clients that might be at risk of churning." },
-  { icon: Calendar, label: "Upcoming deadlines", prompt: "What are my most urgent upcoming deadlines?" },
+  { icon: Sparkles, label: "Focus today", prompt: "What needs my attention today? Give me a prioritized rundown." },
+  { icon: TrendingUp, label: "Agency health", prompt: "How is my agency performing? Give me a full health overview." },
+  { icon: Briefcase, label: "Projects at risk", prompt: "Which projects are behind schedule or at risk? List them with reasons." },
+  { icon: Users, label: "Client attention", prompt: "Which clients need attention or are at risk of churning?" },
+  { icon: DollarSign, label: "Outstanding invoices", prompt: "Which invoices are unpaid or overdue? How much is outstanding?" },
+  { icon: Package, label: "Pending approvals", prompt: "Which deliverables are waiting for client approval or have changes requested?" },
+  { icon: Clock, label: "This week's priorities", prompt: "What are my top priorities and deadlines this week?" },
+  { icon: AlertCircle, label: "Find risks", prompt: "Find all risks in my projects, clients, and finances right now." },
 ];
 
 const CLINIC_PROMPTS = [
@@ -160,7 +160,7 @@ export default function AIAssistantPage() {
 
   const welcomeMessage = isClinic
     ? `Hi! I'm your clinic operations assistant.\n\nI have full context across your patients, appointments, treatments, follow-ups, and billing.\n\nI can answer questions about your clinic, and I can also create follow-ups, schedule appointments, or add tasks — just ask.`
-    : `Hi! I'm your agency operations assistant.\n\nI have full context across your clients, projects, campaigns, deliverables, invoices, team workload, and deadlines.\n\nWhat would you like to know?`;
+    : `Hi! I'm your agency operations manager.\n\nI have full context across your clients, projects, campaigns, deliverables, invoices, tasks, and deadlines — all live from your workspace.\n\nYou can ask me anything, and I can also take actions:\n• Create tasks and reminders\n• Update project status\n\nTry: "What needs my attention today?"`;
 
   const subtitle = isClinic
     ? "Your clinic operations assistant — ask about patients, appointments, treatments, billing, or create follow-ups and tasks."
@@ -489,11 +489,11 @@ export default function AIAssistantPage() {
           </div>
           <p className="text-[10px] text-muted-foreground mt-2">
             Press Enter to send · Shift+Enter for new line
-            {isClinic && (
-              <span className="ml-2 text-violet-500/70">
-                · Ask me to create follow-ups, appointments, or tasks
-              </span>
-            )}
+            <span className="ml-2 text-violet-500/70">
+              {isClinic
+                ? "· Ask me to create follow-ups, appointments, or tasks"
+                : "· Ask me to create tasks or update project status"}
+            </span>
           </p>
         </div>
       </Card>

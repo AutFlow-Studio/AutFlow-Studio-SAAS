@@ -2,6 +2,7 @@ import { useGetDashboard } from "@workspace/api-client-react";
 import { PageHeader } from "@/components/page-header";
 import { PageError } from "@/components/page-error";
 import { AIBriefing } from "@/components/ai-briefing";
+import { AIAttentionWidget } from "@/components/ai-attention-widget";
 import { SectionErrorBoundary } from "@/components/error-boundary";
 import { useAgencyProfile } from "@/components/agency-profile-provider";
 import { getNicheConfig } from "@/lib/niche-config";
@@ -699,10 +700,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ── 2. AI Briefing ── */}
-      <div className="print:hidden">
+      {/* ── 2. AI Intelligence ── */}
+      <div className="print:hidden grid grid-cols-1 lg:grid-cols-2 gap-5">
         <SectionErrorBoundary>
           <AIBriefing />
+        </SectionErrorBoundary>
+        <SectionErrorBoundary>
+          <AIAttentionWidget />
         </SectionErrorBoundary>
       </div>
 
