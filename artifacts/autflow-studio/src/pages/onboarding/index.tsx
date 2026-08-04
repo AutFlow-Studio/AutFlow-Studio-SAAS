@@ -19,7 +19,6 @@ import {
   Building2,
   Palette,
   Settings2,
-  LayoutTemplate,
   CheckCircle2,
   Sparkles,
   LayoutDashboard,
@@ -28,10 +27,7 @@ import {
   Receipt,
   X,
   Briefcase,
-  Heart,
-  Laptop,
   Check,
-  Wand2,
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -49,6 +45,8 @@ interface WizardData {
   notifyInvoicePaid: boolean;
   notifyDeadlineApproaching: boolean;
   notifyWeeklyDigest: boolean;
+  agencyType: string;
+  teamSize: string;
 }
 
 interface OnboardingWizardProps {
@@ -99,6 +97,23 @@ const PAYMENT_TERMS = [
 
 const TOTAL_FORM_STEPS = 4; // steps 1–4 (0 = welcome, 5 = done)
 
+// ─── Agency setup constants ────────────────────────────────────────────────────
+
+const AGENCY_TYPES: { id: string; label: string; description: string; icon: string }[] = [
+  { id: "marketing",       label: "Marketing Agency",       description: "SEO, paid ads, social media & content", icon: "📣" },
+  { id: "web-development", label: "Web Development Agency", description: "Websites, apps & technical builds",      icon: "💻" },
+  { id: "design",          label: "Design Agency",          description: "Branding, UI/UX & creative work",        icon: "🎨" },
+  { id: "ai-automation",   label: "AI Automation Agency",   description: "AI workflows, bots & integrations",      icon: "🤖" },
+  { id: "branding",        label: "Branding Agency",        description: "Brand identity, strategy & positioning", icon: "✨" },
+];
+
+const TEAM_SIZES: { id: string; label: string; sub: string }[] = [
+  { id: "solo",  label: "Just me",      sub: "Solo founder" },
+  { id: "2-5",   label: "2 – 5",        sub: "Small team" },
+  { id: "6-10",  label: "6 – 10",       sub: "Growing team" },
+  { id: "11+",   label: "11+",          sub: "Established agency" },
+];
+
 // ─── Storage helpers ──────────────────────────────────────────────────────────
 
 async function requestUploadUrl(
@@ -138,70 +153,9 @@ const STEP_META = [
   { icon: Building2, label: "Company" },
   { icon: Palette, label: "Brand" },
   { icon: Settings2, label: "Preferences" },
-  { icon: LayoutTemplate, label: "Template" },
+  { icon: Briefcase, label: "Agency" },
 ];
 
-// ─── Template definitions (mirrors backend TEMPLATE_META) ─────────────────────
-
-type TemplateColor = "violet" | "blue" | "rose" | "amber" | "emerald";
-
-const TEMPLATES: {
-  id: string;
-  name: string;
-  tagline: string;
-  icon: React.ElementType;
-  color: TemplateColor;
-  includes: string[];
-}[] = [
-  {
-    id: "digital-agency",
-    name: "Digital Agency",
-    tagline: "Built for marketing, branding, web & automation agencies",
-    icon: Palette,
-    color: "violet",
-    includes: ["Clients, Projects, Campaigns & Deliverables", "Team management with workload tracking", "Invoices, payments & revenue reporting", "AI assistant for agency operations intelligence"],
-  },
-  {
-    id: "consulting",
-    name: "Consulting Business",
-    tagline: "Engagements, reports & advisory",
-    icon: Briefcase,
-    color: "blue",
-    includes: ["Client workspace labelled for advisory engagements", "Engagement & report project structure", "Meeting notes and session tracking", "Guided setup tasks to get you started"],
-  },
-  {
-    id: "clinic",
-    name: "Clinic / Healthcare",
-    tagline: "Appointments, follow-ups & revenue",
-    icon: Heart,
-    color: "rose",
-    includes: ["Client & patient workspace with care terminology", "Care program structure with sessions & milestones", "Appointment and follow-up tracking", "Guided setup tasks to get you started"],
-  },
-  {
-    id: "freelancer",
-    name: "Freelancer",
-    tagline: "Projects, invoices & client comms",
-    icon: Laptop,
-    color: "amber",
-    includes: ["Client workspace with project billing", "Project structure with scope & deadline tracking", "Task lists and milestone management", "Guided setup tasks to get you started"],
-  },
-  {
-    id: "generic",
-    name: "Generic Business",
-    tagline: "A starting point for any service business",
-    icon: Building2,
-    color: "emerald",
-    includes: ["General-purpose client and project workspace", "Full feature access: invoices, docs, meetings", "Task and activity tracking", "Guided setup tasks to get you started"],
-  },
-];
-
-const COLOR_CLASSES: Record<TemplateColor, { icon: string; ring: string; badge: string }> = {
-  violet: { icon: "bg-violet-500/10 text-violet-600 dark:text-violet-400", ring: "ring-violet-400", badge: "bg-violet-500/10 text-violet-700 dark:text-violet-300 border-violet-200 dark:border-violet-800" },
-  blue:   { icon: "bg-blue-500/10 text-blue-600 dark:text-blue-400",       ring: "ring-blue-400",   badge: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800" },
-  rose:   { icon: "bg-rose-500/10 text-rose-600 dark:text-rose-400",       ring: "ring-rose-400",   badge: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800" },
-  amber:  { icon: "bg-amber-500/10 text-amber-600 dark:text-amber-400",    ring: "ring-amber-400",  badge: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800" },
-  emerald:{ icon: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", ring: "ring-emerald-400", badge: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800" },
-};
 
 function StepIndicator({ current }: { current: number }) {
   return (
@@ -371,9 +325,7 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
   const { toast } = useToast();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
-  const [loadingDemo, setLoadingDemo] = useState(false);
   const [direction, setDirection] = useState<"forward" | "back">("forward");
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
 
   const [data, setData] = useState<WizardData>({
     agencyName: "",
@@ -388,6 +340,8 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     notifyInvoicePaid: true,
     notifyDeadlineApproaching: true,
     notifyWeeklyDigest: true,
+    agencyType: "",
+    teamSize: "",
   });
 
   const patch = useCallback((updates: Partial<WizardData>) => {
@@ -404,12 +358,10 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
     setStep((s) => s - 1);
   }
 
-  // Save all settings and optionally apply a business template
-  async function saveAndFinish(templateId: string | null) {
+  // Save all settings
+  async function saveAndFinish() {
     setSaving(true);
     try {
-      // Save agency settings — include businessType so niche config works
-      // even if the user skips the template step.
       const settingsRes = await fetch("/api/settings/agency", {
         method: "PUT",
         credentials: "include",
@@ -417,29 +369,10 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
         body: JSON.stringify({
           ...data,
           onboardingCompleted: true,
-          businessType: templateId ?? "generic",
+          businessType: "digital-agency",
         }),
       });
       if (!settingsRes.ok) throw new Error("Failed to save settings");
-
-      // Apply the selected template if one was chosen (seeds starter tasks + sets businessType)
-      if (templateId) {
-        setLoadingDemo(true);
-        const tplRes = await fetch("/api/templates/apply", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ templateId }),
-        });
-        setLoadingDemo(false);
-        if (!tplRes.ok) {
-          toast({
-            title: "Template couldn't load",
-            description: "Your settings were saved. You can add data later from Settings.",
-            variant: "destructive",
-          });
-        }
-      }
 
       setDirection("forward");
       setStep(5); // Done screen
@@ -451,7 +384,6 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
       });
     } finally {
       setSaving(false);
-      setLoadingDemo(false);
     }
   }
 
@@ -499,16 +431,15 @@ export default function OnboardingWizard({ onComplete }: OnboardingWizardProps) 
             <PreferencesStep data={data} patch={patch} onNext={goNext} onBack={goBack} />
           )}
           {step === 4 && (
-            <TemplateStep
+            <AgencySetupStep
+              data={data}
+              patch={patch}
               saving={saving}
-              loadingDemo={loadingDemo}
-              selectedTemplate={selectedTemplate}
-              onSelect={setSelectedTemplate}
-              onConfirm={() => saveAndFinish(selectedTemplate)}
+              onConfirm={saveAndFinish}
               onBack={goBack}
             />
           )}
-          {step === 5 && <DoneStep onComplete={onComplete} appliedTemplate={selectedTemplate} />}
+          {step === 5 && <DoneStep onComplete={onComplete} agencyName={data.agencyName} agencyType={data.agencyType} />}
         </div>
       </div>
       </div>{/* end inner centering wrapper */}
@@ -844,146 +775,114 @@ function PreferencesStep({
   );
 }
 
-// ─── Step 4: Template picker ──────────────────────────────────────────────────
+// ─── Step 4: Agency setup ─────────────────────────────────────────────────────
 
-function TemplateStep({
+function AgencySetupStep({
+  data,
+  patch,
   saving,
-  loadingDemo,
-  selectedTemplate,
-  onSelect,
   onConfirm,
   onBack,
 }: {
+  data: WizardData;
+  patch: (u: Partial<WizardData>) => void;
   saving: boolean;
-  loadingDemo: boolean;
-  selectedTemplate: string | null;
-  onSelect: (id: string | null) => void;
   onConfirm: () => void;
   onBack: () => void;
 }) {
-  const busy = saving || loadingDemo;
-  const chosen = selectedTemplate
-    ? TEMPLATES.find((t) => t.id === selectedTemplate) ?? null
-    : null;
+  const canConfirm = data.agencyType.length > 0 && data.teamSize.length > 0;
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold">Choose your industry</h2>
+        <h2 className="text-lg font-semibold">Tell us about your agency</h2>
         <p className="text-sm text-muted-foreground mt-0.5">
-          Configure your workspace for your industry. Starts empty — your own real data goes in first.
+          This helps personalise your workspace and AI assistant.
         </p>
       </div>
 
-      {/* Template grid */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-        {TEMPLATES.map((tpl) => {
-          const cls = COLOR_CLASSES[tpl.color];
-          const isSelected = selectedTemplate === tpl.id;
-          return (
-            <button
-              key={tpl.id}
-              type="button"
-              disabled={busy}
-              onClick={() => onSelect(isSelected ? null : tpl.id)}
-              className={`relative flex flex-col gap-2.5 p-3.5 rounded-xl border text-left transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed
-                ${isSelected
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                  : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
-                }`}
-            >
-              {/* Selected checkmark */}
-              {isSelected && (
-                <span className="absolute top-2.5 right-2.5 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                  <Check size={11} className="text-primary-foreground" />
-                </span>
-              )}
-
-              {/* Icon + name */}
-              <div className="flex items-center gap-2.5">
-                <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${cls.icon}`}>
-                  <tpl.icon size={15} />
+      {/* Agency type */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          What type of agency do you run?
+        </p>
+        <div className="grid grid-cols-1 gap-2">
+          {AGENCY_TYPES.map((type) => {
+            const isSelected = data.agencyType === type.id;
+            return (
+              <button
+                key={type.id}
+                type="button"
+                disabled={saving}
+                onClick={() => patch({ agencyType: type.id })}
+                className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl border text-left transition-all duration-150 disabled:opacity-50
+                  ${isSelected
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                    : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+              >
+                <span className="text-lg leading-none flex-shrink-0">{type.icon}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-semibold leading-tight">{type.label}</p>
+                  <p className="text-[11px] text-muted-foreground leading-tight">{type.description}</p>
                 </div>
-                <div>
-                  <p className="text-sm font-semibold leading-tight">{tpl.name}</p>
-                  <p className="text-[11px] text-muted-foreground leading-tight">{tpl.tagline}</p>
-                </div>
-              </div>
+                {isSelected && (
+                  <span className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+                    <Check size={11} className="text-primary-foreground" />
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-              {/* Includes list */}
-              <ul className="space-y-1">
-                {tpl.includes.map((item) => (
-                  <li key={item} className="flex items-start gap-1.5 text-[11px] text-muted-foreground">
-                    <Check size={10} className="mt-0.5 flex-shrink-0 text-primary/60" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </button>
-          );
-        })}
-
-        {/* Start fresh option */}
-        <button
-          type="button"
-          disabled={busy}
-          onClick={() => onSelect(null)}
-          className={`relative flex flex-col gap-2.5 p-3.5 rounded-xl border text-left transition-all duration-150 disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2
-            ${selectedTemplate === null && !busy
-              ? "border-dashed border-primary/40 bg-primary/3 ring-1 ring-primary/20"
-              : "border-dashed border-border bg-card hover:border-muted-foreground/30 hover:bg-muted/30"
-            }`}
-        >
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-              <Sparkles size={14} className="text-muted-foreground" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold leading-tight">Start with a blank workspace</p>
-              <p className="text-[11px] text-muted-foreground leading-tight">
-                Skip the sample data — I'll add my own clients and projects from scratch.
-              </p>
-            </div>
-          </div>
-        </button>
+      {/* Team size */}
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          How many people are on your team?
+        </p>
+        <div className="grid grid-cols-4 gap-2">
+          {TEAM_SIZES.map((size) => {
+            const isSelected = data.teamSize === size.id;
+            return (
+              <button
+                key={size.id}
+                type="button"
+                disabled={saving}
+                onClick={() => patch({ teamSize: size.id })}
+                className={`flex flex-col items-center gap-0.5 py-3 px-2 rounded-xl border text-center transition-all duration-150 disabled:opacity-50
+                  ${isSelected
+                    ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                    : "border-border bg-card hover:border-primary/40 hover:bg-muted/40"
+                  }`}
+              >
+                <span className="text-sm font-bold">{size.label}</span>
+                <span className="text-[10px] text-muted-foreground">{size.sub}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Action row */}
       <div className="flex items-center justify-between pt-1">
-        <Button variant="ghost" size="sm" onClick={onBack} disabled={busy} className="gap-1.5">
+        <Button variant="ghost" size="sm" onClick={onBack} disabled={saving} className="gap-1.5">
           <ArrowLeft size={14} /> Back
         </Button>
-
         <Button
           size="sm"
           onClick={onConfirm}
-          disabled={busy}
-          className="gap-1.5 min-w-[160px]"
+          disabled={saving || !canConfirm}
+          className="gap-1.5 min-w-[140px]"
         >
-          {busy ? (
-            <>
-              <Loader2 size={13} className="animate-spin" />
-              {loadingDemo ? "Applying template…" : "Saving…"}
-            </>
-          ) : chosen ? (
-            <>
-              <Wand2 size={13} />
-              Apply {chosen.name}
-            </>
+          {saving ? (
+            <><Loader2 size={13} className="animate-spin" /> Saving…</>
           ) : (
-            <>
-              <Sparkles size={13} />
-              Start fresh
-            </>
+            <><Sparkles size={13} /> Launch my workspace</>
           )}
         </Button>
       </div>
-
-      {chosen && (
-        <p className="text-[11px] text-muted-foreground text-center -mt-2">
-          Your workspace starts empty — add your real clients and projects to get started.
-        </p>
-      )}
     </div>
   );
 }
@@ -992,12 +891,14 @@ function TemplateStep({
 
 function DoneStep({
   onComplete,
-  appliedTemplate,
+  agencyName,
+  agencyType,
 }: {
   onComplete: () => void;
-  appliedTemplate: string | null;
+  agencyName: string;
+  agencyType: string;
 }) {
-  const tpl = appliedTemplate ? TEMPLATES.find((t) => t.id === appliedTemplate) ?? null : null;
+  const typeLabel = AGENCY_TYPES.find((t) => t.id === agencyType)?.label ?? "Digital Agency";
 
   return (
     <div className="flex flex-col items-center text-center py-8 gap-6">
@@ -1009,46 +910,36 @@ function DoneStep({
       </div>
 
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold">You're all set!</h2>
+        <h2 className="text-2xl font-bold">Your workspace is ready</h2>
         <p className="text-muted-foreground text-sm leading-relaxed max-w-xs">
-          {tpl
-            ? `Your workspace is configured for ${tpl.name}. Your guided setup tasks are waiting — add your real clients and projects to get started.`
-            : "Your workspace is configured and ready. Start adding your clients and projects whenever you are."}
+          {agencyName
+            ? `${agencyName} is configured as a ${typeLabel}. Add your first client to get started.`
+            : `Your ${typeLabel} workspace is configured. Add your first client to get started.`}
         </p>
       </div>
 
       <div className="w-full space-y-2">
-        <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
-          <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
-          <span>Business profile configured</span>
-        </div>
-        <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
-          <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
-          <span>Preferences & notifications saved</span>
-        </div>
-        {tpl ? (
-          <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-primary/5 border border-primary/20">
-            <tpl.icon size={15} className="text-primary flex-shrink-0" />
-            <span><span className="font-medium">{tpl.name}</span> workspace configured — guided tasks ready</span>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
+        {[
+          "Agency profile configured",
+          "Invoicing preferences saved",
+          "AI assistant ready for your workspace",
+          "Client portal enabled",
+        ].map((item) => (
+          <div key={item} className="flex items-center gap-3 text-sm text-left px-4 py-3 rounded-lg bg-muted/50 border border-border">
             <CheckCircle2 size={15} className="text-green-500 flex-shrink-0" />
-            <span>Clean workspace — ready for your real data</span>
+            <span>{item}</span>
           </div>
-        )}
+        ))}
       </div>
 
       <Button size="lg" onClick={onComplete} className="w-full gap-2">
-        Open dashboard
+        Open Agency Dashboard
         <ArrowRight size={16} />
       </Button>
 
-      {tpl && (
-        <p className="text-[11px] text-muted-foreground -mt-3">
-          All sample data can be cleared anytime from Settings → Data Management.
-        </p>
-      )}
+      <p className="text-[11px] text-muted-foreground -mt-3">
+        Everything can be changed later in Settings
+      </p>
     </div>
   );
 }

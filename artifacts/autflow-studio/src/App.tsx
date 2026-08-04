@@ -35,17 +35,6 @@ import CampaignsList from '@/pages/campaigns/index';
 import DeliverablesView from '@/pages/deliverables/index';
 import TeamView from '@/pages/team/index';
 import AIAssistantPage from '@/pages/ai-assistant/index';
-import TimeTrackingPage from '@/pages/time-tracking/index';
-import MilestonesPage from '@/pages/milestones/index';
-
-// Clinic pages
-import ClinicDashboard from '@/pages/clinic/dashboard/index';
-import PatientsList from '@/pages/clinic/patients/index';
-import PatientDetail from '@/pages/clinic/patients/detail';
-import AppointmentsPage from '@/pages/clinic/appointments/index';
-import TreatmentsPage from '@/pages/clinic/treatments/index';
-import FollowupsPage from '@/pages/clinic/followups/index';
-import ClinicBillingPage from '@/pages/clinic/billing/index';
 import { useAgencyProfile } from '@/components/agency-profile-provider';
 
 // Client Portal pages
@@ -69,11 +58,9 @@ const queryClient = new QueryClient({
   },
 });
 
-// ── Smart dashboard: renders clinic or agency dashboard based on businessType ──
+// ── Smart dashboard ───────────────────────────────────────────────────────────
 
 function SmartDashboard() {
-  const { profile } = useAgencyProfile();
-  if (profile.businessType === 'clinic') return <ClinicDashboard />;
   return <Dashboard />;
 }
 
@@ -97,17 +84,8 @@ function AgencyRouter() {
       <Route path="/documents" component={DocumentsList} />
       <Route path="/reports" component={ReportsView} />
       <Route path="/tasks" component={TasksList} />
-      <Route path="/time-tracking" component={TimeTrackingPage} />
-      <Route path="/milestones" component={MilestonesPage} />
       <Route path="/search" component={SearchResults} />
       <Route path="/settings" component={SettingsView} />
-      {/* Clinic routes */}
-      <Route path="/patients" component={PatientsList} />
-      <Route path="/patients/:id" component={PatientDetail} />
-      <Route path="/appointments" component={AppointmentsPage} />
-      <Route path="/treatments" component={TreatmentsPage} />
-      <Route path="/followups" component={FollowupsPage} />
-      <Route path="/clinic-billing" component={ClinicBillingPage} />
       <Route component={NotFound} />
     </Switch>
   );

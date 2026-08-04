@@ -1,0 +1,134 @@
+You are a senior SaaS product architect and full-stack engineer.
+
+Your task is to transform the current AutFlow Studio application into a professional AI-powered operating system specifically designed for digital agencies.
+
+Before making changes:
+- Analyze the existing codebase.
+- Preserve working features.
+- Do not rebuild from scratch.
+- Do not remove valuable existing functionality.
+- Make changes incrementally and safely.
+
+CURRENT SITUATION:
+AutFlow Studio currently supports multiple industries, but the industry system is incomplete. The goal now is to focus exclusively on Digital Agencies and create a premium agency-specific experience.
+
+PRIMARY GOAL:
+Convert the product from a generic business workspace into a specialized Digital Agency workspace.
+
+Requirements:
+
+1. Remove non-agency positioning from the user experience:
+- Hide Clinic workspace.
+- Hide Freelancer workspace.
+- Hide any unrelated industry selection options.
+- Remove navigation items that are incomplete or irrelevant.
+
+The application should feel like it was built specifically for digital agencies.
+
+2. Update terminology across the application:
+
+Use agency language consistently:
+
+Clients → Clients
+Projects → Projects
+Tasks → Tasks
+Deliverables → Deliverables
+Campaigns → Campaigns
+Invoices → Invoices
+Meetings → Client Meetings
+Documents → Client Assets / Documents
+
+Make sure terminology is consistent in:
+- Navigation
+- Pages
+- Forms
+- Buttons
+- Empty states
+- Dashboard widgets
+- AI context
+
+3. Create a clear Digital Agency workspace identity:
+
+The workspace should represent:
+
+"An AI-powered operating system for small digital agencies to manage clients, projects, deliverables, revenue, and operations in one place."
+
+4. Improve onboarding:
+
+The onboarding should assume the user is a digital agency owner.
+
+Replace generic industry selection with an agency-focused setup.
+
+Collect useful agency information:
+- Agency name
+- Agency type:
+  - Marketing Agency
+  - Web Development Agency
+  - Design Agency
+  - AI Automation Agency
+  - Branding Agency
+- Team size
+- Main services
+- Number of active clients
+
+Use this information to personalize the workspace.
+
+5. Improve workspace configuration:
+
+The workspace should prepare for agency workflows:
+
+Core modules:
+- Dashboard
+- Clients
+- Projects
+- Tasks
+- Campaigns
+- Deliverables
+- Documents
+- Meetings
+- Invoices
+- Calendar
+- AI Assistant
+
+6. Clean incomplete functionality:
+
+Hide or disable:
+- Empty pages
+- Placeholder modules
+- Broken navigation links
+- Features that are not ready
+
+The user should only see polished functionality.
+
+7. AI context update:
+
+Update the AI assistant context so it understands:
+
+The user is running a digital agency.
+
+The AI should think about:
+- Clients
+- Projects
+- Deadlines
+- Deliverables
+- Revenue
+- Client satisfaction
+- Agency workload
+
+Do not implement advanced AI actions yet.
+Only improve the foundation and context.
+
+8. Final output:
+
+After implementation, provide:
+
+- What was changed.
+- Which files were modified.
+- Any remaining issues.
+- What should be built next.
+
+Success criteria:
+
+When a digital agency owner opens AutFlow Studio, they should immediately feel:
+
+"This was built specifically for my agency, not adapted from a generic project management tool."

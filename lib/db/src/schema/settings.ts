@@ -16,7 +16,9 @@ export const agencySettingsTable = pgTable("agency_settings", {
   website: text("website"),
   supportEmail: text("support_email"),
   logoUrl: text("logo_url"),
-  businessType: text("business_type"), // "agency" | "consulting" | "freelancer" | "service_business" | "clinic" | "other"
+  businessType: text("business_type"), // always "digital-agency" for agency workspaces
+  agencyType: text("agency_type"), // "marketing" | "web-development" | "design" | "ai-automation" | "branding"
+  teamSize: text("team_size"), // "solo" | "2-5" | "6-10" | "11+"
   defaultCurrency: text("default_currency").notNull().default("USD"),
   timezone: text("timezone").notNull().default("UTC"),
   invoicePrefix: text("invoice_prefix").notNull().default("INV"),

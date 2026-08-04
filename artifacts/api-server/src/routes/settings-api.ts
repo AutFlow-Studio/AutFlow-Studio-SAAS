@@ -38,6 +38,8 @@ router.put("/settings/agency", requireAuth, async (req, res): Promise<void> => {
     supportEmail,
     logoUrl,
     businessType,
+    agencyType,
+    teamSize,
     defaultCurrency,
     timezone,
     invoicePrefix,
@@ -56,6 +58,8 @@ router.put("/settings/agency", requireAuth, async (req, res): Promise<void> => {
   if (supportEmail !== undefined) updates.supportEmail = supportEmail ? String(supportEmail).trim() : null;
   if (logoUrl !== undefined) updates.logoUrl = logoUrl ? String(logoUrl).trim() : null;
   if (businessType !== undefined) updates.businessType = businessType ? String(businessType).trim() : null;
+  if (agencyType !== undefined) updates.agencyType = agencyType ? String(agencyType).trim() : null;
+  if (teamSize !== undefined) updates.teamSize = teamSize ? String(teamSize).trim() : null;
   if (defaultCurrency !== undefined) updates.defaultCurrency = String(defaultCurrency).trim();
   if (timezone !== undefined) updates.timezone = String(timezone).trim();
   if (invoicePrefix !== undefined) updates.invoicePrefix = String(invoicePrefix).trim();
