@@ -17,7 +17,6 @@ import {
   PieChart,
   Pie,
   CartesianGrid,
-  Legend,
 } from "recharts";
 import {
   TrendingUp,
@@ -410,74 +409,83 @@ export default function ReportsView() {
               Current distribution across all active work
             </p>
           </CardHeader>
-          <CardContent className="h-[320px] pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={overview.projectsByStatus}
-                  cx="42%"
-                  cy="50%"
-                  innerRadius={72}
-                  outerRadius={110}
-                  paddingAngle={3}
-                  dataKey="count"
-                  nameKey="status"
-                  strokeWidth={0}
+          <CardContent className="pt-2 flex items-center gap-4" style={{ height: 320 }}>
+            {/* Chart occupies the left ~58% */}
+            <div className="h-full" style={{ flex: "0 0 58%" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={overview.projectsByStatus}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={72}
+                    outerRadius={110}
+                    paddingAngle={3}
+                    dataKey="count"
+                    nameKey="status"
+                    strokeWidth={0}
+                  >
+                    {overview.projectsByStatus.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={
+                          C.projects[entry.status] ?? PROJECT_STATUS_FALLBACK
+                        }
+                      />
+                    ))}
+                  </Pie>
+                  {/* Invisible second Pie used only to render the centre label */}
+                  <Pie
+                    data={[{ count: totalProjects }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={0}
+                    outerRadius={0}
+                    dataKey="count"
+                    label={(props: { cx: number; cy: number }) => (
+                      <DonutLabel {...props} total={totalProjects} />
+                    )}
+                    labelLine={false}
+                    fill="transparent"
+                    strokeWidth={0}
+                  />
+                  <RechartsTooltip
+                    contentStyle={tooltipStyle}
+                    itemStyle={tooltipItemStyle}
+                    formatter={(value: number, name: string) => [
+                      `${value} project${value !== 1 ? "s" : ""}`,
+                      name.replace(/_/g, " "),
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend rendered outside Recharts — avoids the Invalid Hook Call
+                bug that occurs when Recharts calls Legend `content` as a plain
+                function, bypassing React's reconciler dispatcher. */}
+            <ul className="flex flex-col gap-2.5 pr-2 flex-1">
+              {overview.projectsByStatus.map((entry) => (
+                <li
+                  key={entry.status}
+                  className="flex items-center gap-2 text-xs"
                 >
-                  {overview.projectsByStatus.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={
-                        C.projects[entry.status] ?? PROJECT_STATUS_FALLBACK
-                      }
-                    />
-                  ))}
-                </Pie>
-                <text>
-                  {/* centre label rendered via customised label prop below */}
-                </text>
-                <Pie
-                  data={[{ count: totalProjects }]}
-                  cx="42%"
-                  cy="50%"
-                  innerRadius={0}
-                  outerRadius={0}
-                  dataKey="count"
-                  label={(props: { cx: number; cy: number }) => (
-                    <DonutLabel {...props} total={totalProjects} />
-                  )}
-                  labelLine={false}
-                  fill="transparent"
-                  strokeWidth={0}
-                />
-                <RechartsTooltip
-                  contentStyle={tooltipStyle}
-                  itemStyle={tooltipItemStyle}
-                  formatter={(value: number, name: string) => [
-                    `${value} project${value !== 1 ? "s" : ""}`,
-                    name.replace(/_/g, " "),
-                  ]}
-                />
-                <Legend
-                  layout="vertical"
-                  verticalAlign="middle"
-                  align="right"
-                  iconSize={0}
-                  content={(props) => (
-                    <StatusLegend
-                      payload={
-                        props.payload as {
-                          value: string;
-                          color: string;
-                          payload: { count: number };
-                        }[]
-                      }
-                    />
-                  )}
-                  wrapperStyle={{ paddingLeft: "12px", width: "42%" }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                    style={{
+                      backgroundColor:
+                        C.projects[entry.status] ?? PROJECT_STATUS_FALLBACK,
+                    }}
+                  />
+                  <span className="text-muted-foreground capitalize">
+                    {entry.status.replace(/_/g, " ")}
+                  </span>
+                  <span className="ml-auto font-semibold tabular-nums text-foreground">
+                    {entry.count}
+                  </span>
+                </li>
+              ))}
+            </ul>
           </CardContent>
         </Card>
 
@@ -582,58 +590,70 @@ export default function ReportsView() {
               Total value by payment status
             </p>
           </CardHeader>
-          <CardContent className="h-[280px] pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: "Collected", value: overview.totalPaid },
-                    {
-                      name: "Pending",
-                      value:
-                        overview.outstandingPayments - overview.overduePayments,
-                    },
-                    { name: "Overdue", value: overview.overduePayments },
-                  ].filter((d) => d.value > 0)}
-                  cx="45%"
-                  cy="50%"
-                  innerRadius={64}
-                  outerRadius={96}
-                  paddingAngle={3}
-                  dataKey="value"
-                  strokeWidth={0}
-                >
-                  <Cell fill={C.collected} />
-                  <Cell fill={C.outstanding} />
-                  <Cell fill={C.overdue} />
-                </Pie>
-                <RechartsTooltip
-                  contentStyle={tooltipStyle}
-                  itemStyle={tooltipItemStyle}
-                  formatter={(value: number, name: string) => [
-                    `$${value.toLocaleString()}`,
-                    name,
-                  ]}
-                />
-                <Legend
-                  layout="vertical"
-                  verticalAlign="middle"
-                  align="right"
-                  iconSize={10}
-                  iconType="square"
-                  wrapperStyle={{
-                    fontSize: "12px",
-                    paddingLeft: "16px",
-                    color: "hsl(var(--muted-foreground))",
-                  }}
-                  formatter={(value: string) => (
-                    <span style={{ color: "hsl(var(--foreground))" }}>
-                      {value}
+          <CardContent className="pt-2 flex items-center gap-4" style={{ height: 280 }}>
+            {/* Chart */}
+            <div className="h-full" style={{ flex: "0 0 58%" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "Collected", value: overview.totalPaid },
+                      {
+                        name: "Pending",
+                        value:
+                          overview.outstandingPayments - overview.overduePayments,
+                      },
+                      { name: "Overdue", value: overview.overduePayments },
+                    ].filter((d) => d.value > 0)}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={64}
+                    outerRadius={96}
+                    paddingAngle={3}
+                    dataKey="value"
+                    strokeWidth={0}
+                  >
+                    <Cell fill={C.collected} />
+                    <Cell fill={C.outstanding} />
+                    <Cell fill={C.overdue} />
+                  </Pie>
+                  <RechartsTooltip
+                    contentStyle={tooltipStyle}
+                    itemStyle={tooltipItemStyle}
+                    formatter={(value: number, name: string) => [
+                      `$${value.toLocaleString()}`,
+                      name,
+                    ]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+
+            {/* Legend rendered outside Recharts — same fix as Projects donut */}
+            <ul className="flex flex-col gap-3 pr-2 flex-1">
+              {[
+                { name: "Collected", color: C.collected, value: overview.totalPaid },
+                {
+                  name: "Pending",
+                  color: C.outstanding,
+                  value: overview.outstandingPayments - overview.overduePayments,
+                },
+                { name: "Overdue", color: C.overdue, value: overview.overduePayments },
+              ]
+                .filter((d) => d.value > 0)
+                .map((item) => (
+                  <li key={item.name} className="flex items-center gap-2 text-xs">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-sm flex-shrink-0"
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-muted-foreground">{item.name}</span>
+                    <span className="ml-auto font-semibold tabular-nums text-foreground">
+                      ${item.value.toLocaleString()}
                     </span>
-                  )}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+                  </li>
+                ))}
+            </ul>
           </CardContent>
         </Card>
 
