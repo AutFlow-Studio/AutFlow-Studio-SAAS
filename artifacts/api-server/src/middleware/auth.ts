@@ -1,14 +1,43 @@
 import type { Request, Response, NextFunction } from "express";
+import { eq } from "drizzle-orm";
+import { db, usersTable } from "@workspace/db";
 
 /**
  * Middleware: require the request to have an authenticated session.
  * Returns 401 if no session user is present.
  */
-export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   if (!req.session?.userId) {
     res.status(401).json({ error: "Authentication required" });
     return;
   }
+
+  const [user] = await db
+    .select({
+      id: usersTable.id,
+      role: usersTable.role,
+      name: usersTable.name,
+      email: usersTable.email,
+      workspaceId: usersTable.workspaceId,
+      isEmailVerified: usersTable.isEmailVerified,
+    })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.session.userId))
+    .limit(1);
+
+  if (!user || !user.workspaceId) {
+    req.session.destroy(() => {});
+    res.status(401).json({ error: "Authentication required" });
+    return;
+  }
+
+  // Rehydrate tenant identity from the database on every authenticated request.
+  // This prevents stale or tampered session workspace data from crossing tenants.
+  req.session.userRole = user.role;
+  req.session.userName = user.name;
+  req.session.userEmail = user.email;
+  req.session.workspaceId = user.workspaceId;
+  req.session.isEmailVerified = user.isEmailVerified;
   next();
 }
 

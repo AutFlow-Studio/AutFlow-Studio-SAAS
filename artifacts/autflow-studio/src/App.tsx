@@ -15,8 +15,7 @@ import SignupPage from '@/pages/signup/index';
 import VerifyEmailPage from '@/pages/verify-email/index';
 import ForgotPasswordPage from '@/pages/forgot-password/index';
 import ResetPasswordPage from '@/pages/reset-password/index';
-import OnboardingWizard from '@/pages/onboarding/index';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 import Dashboard from '@/pages/dashboard';
 import ClientsList from '@/pages/clients/index';
@@ -96,22 +95,6 @@ function AgencyRouter() {
 function AgencyAuthGate() {
   const { user, loading } = useAuth();
   const [location] = useLocation();
-  const [onboardingDone, setOnboardingDone] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    if (!user) {
-      setOnboardingDone(null);
-      return;
-    }
-    fetch('/api/settings/agency', { credentials: 'include' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        setOnboardingDone(data?.onboardingCompleted ?? false);
-      })
-      .catch(() => {
-        setOnboardingDone(true);
-      });
-  }, [user]);
 
   // Always-public pages — no auth required
   if (location === '/forgot-password') return <ForgotPasswordPage />;
@@ -121,7 +104,7 @@ function AgencyAuthGate() {
   // Verify-email: accessible when logged in but not yet verified
   if (location.startsWith('/verify-email')) return <VerifyEmailPage />;
 
-  if (loading || (user && onboardingDone === null)) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-muted-foreground">
@@ -134,15 +117,6 @@ function AgencyAuthGate() {
 
   if (!user) {
     return <LoginPage />;
-  }
-
-  // Email verification gate
-  if (!user.isEmailVerified) {
-    return <VerifyEmailPage />;
-  }
-
-  if (!onboardingDone) {
-    return <OnboardingWizard onComplete={() => setOnboardingDone(true)} />;
   }
 
   return (

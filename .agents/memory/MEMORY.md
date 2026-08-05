@@ -2,3 +2,4 @@
 - [Client Portal feature](client-portal.md) — separate session keys, portal-only tables, strict workspace+clientId isolation on every query.
 - [Production readiness audit](production-readiness-audit.md) — all security fixes, TS errors fixed, OpenAPI schema updated, indexes added.
 - [Niche personalization system](niche-personalization.md) — businessType → NicheConfig UI, templates seed tasks not demo data, where to extend.
+- [Workspace authentication](workspace-authentication.md) — users are tenant-scoped through persisted workspace ownership; registration skips onboarding and settings are editable later.

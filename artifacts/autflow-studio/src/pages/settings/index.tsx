@@ -28,6 +28,10 @@ interface AgencySettingsData {
   invoicePrefix: string;
   paymentTermsDays: number;
   logoUrl: string | null;
+  agencyType: string;
+  teamSize: string;
+  mainServices: string[];
+  timezone: string;
   notifyInvoicePaid: boolean;
   notifyDeadlineApproaching: boolean;
   notifyWeeklyDigest: boolean;
@@ -42,6 +46,10 @@ const DEFAULT_SETTINGS: AgencySettingsData = {
   invoicePrefix: "INV",
   paymentTermsDays: 30,
   logoUrl: null,
+  agencyType: "",
+  teamSize: "",
+  mainServices: [],
+  timezone: "UTC",
   notifyInvoicePaid: true,
   notifyDeadlineApproaching: true,
   notifyWeeklyDigest: true,
@@ -60,6 +68,49 @@ const CURRENCIES = [
   { value: "MXN", label: "MXN — Mexican Peso" },
   { value: "SGD", label: "SGD — Singapore Dollar" },
   { value: "ZAR", label: "ZAR — South African Rand" },
+];
+
+const AGENCY_TYPES = [
+  { value: "marketing", label: "Marketing agency" },
+  { value: "web-development", label: "Web development agency" },
+  { value: "design", label: "Design agency" },
+  { value: "ai-automation", label: "AI automation agency" },
+  { value: "branding", label: "Branding agency" },
+];
+
+const TEAM_SIZES = [
+  { value: "solo", label: "Just me" },
+  { value: "2-5", label: "2–5 people" },
+  { value: "6-10", label: "6–10 people" },
+  { value: "11+", label: "11+ people" },
+];
+
+const SERVICES = [
+  { value: "seo-content", label: "SEO & Content" },
+  { value: "paid-ads", label: "Paid Advertising" },
+  { value: "social-media", label: "Social Media" },
+  { value: "web-development", label: "Web Development" },
+  { value: "branding", label: "Branding & Identity" },
+  { value: "email-marketing", label: "Email Marketing" },
+  { value: "ai-automation", label: "AI & Automation" },
+  { value: "video", label: "Video Production" },
+  { value: "ui-ux", label: "UI / UX Design" },
+  { value: "copywriting", label: "Copywriting" },
+];
+
+const TIMEZONES = [
+  { value: "UTC", label: "UTC" },
+  { value: "America/New_York", label: "Eastern Time (ET)" },
+  { value: "America/Chicago", label: "Central Time (CT)" },
+  { value: "America/Denver", label: "Mountain Time (MT)" },
+  { value: "America/Los_Angeles", label: "Pacific Time (PT)" },
+  { value: "Europe/London", label: "London (GMT)" },
+  { value: "Europe/Paris", label: "Paris (CET)" },
+  { value: "Asia/Dubai", label: "Dubai (GST)" },
+  { value: "Asia/Kolkata", label: "India (IST)" },
+  { value: "Asia/Singapore", label: "Singapore (SGT)" },
+  { value: "Asia/Tokyo", label: "Tokyo (JST)" },
+  { value: "Australia/Sydney", label: "Sydney (AEST)" },
 ];
 
 // ── Storage helpers ────────────────────────────────────────────────────────────
@@ -312,6 +363,14 @@ export default function SettingsView() {
             website: data.website ?? "",
             supportEmail: data.supportEmail ?? "",
             defaultCurrency: data.defaultCurrency ?? "USD",
+            agencyType: data.agencyType ?? "",
+            teamSize: data.teamSize ?? "",
+            mainServices: Array.isArray(data.mainServices)
+              ? data.mainServices
+              : typeof data.mainServices === "string"
+                ? JSON.parse(data.mainServices || "[]")
+                : [],
+            timezone: data.timezone ?? "UTC",
             invoicePrefix: data.invoicePrefix ?? "INV",
             paymentTermsDays: data.paymentTermsDays ?? 30,
             logoUrl: data.logoUrl ?? null,
@@ -370,6 +429,10 @@ export default function SettingsView() {
           website: settings.website,
           supportEmail: settings.supportEmail,
           defaultCurrency: settings.defaultCurrency,
+          agencyType: settings.agencyType || null,
+          teamSize: settings.teamSize || null,
+          mainServices: settings.mainServices,
+          timezone: settings.timezone,
           invoicePrefix: settings.invoicePrefix,
           paymentTermsDays: settings.paymentTermsDays,
           logoUrl: settings.logoUrl,
@@ -443,12 +506,12 @@ export default function SettingsView() {
 
   return (
     <div className="space-y-6 max-w-4xl pb-12">
-      <PageHeader title="Settings" description="Manage your account and agency preferences" />
+      <PageHeader title="Workspace Settings" description="Manage your account and agency preferences" />
 
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="w-full justify-start h-auto p-1 bg-card/40 backdrop-blur-sm border overflow-x-auto overflow-y-hidden mb-6">
           <TabsTrigger value="profile" className="py-2 px-4">Profile</TabsTrigger>
-          <TabsTrigger value="business" className="py-2 px-4">Business</TabsTrigger>
+          <TabsTrigger value="business" className="py-2 px-4">Workspace</TabsTrigger>
           <TabsTrigger value="notifications" className="py-2 px-4">Notifications</TabsTrigger>
           <TabsTrigger value="security" className="py-2 px-4">Security</TabsTrigger>
           <TabsTrigger value="appearance" className="py-2 px-4">Appearance</TabsTrigger>
@@ -508,8 +571,8 @@ export default function SettingsView() {
           ) : (
             <Card className="bg-card/40 backdrop-blur-sm border-border/50">
               <CardHeader>
-                <CardTitle>Business Settings</CardTitle>
-                <CardDescription>Your agency details used on invoices, reports, and client-facing documents</CardDescription>
+              <CardTitle>Workspace Settings</CardTitle>
+              <CardDescription>Manage the agency details used across your workspace, invoices, reports, and client-facing documents.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Logo */}
@@ -521,15 +584,56 @@ export default function SettingsView() {
                 />
 
                 <div className="border-t border-border/50 pt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Company name */}
+                   {/* Agency name */}
                   <div className="space-y-2">
-                    <Label htmlFor="agencyName">Company Name</Label>
+                     <Label htmlFor="agencyName">Agency Name</Label>
                     <Input
                       id="agencyName"
                       value={settings.agencyName}
                       onChange={(e) => setSettings((s) => ({ ...s, agencyName: e.target.value }))}
                     />
                   </div>
+
+                   {/* Agency type */}
+                   <div className="space-y-2">
+                     <Label htmlFor="agencyType">Agency Type</Label>
+                     <Select
+                       value={settings.agencyType || "unspecified"}
+                       onValueChange={(v) => setSettings((s) => ({ ...s, agencyType: v === "unspecified" ? "" : v }))}
+                     >
+                       <SelectTrigger id="agencyType"><SelectValue placeholder="Select agency type" /></SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="unspecified">Not specified</SelectItem>
+                         {AGENCY_TYPES.map((type) => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}
+                       </SelectContent>
+                     </Select>
+                   </div>
+
+                   {/* Team size */}
+                   <div className="space-y-2">
+                     <Label htmlFor="teamSize">Team Size</Label>
+                     <Select
+                       value={settings.teamSize || "unspecified"}
+                       onValueChange={(v) => setSettings((s) => ({ ...s, teamSize: v === "unspecified" ? "" : v }))}
+                     >
+                       <SelectTrigger id="teamSize"><SelectValue placeholder="Select team size" /></SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="unspecified">Not specified</SelectItem>
+                         {TEAM_SIZES.map((size) => <SelectItem key={size.value} value={size.value}>{size.label}</SelectItem>)}
+                       </SelectContent>
+                     </Select>
+                   </div>
+
+                   {/* Time zone */}
+                   <div className="space-y-2">
+                     <Label htmlFor="timezone">Time Zone</Label>
+                     <Select value={settings.timezone} onValueChange={(v) => setSettings((s) => ({ ...s, timezone: v }))}>
+                       <SelectTrigger id="timezone"><SelectValue /></SelectTrigger>
+                       <SelectContent>
+                         {TIMEZONES.map((zone) => <SelectItem key={zone.value} value={zone.value}>{zone.label}</SelectItem>)}
+                       </SelectContent>
+                     </Select>
+                   </div>
 
                   {/* Default currency */}
                   <div className="space-y-2">
@@ -548,6 +652,32 @@ export default function SettingsView() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                   {/* Services */}
+                   <div className="space-y-2 sm:col-span-2">
+                     <Label>Services</Label>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-lg border border-border/60 p-3">
+                       {SERVICES.map((service) => {
+                         const selected = settings.mainServices.includes(service.value);
+                         return (
+                           <label key={service.value} className="flex items-center gap-2 text-sm cursor-pointer">
+                             <input
+                               type="checkbox"
+                               checked={selected}
+                               onChange={(event) => setSettings((s) => ({
+                                 ...s,
+                                 mainServices: event.target.checked
+                                   ? [...s.mainServices, service.value]
+                                   : s.mainServices.filter((value) => value !== service.value),
+                               }))}
+                               className="h-4 w-4 rounded border-border accent-primary"
+                             />
+                             {service.label}
+                           </label>
+                         );
+                       })}
+                     </div>
+                   </div>
 
                   {/* Support email */}
                   <div className="space-y-2">

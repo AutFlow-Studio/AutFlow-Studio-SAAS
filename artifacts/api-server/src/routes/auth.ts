@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request } from "express";
 import { eq, and, isNull, gt } from "drizzle-orm";
 import { randomBytes } from "crypto";
 import bcrypt from "bcryptjs";
@@ -21,6 +21,39 @@ function sanitizeUser(u: typeof usersTable.$inferSelect): PublicUser {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { passwordHash: _ph, ...rest } = u;
   return rest;
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function isUniqueViolation(error: unknown): boolean {
+  return Boolean(
+    error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "23505",
+  );
+}
+
+function establishUserSession(
+  req: Request,
+  user: typeof usersTable.$inferSelect,
+  workspaceId: number,
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.regenerate((err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      req.session.userId = user.id;
+      req.session.userRole = user.role;
+      req.session.userName = user.name;
+      req.session.userEmail = user.email;
+      req.session.workspaceId = workspaceId;
+      req.session.isEmailVerified = user.isEmailVerified;
+      resolve();
+    });
+  });
 }
 
 /**
@@ -52,6 +85,14 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
   }
 
   const normalizedEmail = String(email).toLowerCase().trim();
+  if (!EMAIL_PATTERN.test(normalizedEmail)) {
+    res.status(400).json({ error: "Enter a valid email address" });
+    return;
+  }
+  if (!String(name).trim() || !String(companyName).trim()) {
+    res.status(400).json({ error: "Name and company name cannot be blank" });
+    return;
+  }
 
   // Check for existing account
   const [existing] = await db
@@ -68,42 +109,53 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
   const passwordHash = await bcrypt.hash(String(password), 12);
 
   // Create user → workspace → link (transaction)
-  const { user, workspace } = await db.transaction(async (tx) => {
-    const [newUser] = await tx
-      .insert(usersTable)
-      .values({
-        name: String(name).trim(),
-        email: normalizedEmail,
-        passwordHash,
-        role: "owner",
-        isEmailVerified: false,
-      })
-      .returning();
+  let user: typeof usersTable.$inferSelect;
+  let workspace: typeof workspacesTable.$inferSelect;
+  try {
+    ({ user, workspace } = await db.transaction(async (tx) => {
+      const [newUser] = await tx
+        .insert(usersTable)
+        .values({
+          name: String(name).trim(),
+          email: normalizedEmail,
+          passwordHash,
+          role: "owner",
+          isEmailVerified: false,
+        })
+        .returning();
 
-    const [newWorkspace] = await tx
-      .insert(workspacesTable)
-      .values({
-        name: String(companyName).trim(),
-        ownerId: newUser.id,
-        plan: "free",
-      })
-      .returning();
+      const [newWorkspace] = await tx
+        .insert(workspacesTable)
+        .values({
+          name: String(companyName).trim(),
+          ownerId: newUser.id,
+          plan: "free",
+        })
+        .returning();
 
-    const [updatedUser] = await tx
-      .update(usersTable)
-      .set({ workspaceId: newWorkspace.id })
-      .where(eq(usersTable.id, newUser.id))
-      .returning();
+      const [updatedUser] = await tx
+        .update(usersTable)
+        .set({ workspaceId: newWorkspace.id })
+        .where(eq(usersTable.id, newUser.id))
+        .returning();
 
-    // Create default workspace settings
-    await tx.insert(agencySettingsTable).values({
-      workspaceId: newWorkspace.id,
-      agencyName: String(companyName).trim(),
-      onboardingCompleted: false,
-    });
+      // Create default workspace settings. The workspace is usable immediately;
+      // the optional settings can be completed later from Workspace Settings.
+      await tx.insert(agencySettingsTable).values({
+        workspaceId: newWorkspace.id,
+        agencyName: String(companyName).trim(),
+        onboardingCompleted: true,
+      });
 
-    return { user: updatedUser, workspace: newWorkspace };
-  });
+      return { user: updatedUser, workspace: newWorkspace };
+    }));
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      res.status(409).json({ error: "An account with that email already exists" });
+      return;
+    }
+    throw error;
+  }
 
   const emailEnabled = Boolean(process.env.RESEND_API_KEY);
 
@@ -124,7 +176,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
       console.warn(`[signup] No app URL configured — verification token for ${user.email}: ${token}`);
     }
   } else {
-    // No email service configured — auto-verify so the user can proceed to onboarding
+    // No email service configured — auto-verify for environments without email delivery.
     await db
       .update(usersTable)
       .set({ isEmailVerified: true, emailVerifiedAt: new Date() })
@@ -134,12 +186,7 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
   }
 
   // Create session
-  req.session.userId = user.id;
-  req.session.userRole = user.role;
-  req.session.userName = user.name;
-  req.session.userEmail = user.email;
-  req.session.workspaceId = workspace.id;
-  req.session.isEmailVerified = emailEnabled ? false : true;
+  await establishUserSession(req, user, workspace.id);
 
   res.status(201).json(sanitizeUser(user));
 });
@@ -281,10 +328,16 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     return;
   }
 
+  const normalizedEmail = String(email).toLowerCase().trim();
+  if (!EMAIL_PATTERN.test(normalizedEmail) || String(password).length === 0) {
+    res.status(400).json({ error: "Enter a valid email address and password" });
+    return;
+  }
+
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(eq(usersTable.email, String(email).toLowerCase().trim()))
+    .where(eq(usersTable.email, normalizedEmail))
     .limit(1);
 
   if (!user) {
@@ -298,18 +351,17 @@ router.post("/auth/login", loginRateLimiter, async (req, res): Promise<void> => 
     res.status(401).json({ error: "Invalid email or password" });
     return;
   }
+  if (!user.workspaceId) {
+    res.status(401).json({ error: "This account is not connected to a workspace" });
+    return;
+  }
 
   await db
     .update(usersTable)
     .set({ lastLoginAt: new Date() })
     .where(eq(usersTable.id, user.id));
 
-  req.session.userId = user.id;
-  req.session.userRole = user.role;
-  req.session.userName = user.name;
-  req.session.userEmail = user.email;
-  req.session.workspaceId = user.workspaceId ?? 0;
-  req.session.isEmailVerified = user.isEmailVerified;
+  await establishUserSession(req, user, user.workspaceId);
 
   res.json(sanitizeUser(user));
 });
@@ -364,6 +416,10 @@ router.post("/auth/register", requireAuth, async (req, res): Promise<void> => {
   }
 
   const normalizedEmail = String(email).toLowerCase().trim();
+  if (!EMAIL_PATTERN.test(normalizedEmail)) {
+    res.status(400).json({ error: "Enter a valid email address" });
+    return;
+  }
   const [existing] = await db
     .select({ id: usersTable.id })
     .from(usersTable)
@@ -378,17 +434,26 @@ router.post("/auth/register", requireAuth, async (req, res): Promise<void> => {
   const passwordHash = await bcrypt.hash(String(password), 12);
   const validRole = role === "owner" ? "owner" : "member";
 
-  const [newUser] = await db
-    .insert(usersTable)
-    .values({
-      name: String(name).trim(),
-      email: normalizedEmail,
-      passwordHash,
-      role: validRole,
-      workspaceId: req.session.workspaceId,
-      isEmailVerified: true, // invited users are pre-verified
-    })
-    .returning();
+  let newUser: typeof usersTable.$inferSelect;
+  try {
+    [newUser] = await db
+      .insert(usersTable)
+      .values({
+        name: String(name).trim(),
+        email: normalizedEmail,
+        passwordHash,
+        role: validRole,
+        workspaceId: req.session.workspaceId,
+        isEmailVerified: true, // invited users are pre-verified
+      })
+      .returning();
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      res.status(409).json({ error: "A user with that email already exists" });
+      return;
+    }
+    throw error;
+  }
 
   res.status(201).json(sanitizeUser(newUser));
 });
@@ -443,11 +508,20 @@ router.patch("/auth/profile", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const [updated] = await db
-    .update(usersTable)
-    .set(updates)
-    .where(eq(usersTable.id, req.session.userId!))
-    .returning();
+  let updated: typeof usersTable.$inferSelect | undefined;
+  try {
+    [updated] = await db
+      .update(usersTable)
+      .set(updates)
+      .where(eq(usersTable.id, req.session.userId!))
+      .returning();
+  } catch (error) {
+    if (isUniqueViolation(error)) {
+      res.status(409).json({ error: "An account with that email already exists" });
+      return;
+    }
+    throw error;
+  }
 
   if (!updated) {
     res.status(404).json({ error: "User not found" });

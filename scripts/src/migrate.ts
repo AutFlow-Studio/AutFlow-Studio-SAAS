@@ -231,6 +231,10 @@ async function migrate() {
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS workspace_id INTEGER`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS is_email_verified BOOLEAN NOT NULL DEFAULT FALSE`);
     await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ`);
+    await client.query(`UPDATE users SET email = LOWER(BTRIM(email)) WHERE email <> LOWER(BTRIM(email))`);
+    // Application code normalizes emails, while this index also protects
+    // direct writes and legacy rows from case-variant duplicate accounts.
+    await client.query(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_email_lower ON users (LOWER(email))`);
 
     // ── Multi-tenant: workspace_id on all business tables ─────────────────
 
