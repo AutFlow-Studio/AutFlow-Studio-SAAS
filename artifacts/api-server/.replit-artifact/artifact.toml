@@ -1,36 +1,37 @@
 kind = "web"
-previewPath = "/api/"
-title = "API Server"
-description = "Express 5 API backend for AutFlow Studio. Handles auth, all CRUD routes, AI endpoints, and session management. Serves under /api."
-version = "1.0.0"
-id = "artifacts/api-server"
-router = "path"
+    previewPath = "/api/"
+    title = "API Server"
+    description = "Express 5 API backend for AutFlow Studio."
+    version = "1.0.0"
+    id = "artifacts/api-server"
+    router = "path"
 
-[[services]]
-name = "API Server"
-paths = [ "/api" ]
-localPort = 8080
+    [[services]]
+    name = "API Server"
+    paths = [ "/api" ]
+    localPort = 8080
 
-[services.development]
-run = "pnpm --filter @workspace/api-server run dev"
+    [services.development]
+    run = "pnpm --filter @workspace/api-server run dev"
 
-[services.production]
+    [services.production]
 
-[services.production.build]
-args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
+    [services.production.build]
+    args = ["pnpm", "--filter", "@workspace/api-server", "run", "build"]
 
-[services.production.build.env]
-NODE_ENV = "production"
+    [services.production.build.env]
+    NODE_ENV = "production"
 
-[services.production.run]
-args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+    [services.production.run]
+    args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
 
-[services.production.run.env]
-PORT = "8080"
-NODE_ENV = "production"
+    [services.production.run.env]
+    PORT = "8080"
+    NODE_ENV = "production"
 
-[services.production.health.startup]
-path = "/api/healthz"
+    [services.production.health.startup]
+    path = "/api/healthz"
 
-[services.env]
-PORT = "8080"
+    [services.env]
+    PORT = "8080"
+    
