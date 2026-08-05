@@ -322,6 +322,8 @@ export default function TasksList() {
   } | null>(null);
   // Ref to enforce dragging only from the grip handle
   const dragHandleActive = useRef(false);
+  // Ref to track the source column — drag only reorders within the same column
+  const draggingColumnRef = useRef<string | null>(null);
 
   // ── Sort helper ─────────────────────────────────────────────────────────────
   function sortByOrder(items: TaskItem[]): TaskItem[] {
@@ -340,12 +342,13 @@ export default function TasksList() {
     dragHandleActive.current = true;
   }, []);
 
-  const handleDragStart = useCallback((e: React.DragEvent, taskId: number) => {
+  const handleDragStart = useCallback((e: React.DragEvent, taskId: number, columnId: string) => {
     if (!dragHandleActive.current) {
       e.preventDefault();
       return;
     }
     dragHandleActive.current = false;
+    draggingColumnRef.current = columnId;
     setDraggingId(taskId);
     e.dataTransfer.effectAllowed = "move";
     // Required for Firefox
@@ -356,13 +359,19 @@ export default function TasksList() {
     setDraggingId(null);
     setDropTarget(null);
     dragHandleActive.current = false;
+    draggingColumnRef.current = null;
   }, []);
 
-  // Called when dragging over a task card — sets drop position to before that card
+  // Called when dragging over a task card — only reorders within the source column
   const handleDragOverCard = useCallback(
     (e: React.DragEvent, columnId: string, beforeTaskId: number) => {
       e.preventDefault();
       e.stopPropagation();
+      // Reject drops on cards in a different column
+      if (columnId !== draggingColumnRef.current) {
+        e.dataTransfer.dropEffect = "none";
+        return;
+      }
       e.dataTransfer.dropEffect = "move";
       setDropTarget((prev) =>
         prev?.columnId === columnId && prev?.beforeTaskId === beforeTaskId
@@ -373,10 +382,15 @@ export default function TasksList() {
     []
   );
 
-  // Called when dragging over the column's empty-drop area — sets drop to end
+  // Called when dragging over the column's empty-drop area — only accepts source column
   const handleDragOverColumn = useCallback(
     (e: React.DragEvent, columnId: string) => {
       e.preventDefault();
+      // Reject drops on a different column
+      if (columnId !== draggingColumnRef.current) {
+        e.dataTransfer.dropEffect = "none";
+        return;
+      }
       e.dataTransfer.dropEffect = "move";
       setDropTarget((prev) =>
         prev?.columnId === columnId && prev?.beforeTaskId === null
@@ -392,94 +406,53 @@ export default function TasksList() {
       e.preventDefault();
       if (!draggingId || !tasks) return;
 
+      // Only allow drops within the same column — cross-column moves require Edit Status
+      if (targetColumnId !== draggingColumnRef.current) {
+        setDraggingId(null);
+        setDropTarget(null);
+        draggingColumnRef.current = null;
+        return;
+      }
+
       const allTasks = tasks as TaskItem[];
       const draggedTask = allTasks.find((t) => t.id === draggingId);
       if (!draggedTask) return;
 
-      const fromColumnId = draggedTask.status;
-      const targetColItems = sortByOrder(allTasks.filter((t) => t.status === targetColumnId));
+      const colItems = sortByOrder(allTasks.filter((t) => t.status === targetColumnId));
+      const withoutDragged = colItems.filter((t) => t.id !== draggingId);
+      const insertAt =
+        beforeTaskId !== null
+          ? withoutDragged.findIndex((t) => t.id === beforeTaskId)
+          : withoutDragged.length;
+      const idx = insertAt === -1 ? withoutDragged.length : insertAt;
+      withoutDragged.splice(idx, 0, draggedTask);
 
-      if (fromColumnId === targetColumnId) {
-        // ── Same-column reorder ──────────────────────────────────────────────
-        const withoutDragged = targetColItems.filter((t) => t.id !== draggingId);
-        const insertAt =
-          beforeTaskId !== null
-            ? withoutDragged.findIndex((t) => t.id === beforeTaskId)
-            : withoutDragged.length;
-        const idx = insertAt === -1 ? withoutDragged.length : insertAt;
-        withoutDragged.splice(idx, 0, draggedTask);
+      // Assign new sortOrders (0, 100, 200, …)
+      const updates = withoutDragged.map((t, i) => ({ id: t.id, sortOrder: i * 100 }));
 
-        // Assign new sortOrders (0, 100, 200, …)
-        const updates = withoutDragged.map((t, i) => ({ id: t.id, sortOrder: i * 100 }));
+      // Optimistic update — immediately reflect new order in the cache
+      const updatedCache = allTasks.map((t) => {
+        const u = updates.find((upd) => upd.id === t.id);
+        return u ? { ...t, sortOrder: u.sortOrder } : t;
+      });
+      queryClient.setQueryData(getListTasksQueryKey(), updatedCache);
 
-        // Optimistic update — immediately reflect new order in the cache
-        const updatedCache = allTasks.map((t) => {
-          const u = updates.find((upd) => upd.id === t.id);
-          return u ? { ...t, sortOrder: u.sortOrder } : t;
-        });
-        queryClient.setQueryData(getListTasksQueryKey(), updatedCache);
+      // Persist every changed task's sortOrder in the background
+      updates.forEach(({ id, sortOrder }) => {
+        updateTask({ id, data: { sortOrder } as any });
+      });
 
-        // Persist every changed task's sortOrder in the background
-        updates.forEach(({ id, sortOrder }) => {
-          updateTask({ id, data: { sortOrder } as any });
-        });
-
-        // Re-sync from server after all writes likely land
-        setTimeout(
-          () => queryClient.invalidateQueries({ queryKey: getListTasksQueryKey() }),
-          800
-        );
-      } else {
-        // ── Cross-column move: change status + assign sortOrder ──────────────
-        let newSortOrder: number;
-        if (beforeTaskId !== null) {
-          const beforeIdx = targetColItems.findIndex((t) => t.id === beforeTaskId);
-          const prev = targetColItems[beforeIdx - 1];
-          const curr = targetColItems[beforeIdx];
-          if (prev) {
-            newSortOrder = Math.floor(
-              ((prev.sortOrder ?? 0) + (curr.sortOrder ?? (prev.sortOrder ?? 0) + 100)) / 2
-            );
-          } else {
-            newSortOrder = (curr.sortOrder ?? 100) - 100;
-          }
-        } else {
-          const last = targetColItems[targetColItems.length - 1];
-          newSortOrder = last ? (last.sortOrder ?? 0) + 100 : 0;
-        }
-
-        // Optimistic update
-        const updatedCache = allTasks.map((t) =>
-          t.id === draggingId
-            ? { ...t, status: targetColumnId, sortOrder: newSortOrder }
-            : t
-        );
-        queryClient.setQueryData(getListTasksQueryKey(), updatedCache);
-
-        updateTask(
-          { id: draggingId, data: { status: targetColumnId as any, sortOrder: newSortOrder } as any },
-          {
-            onSuccess: () => {
-              queryClient.invalidateQueries({ queryKey: getListTasksQueryKey() });
-              queryClient.invalidateQueries({ queryKey: getGetDashboardQueryKey() });
-            },
-            onError: () => {
-              // Roll back on failure
-              queryClient.invalidateQueries({ queryKey: getListTasksQueryKey() });
-              toast({
-                title: "Error",
-                description: "Failed to move task. Please try again.",
-                variant: "destructive",
-              });
-            },
-          }
-        );
-      }
+      // Re-sync from server after all writes likely land
+      setTimeout(
+        () => queryClient.invalidateQueries({ queryKey: getListTasksQueryKey() }),
+        800
+      );
 
       setDraggingId(null);
       setDropTarget(null);
+      draggingColumnRef.current = null;
     },
-    [draggingId, tasks, queryClient, updateTask, toast]
+    [draggingId, tasks, queryClient, updateTask]
   );
 
   // ── Delete ──────────────────────────────────────────────────────────────────
@@ -607,7 +580,7 @@ export default function TasksList() {
                           <div className="mb-3">
                             <Card
                               draggable
-                              onDragStart={(e) => handleDragStart(e, task.id)}
+                              onDragStart={(e) => handleDragStart(e, task.id, col.id)}
                               onDragEnd={handleDragEnd}
                               onDragOver={(e) => handleDragOverCard(e, col.id, task.id)}
                               onDrop={(e) => handleDrop(e, col.id, task.id)}

@@ -14,7 +14,6 @@ import {
   Search,
   Command,
   Bell,
-  User,
   LogOut,
   Menu,
   X,
@@ -29,15 +28,14 @@ import {
   Megaphone,
   Package,
   UserCog,
-  Bot,
   Heart,
   Stethoscope,
-  ClipboardList,
   Clock,
   Flag,
   Video,
   Trash2,
 } from "lucide-react";
+import { getAvatarColor } from "@/lib/avatar-color";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -91,7 +89,6 @@ const BASE_NAV_ITEMS: { key: NavItemKey; href: string; icon: React.ElementType }
   { key: "documents",     href: "/documents",      icon: Files },
   { key: "reports",       href: "/reports",        icon: BarChart3 },
   { key: "team",          href: "/team",           icon: UserCog },
-  { key: "ai-assistant",  href: "/ai-assistant",   icon: Bot },
   // Freelancer-specific
   { key: "time-tracking", href: "/time-tracking",  icon: Clock },
   { key: "milestones",    href: "/milestones",     icon: Flag },
@@ -132,7 +129,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
         item.key === "campaigns"     ? "Campaigns" :
         item.key === "deliverables"  ? "Deliverables" :
         item.key === "team"          ? "Team" :
-        item.key === "ai-assistant"  ? "AI Assistant" :
         item.key === "patients"      ? "Patients" :
         item.key === "appointments"  ? "Appointments" :
         item.key === "treatments"    ? "Treatments" :
@@ -197,13 +193,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             href={item.href}
             onClick={onClickItem}
             className={cn(
-              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-200",
+              "flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium transition-all duration-150",
               isActive
-                ? "bg-primary/10 text-primary"
-                : "text-muted-foreground hover:bg-secondary/80 hover:text-foreground"
+                ? "bg-primary/[0.08] text-primary shadow-[inset_2px_0_0_0_hsl(var(--primary))]"
+                : "text-muted-foreground hover:bg-secondary hover:text-foreground"
             )}
           >
-            <item.icon size={16} className={cn(isActive ? "text-primary" : "text-muted-foreground")} />
+            <item.icon size={16} className={cn("shrink-0 transition-colors", isActive ? "text-primary" : "text-muted-foreground/70")} />
             {item.label}
           </Link>
         );
@@ -406,7 +402,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <span className="w-full h-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center text-xs font-bold text-white">
+                    <span
+                      className="w-full h-full flex items-center justify-center text-xs font-bold"
+                      style={(() => { const c = getAvatarColor(user?.name ?? ""); return { backgroundColor: c.bg, color: c.text }; })()}
+                    >
                       {initials}
                     </span>
                   )}

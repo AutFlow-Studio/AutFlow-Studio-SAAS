@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { getAvatarColor } from "@/lib/avatar-color";
 import { PageHeader } from "@/components/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -172,6 +173,7 @@ function getWorkloadLabel(tasks: number, inProgress: number) {
 function MemberAvatar({ member, size = "md" }: { member: Pick<TeamMember, "name" | "avatarUrl">; size?: "sm" | "md" | "lg" }) {
   const sizeClass = size === "sm" ? "w-8 h-8 text-xs" : size === "lg" ? "w-14 h-14 text-lg" : "w-10 h-10 text-sm";
   const initials = member.name.split(/\s+/).filter(Boolean).map((p) => p[0]!.toUpperCase()).slice(0, 2).join("");
+  const avatarColor = getAvatarColor(member.name);
   if (member.avatarUrl) {
     return (
       <img
@@ -182,7 +184,10 @@ function MemberAvatar({ member, size = "md" }: { member: Pick<TeamMember, "name"
     );
   }
   return (
-    <div className={cn("rounded-full bg-gradient-to-tr from-primary to-accent flex items-center justify-center font-bold text-white flex-shrink-0", sizeClass)}>
+    <div
+      className={cn("rounded-full flex items-center justify-center font-bold flex-shrink-0", sizeClass)}
+      style={{ backgroundColor: avatarColor.bg, color: avatarColor.text }}
+    >
       {initials || "?"}
     </div>
   );
