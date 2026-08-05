@@ -36,6 +36,7 @@ import {
   Clock,
   Flag,
   Video,
+  Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
