@@ -20,15 +20,22 @@ pnpm --filter @workspace/scripts run seed      # seed demo data (Velocity Creati
 ```
 
 ## Dev credentials
-- Email: `admin@autflow.io`
-- Password: `admin123`
-- Admin name: `Alex Rivera`
+- See migrate.ts for admin user creation; seed.ts confirms the admin user on each run.
+- Team members use a separate password set in seed.ts.
 
 ## Demo workspace
 Agency: **Velocity Creative Agency** (`velocitycreative.co`)
-- 8 clients, 14 projects, 18 deliverables, 24 invoices, 5 campaigns, 4 team members
+- **5 clients** across 3 lifecycle statuses: active (Beacon & Co., Solace Wellness, Kepler Robotics), at_risk (Northfield Realty Group), prospect (Marrow Coffee Roasters)
+- **8 projects**: in_progress, client_review, completed, revision (delayed) statuses
+- **~34 tasks** per project: done, in_progress, todo; overdue = todo/in_progress with past deadline
+- **~20 deliverables**: approved, sent (waiting), changes_requested, internal_review, completed
+- **20 payments**: paid, pending, overdue — Northfield has 2 overdue invoices
+- **4 campaigns**, **14 documents**, **10 meetings**, **7 notes**
+- **Activity feed**: client_added, task_completed, deliverable_approved, invoice_paid, payment_overdue events
 - Team: Maya Chen, Theo Brandt, Priya Nadar, Sam Okoye (all at `@velocitycreative.co`)
+- Admin: `admin@autflow.io` / `admin123`; team password: `member123`
 - Re-seed anytime: `pnpm --filter @workspace/scripts run seed`
+- NOW anchor in seed.ts: `2026-08-05T15:00:00Z` (update if re-seeding far in the future)
 
 ## Agency nav items (AGENCY_CONFIG in niche-config.ts)
 dashboard, clients, projects, tasks, campaigns, deliverables, documents, meetings, payments, calendar, team, reports, ai-assistant
