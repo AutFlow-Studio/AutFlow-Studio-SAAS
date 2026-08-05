@@ -1,102 +1,59 @@
 # AutFlow Studio
 
-A premium digital agency operating system — manage clients, projects, campaigns, deliverables, team, invoices, documents, tasks, calendar, reports, and AI-powered operations in one place.
-
-## Run & Operate
-
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 8080)
-- `pnpm --filter @workspace/autflow-studio run dev` — run the frontend
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- `pnpm --filter @workspace/scripts run migrate` — run full migration (creates all tables + default admin user)
-- `pnpm --filter @workspace/scripts run seed` — seed demo data
-
-## Dev Login
-
-- Email: `admin@autflow.io`
-- Password: `admin123`
+An agency owner operating system — manage clients, projects, payments, documents, meetings, tasks, calendar, notifications, and reports in one place.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- Frontend: React + Vite + Tailwind CSS + shadcn/ui (`artifacts/autflow-studio`)
-- API: Express 5 (`artifacts/api-server`)
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Auth: Session-based (bcrypt + connect-pg-simple)
-- Storage: GCS object storage (presigned URL flow)
+- **Frontend:** React + Vite + Tailwind CSS + shadcn/ui (`artifacts/autflow-studio`)
+- **Backend:** Express 5 API server (`artifacts/api-server`)
+- **Database:** PostgreSQL via Drizzle ORM (`lib/db`)
+- **Auth:** Session-based (express-session + connect-pg-simple)
+- **Package manager:** pnpm workspaces
 
-## Where things live
+## Running the project
 
-- DB schema: `lib/db/src/schema/` — each domain has its own file
-- API contract: `lib/api-spec/openapi.yaml` — source of truth
-- Generated hooks: `lib/api-client-react/src/generated/`
-- Generated Zod schemas: `lib/api-zod/src/generated/`
-- API routes: `artifacts/api-server/src/routes/`
-- Frontend pages: `artifacts/autflow-studio/src/pages/`
+Both services start automatically via the configured workflows. To restart manually:
 
-## DB Tables (13)
+```bash
+# API server (port 8080, serves /api/*)
+pnpm --filter @workspace/api-server run dev
 
-clients, projects, deliverables, payments, documents, meetings, notes, tasks, activity, users, sessions, agency_settings, notifications
-
-## Architecture decisions
-
-- Session-based auth (not JWT) — sessions stored in `sessions` table via connect-pg-simple
-- `app.set("trust proxy", 1)` required for Replit's reverse proxy
-- CORS: `origin: true` with `credentials: true` — same-origin in prod, Vite proxy in dev
-- Document uploads: two-step presigned URL flow — browser PUTs directly to GCS
-- Notifications: fire-and-forget via `createNotification()` helper
-
-## User preferences
-
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Initial Setup (Replit)
-
-Run once on a fresh environment:
-
-```sh
-pnpm install
-pnpm --filter @workspace/scripts run migrate
-pnpm --filter @workspace/scripts run seed   # optional demo data
+# Frontend (port 22583, serves /)
+pnpm --filter @workspace/autflow-studio run dev
 ```
 
-Both workflows (`API Server` and `AutFlow Studio`) start automatically. The Replit built-in PostgreSQL database is used; `DATABASE_URL` is injected automatically.
+## Database
 
-## Gotchas
+```bash
+# Push schema changes
+pnpm --filter @workspace/db run push
 
-- After any `lib/*` change, run `pnpm run typecheck:libs` before leaf artifact checks
-- `lib/api-client-react/src/index.ts` must NOT have duplicate export lines
-- Fresh env setup: `pnpm install` → `pnpm --filter @workspace/scripts run migrate` → `pnpm --filter @workspace/scripts run seed`
-- Port 8080 can get occupied by stale processes. Kill with `fuser -k 8080/tcp` then restart workflows.
-- The vite dev server proxies `/api` to `localhost:8080` — do NOT hardcode API URLs in frontend code.
+# Run migrations (idempotent — safe to run repeatedly)
+cd scripts && pnpm run migrate
 
-## Production Readiness
+# Seed demo data (Velocity Creative Agency)
+cd scripts && pnpm run seed
+```
 
-The following was audited and fixed for SaaS readiness:
+## Demo credentials
 
-- **BOLA fix**: `deliverables.ts` — all 4 endpoints now verify project workspace ownership via JOIN before returning/mutating data
-- **Workspace isolation**: `tasks.ts`, `payments.ts`, `notes.ts` — client/project name lookups now include `workspaceId` filter
-- **TypeScript**: Zero TS errors across all packages (5 pre-existing errors fixed)
-- **OpenAPI spec**: `DashboardStats` schema updated with all fields; types regenerated
-- **DB index**: `idx_deliverables_project_id` added to migration script
-- **Auth**: Signup, login, logout, password reset, email verification all functional
-- **AI**: Graceful 503 when `OPENAI_API_KEY` missing; workspace-scoped context
-- **Email**: Falls back to console.warn when `RESEND_API_KEY` not set
+- **Admin:** `admin@autflow.io` / `admin123`
+- **Team members:** `@velocitycreative.co` addresses / `member123`
 
-## Environment variables needed for full functionality
+## Required secrets
 
-| Variable | Required | Purpose |
+| Secret | Required | Notes |
 |---|---|---|
-| `DATABASE_URL` | ✅ Yes | PostgreSQL (Replit auto-injects) |
-| `SESSION_SECRET` | ✅ Yes | Cookie signing |
-| `RESEND_API_KEY` | Optional | Email delivery (password reset, verification) |
-| `OPENAI_API_KEY` | Optional | AI features (briefing, chat, health scores) |
-| `APP_URL` | Optional | Email link base URL (e.g. `https://yourapp.replit.app`) |
+| `SESSION_SECRET` | ✅ Yes | Already set |
+| `OPENAI_API_KEY` | Optional | AI assistant features |
+| `RESEND_API_KEY` | Optional | Email (password reset, verification) |
 
-## Pointers
+`DATABASE_URL` is provisioned automatically by Replit — do not set manually.
 
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+## Optional env vars (all have defaults)
+
+- `LOG_LEVEL` — defaults to `info`
+- `FROM_EMAIL` — defaults to `AutFlow Studio <onboarding@resend.dev>`
+- `LOCAL_UPLOAD_DIR` — defaults to `<workspace>/data/uploads/`
+
+## User preferences
