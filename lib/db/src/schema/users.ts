@@ -12,7 +12,10 @@ export const usersTable = pgTable("users", {
   name: text("name").notNull(),
   email: text("email").notNull().unique(),
   passwordHash: text("password_hash").notNull(),
-  role: text("role").notNull().default("member"), // "owner" | "member"
+  role: text("role").notNull().default("member"), // "owner" | "admin" | "manager" | "member"
+  jobTitle: text("job_title"),
+  phone: text("phone"),
+  status: text("status").notNull().default("active"), // "active" | "inactive"
   avatarUrl: text("avatar_url"),
   // Multi-tenant: nullable until workspace is created at signup
   workspaceId: integer("workspace_id"),

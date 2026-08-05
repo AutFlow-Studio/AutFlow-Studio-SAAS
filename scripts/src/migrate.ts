@@ -611,6 +611,12 @@ async function migrate() {
 
     console.log("✓ Agency OS v2 schema additions applied.");
 
+    // ── Team module v2: extended profile fields ───────────────────────────
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS job_title TEXT`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS phone TEXT`);
+    await client.query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'active'`);
+    console.log("✓ Team module v2 columns applied (job_title, phone, status).");
+
     // Mark all existing users as email-verified (they were already using the app)
     await client.query(`
       UPDATE users
