@@ -26,4 +26,3 @@ kind = "web"
     [services.env]
     PORT = "22583"
     BASE_PATH = "/"
-    
