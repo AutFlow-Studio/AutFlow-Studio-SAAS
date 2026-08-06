@@ -35,6 +35,7 @@ import CampaignsList from '@/pages/campaigns/index';
 import DeliverablesView from '@/pages/deliverables/index';
 import TeamView from '@/pages/team/index';
 import AIAssistantPage from '@/pages/ai-assistant/index';
+import IntegrationsPage from '@/pages/integrations/index';
 import { useAgencyProfile } from '@/components/agency-profile-provider';
 
 // Client Portal pages
@@ -87,6 +88,7 @@ function AgencyRouter() {
       <Route path="/tasks" component={TasksList} />
       <Route path="/search" component={SearchResults} />
       <Route path="/settings" component={SettingsView} />
+      <Route path="/integrations" component={IntegrationsPage} />
       <Route component={NotFound} />
     </Switch>
   );

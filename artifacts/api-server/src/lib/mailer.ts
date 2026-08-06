@@ -126,6 +126,62 @@ export async function sendVerificationEmail({
   });
 }
 
+// ── Welcome email ─────────────────────────────────────────────────────────────
+
+export async function sendWelcomeEmail({
+  to,
+  name,
+  appUrl,
+}: {
+  to: string;
+  name: string;
+  appUrl: string;
+}): Promise<void> {
+  const client = getResend();
+
+  if (!client) {
+    console.warn("[mailer] RESEND_API_KEY is not set — welcome email not sent.");
+    return;
+  }
+
+  const html = emailShell(`
+    <tr>
+      <td style="padding-bottom:24px;">
+        <h1 style="margin:0 0 12px;font-size:22px;font-weight:600;color:#fafafa;">Welcome to AutFlow Studio 🎉</h1>
+        <p style="margin:0 0 8px;font-size:15px;color:#a1a1aa;line-height:1.6;">Hi ${escapeHtml(name)},</p>
+        <p style="margin:0 0 24px;font-size:15px;color:#a1a1aa;line-height:1.6;">
+          Your email is verified and your workspace is ready. Use AutFlow Studio to manage
+          clients, projects, invoices, campaigns, and your whole agency — all in one place.
+        </p>
+        <table cellpadding="0" cellspacing="0" width="100%">
+          <tr>
+            <td align="center">
+              <a href="${appUrl}"
+                 style="display:inline-block;padding:12px 28px;background:#7c3aed;color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:8px;letter-spacing:0.01em;">
+                Open your workspace
+              </a>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding-top:24px;border-top:1px solid #27272a;">
+        <p style="margin:0;font-size:13px;color:#52525b;line-height:1.5;">
+          If you have any questions, reply to this email — we're happy to help.
+        </p>
+      </td>
+    </tr>
+  `);
+
+  await client.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: "Welcome to AutFlow Studio — your workspace is ready",
+    html,
+  });
+}
+
 // ── Password reset ────────────────────────────────────────────────────────────
 
 export async function sendPasswordResetEmail({

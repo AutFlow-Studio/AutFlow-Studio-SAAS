@@ -13,7 +13,7 @@ import {
 import type { PublicUser } from "@workspace/db";
 import { requireAuth } from "../middleware/auth";
 import { loginRateLimiter, forgotPasswordRateLimiter } from "../middleware/rate-limit";
-import { sendPasswordResetEmail, sendVerificationEmail } from "../lib/mailer";
+import { sendPasswordResetEmail, sendVerificationEmail, sendWelcomeEmail } from "../lib/mailer";
 
 const router: IRouter = Router();
 
@@ -269,6 +269,22 @@ router.post("/auth/verify-email", async (req, res): Promise<void> => {
   // Update session if this user is already logged in
   if (req.session.userId === record.userId) {
     req.session.isEmailVerified = true;
+  }
+
+  // Send welcome email (fire-and-forget — don't block the response)
+  const [verifiedUser] = await db
+    .select({ name: usersTable.name, email: usersTable.email })
+    .from(usersTable)
+    .where(eq(usersTable.id, record.userId))
+    .limit(1);
+
+  if (verifiedUser) {
+    const appUrl = getTrustedAppUrl();
+    if (appUrl) {
+      sendWelcomeEmail({ to: verifiedUser.email, name: verifiedUser.name, appUrl }).catch((err) => {
+        console.error("[verify-email] failed to send welcome email:", err);
+      });
+    }
   }
 
   res.json({ success: true });
