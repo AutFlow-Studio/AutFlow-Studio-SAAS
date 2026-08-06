@@ -99,9 +99,8 @@ function AgencyAuthGate() {
   // Always-public pages — no auth required
   if (location === '/forgot-password') return <ForgotPasswordPage />;
   if (location.startsWith('/reset-password')) return <ResetPasswordPage />;
-  if (location === '/signup') return <SignupPage />;
 
-  // Verify-email: accessible when logged in but not yet verified
+  // Verify-email: accessible regardless of auth state (link arrives via email)
   if (location.startsWith('/verify-email')) return <VerifyEmailPage />;
 
   if (loading) {
@@ -115,10 +114,13 @@ function AgencyAuthGate() {
     );
   }
 
+  // Not yet authenticated — show signup or login
   if (!user) {
+    if (location === '/signup') return <SignupPage />;
     return <LoginPage />;
   }
 
+  // Authenticated — render the app (handles any leftover /signup location too)
   return (
     <Layout>
       <AgencyRouter />

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "@/components/auth-provider";
 import { useToast } from "@/hooks/use-toast";
 import { Eye, EyeOff } from "lucide-react";
@@ -7,6 +7,7 @@ import { Eye, EyeOff } from "lucide-react";
 export default function SignupPage() {
   const { signup } = useAuth();
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -23,7 +24,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signup(name.trim(), email.trim(), password, companyName.trim());
-      // After signup, AuthGate will handle navigation to verify-email
+      navigate("/");
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
       toast({ title: "Signup failed", description: message, variant: "destructive" });
