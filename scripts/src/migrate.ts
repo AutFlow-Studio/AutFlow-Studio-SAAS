@@ -594,6 +594,7 @@ async function migrate() {
       )
     `);
     await client.query(`CREATE INDEX IF NOT EXISTS idx_workspace_integrations_workspace ON workspace_integrations(workspace_id)`);
+    await client.query(`ALTER TABLE workspace_integrations ADD COLUMN IF NOT EXISTS metadata TEXT`);
 
     // campaigns table (agency marketing campaigns)
     await client.query(`

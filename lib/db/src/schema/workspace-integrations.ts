@@ -15,6 +15,11 @@ export const workspaceIntegrationsTable = pgTable("workspace_integrations", {
   provider: text("provider").notNull(),
   /** AES-256-GCM encrypted key: `${iv_hex}:${authTag_hex}:${ciphertext_hex}` */
   encryptedKey: text("encrypted_key").notNull(),
+  /**
+   * Optional JSON metadata. For the unified "ai" provider this holds:
+   * { detectedProvider, baseUrl, model }
+   */
+  metadata: text("metadata"),
   configuredAt: timestamp("configured_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
