@@ -1,4 +1,5 @@
 export * from "./workspaces";
+export * from "./workspace-integrations";
 export * from "./campaigns";
 export * from "./email-verification-tokens";
 export * from "./clients";

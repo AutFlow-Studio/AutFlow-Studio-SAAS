@@ -11,6 +11,7 @@ import {
   projectsTable,
   deliverablesTable,
   paymentsTable,
+  invoicesTable,
   documentsTable,
   meetingsTable,
   notesTable,
@@ -582,6 +583,197 @@ async function main() {
       paymentMethod: p.method ?? null,
       remainingBalance: p.status === "paid" ? "0" : p.amount,
       notes: p.notes ?? null,
+    }))
+  );
+
+  // ─── INVOICES (formal invoice records with line items) ────────────────────
+  console.log("Seeding invoices...");
+
+  const invoiceSpecs: {
+    client: string;
+    project?: string;
+    invoiceNumber: string;
+    status: string;
+    subtotal: string;
+    tax: string;
+    total: string;
+    amountPaid: string;
+    lineItems: { description: string; quantity: number; unitPrice: number; amount: number }[];
+    dueOffset: number;
+    paidOffset?: number;
+    notes?: string;
+    sentOffset?: number;
+  }[] = [
+    // Beacon & Co. — Q3 Brand Refresh milestone 1
+    {
+      client: "Beacon & Co.", project: "Q3 Brand Refresh",
+      invoiceNumber: "INV-1041", status: "paid",
+      subtotal: "15000", tax: "0", total: "15000", amountPaid: "15000",
+      lineItems: [{ description: "Brand strategy & discovery phase", quantity: 1, unitPrice: 7500, amount: 7500 }, { description: "Logo system exploration (3 directions)", quantity: 1, unitPrice: 7500, amount: 7500 }],
+      dueOffset: -50, paidOffset: -52, sentOffset: -55,
+    },
+    // Beacon & Co. — Q3 Brand Refresh milestone 2
+    {
+      client: "Beacon & Co.", project: "Q3 Brand Refresh",
+      invoiceNumber: "INV-1058", status: "paid",
+      subtotal: "15000", tax: "0", total: "15000", amountPaid: "15000",
+      lineItems: [{ description: "Color & typography system", quantity: 1, unitPrice: 6000, amount: 6000 }, { description: "Brand guidelines document (draft)", quantity: 1, unitPrice: 9000, amount: 9000 }],
+      dueOffset: -20, paidOffset: -21, sentOffset: -25,
+    },
+    // Beacon & Co. — Q3 Brand Refresh milestone 3 (pending)
+    {
+      client: "Beacon & Co.", project: "Q3 Brand Refresh",
+      invoiceNumber: "INV-1072", status: "sent",
+      subtotal: "15000", tax: "0", total: "15000", amountPaid: "0",
+      lineItems: [{ description: "Investor deck template (PowerPoint + Google Slides)", quantity: 1, unitPrice: 8000, amount: 8000 }, { description: "Final brand guidelines PDF", quantity: 1, unitPrice: 7000, amount: 7000 }],
+      dueOffset: 15, sentOffset: -3,
+    },
+    // Beacon & Co. — Investor Portal Redesign milestone 1
+    {
+      client: "Beacon & Co.", project: "Investor Portal Redesign",
+      invoiceNumber: "INV-1059", status: "paid",
+      subtotal: "19000", tax: "0", total: "19000", amountPaid: "19000",
+      lineItems: [{ description: "UX research & stakeholder interviews", quantity: 1, unitPrice: 5000, amount: 5000 }, { description: "Wireframes & information architecture", quantity: 1, unitPrice: 8000, amount: 8000 }, { description: "High-fidelity UI mockups (round 1)", quantity: 1, unitPrice: 6000, amount: 6000 }],
+      dueOffset: -30, paidOffset: -32, sentOffset: -35,
+    },
+    // Beacon & Co. — Investor Portal Redesign milestone 2
+    {
+      client: "Beacon & Co.", project: "Investor Portal Redesign",
+      invoiceNumber: "INV-1074", status: "sent",
+      subtotal: "19000", tax: "0", total: "19000", amountPaid: "0",
+      lineItems: [{ description: "UI revisions & final design system", quantity: 1, unitPrice: 10000, amount: 10000 }, { description: "Developer handoff specs & asset export", quantity: 1, unitPrice: 9000, amount: 9000 }],
+      dueOffset: 10, sentOffset: -4,
+    },
+    // Beacon & Co. — July retainer
+    {
+      client: "Beacon & Co.",
+      invoiceNumber: "INV-1080", status: "paid",
+      subtotal: "9500", tax: "0", total: "9500", amountPaid: "9500",
+      lineItems: [{ description: "Monthly retainer — July 2026", quantity: 1, unitPrice: 9500, amount: 9500 }],
+      dueOffset: -5, paidOffset: -5, sentOffset: -7, notes: "July retainer.",
+    },
+    // Beacon & Co. — August retainer
+    {
+      client: "Beacon & Co.",
+      invoiceNumber: "INV-1088", status: "sent",
+      subtotal: "9500", tax: "0", total: "9500", amountPaid: "0",
+      lineItems: [{ description: "Monthly retainer — August 2026", quantity: 1, unitPrice: 9500, amount: 9500 }],
+      dueOffset: 26, sentOffset: 1, notes: "August retainer.",
+    },
+    // Solace Wellness — Studio Launch Website
+    {
+      client: "Solace Wellness", project: "Studio Launch Website",
+      invoiceNumber: "INV-2011", status: "paid",
+      subtotal: "17000", tax: "0", total: "17000", amountPaid: "17000",
+      lineItems: [{ description: "Homepage design & booking flow", quantity: 1, unitPrice: 9000, amount: 9000 }, { description: "Content strategy & copywriting", quantity: 1, unitPrice: 4000, amount: 4000 }, { description: "CMS setup & configuration", quantity: 1, unitPrice: 4000, amount: 4000 }],
+      dueOffset: -90, paidOffset: -92, sentOffset: -95,
+    },
+    {
+      client: "Solace Wellness", project: "Studio Launch Website",
+      invoiceNumber: "INV-2029", status: "paid",
+      subtotal: "17000", tax: "0", total: "17000", amountPaid: "17000",
+      lineItems: [{ description: "Development & CMS integration", quantity: 1, unitPrice: 10000, amount: 10000 }, { description: "QA, performance & accessibility audit", quantity: 1, unitPrice: 4000, amount: 4000 }, { description: "Launch support & post-launch monitoring", quantity: 1, unitPrice: 3000, amount: 3000 }],
+      dueOffset: -20, paidOffset: -22, sentOffset: -25,
+    },
+    // Solace Wellness — App Onboarding Flow
+    {
+      client: "Solace Wellness", project: "App Onboarding Flow",
+      invoiceNumber: "INV-2034", status: "paid",
+      subtotal: "13000", tax: "0", total: "13000", amountPaid: "13000",
+      lineItems: [{ description: "Onboarding audit & drop-off analysis", quantity: 1, unitPrice: 4000, amount: 4000 }, { description: "Three onboarding flow concepts", quantity: 1, unitPrice: 5000, amount: 5000 }, { description: "Interactive prototype (Figma)", quantity: 1, unitPrice: 4000, amount: 4000 }],
+      dueOffset: -28, paidOffset: -29, sentOffset: -32,
+    },
+    {
+      client: "Solace Wellness", project: "App Onboarding Flow",
+      invoiceNumber: "INV-2041", status: "sent",
+      subtotal: "13000", tax: "0", total: "13000", amountPaid: "0",
+      lineItems: [{ description: "Usability testing facilitation", quantity: 1, unitPrice: 5000, amount: 5000 }, { description: "Final production-ready specs & dev handoff", quantity: 1, unitPrice: 8000, amount: 8000 }],
+      dueOffset: 8, sentOffset: -2,
+    },
+    // Northfield Realty Group
+    {
+      client: "Northfield Realty Group", project: "Listing Site Overhaul",
+      invoiceNumber: "INV-3005", status: "paid",
+      subtotal: "20000", tax: "0", total: "20000", amountPaid: "20000",
+      lineItems: [{ description: "Discovery workshop & requirements", quantity: 1, unitPrice: 5000, amount: 5000 }, { description: "Wireframes — map search & listing detail", quantity: 1, unitPrice: 8000, amount: 8000 }, { description: "UI design system for listings", quantity: 1, unitPrice: 7000, amount: 7000 }],
+      dueOffset: -70, paidOffset: -72, sentOffset: -75,
+    },
+    {
+      client: "Northfield Realty Group", project: "Listing Site Overhaul",
+      invoiceNumber: "INV-3019", status: "overdue",
+      subtotal: "20000", tax: "0", total: "20000", amountPaid: "0",
+      lineItems: [{ description: "Front-end development (listings grid, map, search)", quantity: 1, unitPrice: 20000, amount: 20000 }],
+      dueOffset: -25, sentOffset: -55, notes: "30 days overdue. Second notice sent Jul 30.",
+    },
+    {
+      client: "Northfield Realty Group",
+      invoiceNumber: "INV-3041", status: "overdue",
+      subtotal: "3800", tax: "0", total: "3800", amountPaid: "0",
+      lineItems: [{ description: "Monthly retainer — July 2026", quantity: 1, unitPrice: 3800, amount: 3800 }],
+      dueOffset: -8, sentOffset: -10, notes: "July retainer — overdue. Follow up by phone.",
+    },
+    // Kepler Robotics
+    {
+      client: "Kepler Robotics", project: "Technical Documentation Hub",
+      invoiceNumber: "INV-4002", status: "paid",
+      subtotal: "26000", tax: "0", total: "26000", amountPaid: "26000",
+      lineItems: [{ description: "Content architecture & taxonomy design", quantity: 1, unitPrice: 10000, amount: 10000 }, { description: "Component library design (v1)", quantity: 1, unitPrice: 10000, amount: 10000 }, { description: "Engineering team workshops (×2)", quantity: 2, unitPrice: 3000, amount: 6000 }],
+      dueOffset: -40, paidOffset: -41, sentOffset: -45,
+    },
+    {
+      client: "Kepler Robotics", project: "Technical Documentation Hub",
+      invoiceNumber: "INV-4018", status: "sent",
+      subtotal: "26000", tax: "0", total: "26000", amountPaid: "0",
+      lineItems: [{ description: "Doc hub component library build", quantity: 1, unitPrice: 15000, amount: 15000 }, { description: "Content migration (priority docs)", quantity: 1, unitPrice: 8000, amount: 8000 }, { description: "QA & accessibility review", quantity: 1, unitPrice: 3000, amount: 3000 }],
+      dueOffset: 14, sentOffset: -1,
+    },
+    {
+      client: "Kepler Robotics", project: "Brand Identity & Pitch System",
+      invoiceNumber: "INV-4025", status: "paid",
+      subtotal: "14000", tax: "0", total: "14000", amountPaid: "14000",
+      lineItems: [{ description: "Brand discovery & moodboards", quantity: 1, unitPrice: 4000, amount: 4000 }, { description: "Three brand directions", quantity: 1, unitPrice: 6000, amount: 6000 }, { description: "Approved direction development", quantity: 1, unitPrice: 4000, amount: 4000 }],
+      dueOffset: -35, paidOffset: -37, sentOffset: -40,
+    },
+    {
+      client: "Kepler Robotics", project: "Brand Identity & Pitch System",
+      invoiceNumber: "INV-4036", status: "sent",
+      subtotal: "14000", tax: "0", total: "14000", amountPaid: "0",
+      lineItems: [{ description: "Final brand identity system & files", quantity: 1, unitPrice: 8000, amount: 8000 }, { description: "Series B pitch deck system (modular)", quantity: 1, unitPrice: 6000, amount: 6000 }],
+      dueOffset: 5, sentOffset: -6,
+    },
+    // Marrow Coffee Roasters
+    {
+      client: "Marrow Coffee Roasters", project: "Packaging & Brand Redesign",
+      invoiceNumber: "INV-5003", status: "paid",
+      subtotal: "5700", tax: "0", total: "5700", amountPaid: "5700",
+      lineItems: [{ description: "Discovery deposit (20%) — packaging & brand redesign", quantity: 1, unitPrice: 5700, amount: 5700 }],
+      dueOffset: -8, paidOffset: -7, sentOffset: -10, notes: "20% discovery deposit paid upfront.",
+    },
+    {
+      client: "Marrow Coffee Roasters", project: "Packaging & Brand Redesign",
+      invoiceNumber: "INV-5011", status: "draft",
+      subtotal: "8550", tax: "0", total: "8550", amountPaid: "0",
+      lineItems: [{ description: "30% milestone — creative direction approval", quantity: 1, unitPrice: 8550, amount: 8550 }],
+      dueOffset: 30, notes: "30% milestone — due on creative direction approval.",
+    },
+  ];
+
+  await db.insert(invoicesTable).values(
+    invoiceSpecs.map((inv) => ({
+      workspaceId: wsId,
+      clientId: clientByName[inv.client]!.id,
+      projectId: inv.project ? projectByName[inv.project]!.id : null,
+      invoiceNumber: inv.invoiceNumber,
+      status: inv.status,
+      subtotal: inv.subtotal,
+      tax: inv.tax,
+      total: inv.total,
+      amountPaid: inv.amountPaid,
+      lineItems: JSON.stringify(inv.lineItems),
+      dueDate: dateStr(daysFrom(NOW, inv.dueOffset)),
+      paidDate: inv.paidOffset != null ? dateStr(daysFrom(NOW, inv.paidOffset)) : null,
+      sentAt: inv.sentOffset != null ? daysFrom(NOW, inv.sentOffset) : null,
+      notes: inv.notes ?? null,
     }))
   );
 

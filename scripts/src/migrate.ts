@@ -581,6 +581,20 @@ async function migrate() {
     // tasks: add sort_order for Kanban drag-and-drop
     await client.query(`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS sort_order INTEGER NOT NULL DEFAULT 0`);
 
+    // ── Workspace integrations (encrypted API key storage) ────────────────
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS workspace_integrations (
+        id            SERIAL PRIMARY KEY,
+        workspace_id  INTEGER NOT NULL,
+        provider      TEXT NOT NULL,
+        encrypted_key TEXT NOT NULL,
+        configured_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        CONSTRAINT workspace_integrations_workspace_provider_unique UNIQUE (workspace_id, provider)
+      )
+    `);
+    await client.query(`CREATE INDEX IF NOT EXISTS idx_workspace_integrations_workspace ON workspace_integrations(workspace_id)`);
+
     // campaigns table (agency marketing campaigns)
     await client.query(`
       CREATE TABLE IF NOT EXISTS campaigns (
